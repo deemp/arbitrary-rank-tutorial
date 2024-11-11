@@ -1,0 +1,69 @@
+cabal-version: 1.24
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           free-foil-stlc
+version:        0.0.1
+synopsis:       An implementation of Simply typed lambda calculus using Free Foil
+description:    Please see the README on GitHub at <https://github.com/objectionary/eo-phi-normalizer#readme>
+homepage:       https://github.com/deemp/query-driven-free-foil#readme
+bug-reports:    https://github.com/deemp/query-driven-free-foil/issues
+author:         Danila Danko, Nickolay Kudasov, Nikita Strygin
+maintainer:     br4ch1st0chr0n3@gmail.com, nickolay.kudasov@gmail.com
+copyright:      2024 Danila Danko, Nickolay Kudasov, Nikita Strygin
+license:        BSD3
+build-type:     Custom
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/deemp/query-driven-free-foil
+
+custom-setup
+  setup-depends:
+      Cabal >=2.4.0.1 && <4.0
+    , base >=4.11.0.0 && <5.0
+    , process >=1.6.3.0
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_free_foil_stlc
+  hs-source-dirs:
+      src
+  default-extensions:
+      ImportQualifiedPost
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
+  build-tools:
+      alex ==3.4.0.1
+    , happy ==1.20.1.1
+  build-tool-depends:
+      BNFC:bnfc ==2.9.5
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable free-foil-stlc
+  main-is: Main.hs
+  other-modules:
+      Paths_free_foil_stlc
+  hs-source-dirs:
+      app
+  default-extensions:
+      ImportQualifiedPost
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex ==3.4.0.1
+    , happy ==1.20.1.1
+  build-tool-depends:
+      BNFC:bnfc ==2.9.5
+  build-depends:
+      base >=4.7 && <5
+    , free-foil-stlc
+    , with-utf8
+  default-language: Haskell2010

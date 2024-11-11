@@ -1,0 +1,4 @@
+resolver: lts-22.41
+packages:
+  - free-foil-stlc
+notify-if-nix-on-path: false

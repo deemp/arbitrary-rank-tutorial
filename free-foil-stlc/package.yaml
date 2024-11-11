@@ -1,0 +1,129 @@
+name: free-foil-stlc
+synopsis: "An implementation of Simply typed lambda calculus using Free Foil"
+version: 0.0.1
+github: "deemp/query-driven-free-foil"
+license: BSD3
+author: "Danila Danko, Nickolay Kudasov, Nikita Strygin"
+maintainer: "br4ch1st0chr0n3@gmail.com, nickolay.kudasov@gmail.com"
+copyright: "2024 Danila Danko, Nickolay Kudasov, Nikita Strygin"
+
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+verbatim:
+  cabal-version: 1.24
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description: Please see the README on GitHub at <https://github.com/objectionary/eo-phi-normalizer#readme>
+
+custom-setup:
+  dependencies:
+    - base >= 4.11.0.0 && < 5.0
+    - Cabal >= 2.4.0.1 && < 4.0
+    - process >= 1.6.3.0
+
+build-tools:
+  alex: "== 3.4.0.1"
+  happy: "== 1.20.1.1"
+  BNFC:bnfc: "== 2.9.5"
+
+dependencies:
+  - base >= 4.7 && < 5
+  # - aeson
+  # - array >= 0.5.5.0
+  # - directory
+  # - filepath
+  # - yaml
+  # - mtl
+  # - PyF
+  # - lens
+  # - generic-lens
+  # - hspec
+  # - hspec-core
+  # - text
+  # - template-haskell
+  # - blaze-html
+  # - blaze-markup
+  # - scientific
+  # - file-embed >= 0.0.16.0
+  # - regex-compat
+  # - cereal
+  # - bytestring
+  # - hashable
+  # - unordered-containers
+  # - containers
+
+default-extensions:
+  - ImportQualifiedPost
+
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wmissing-home-modules
+  - -Wpartial-fields
+  - -Wredundant-constraints
+  - -Wno-missing-export-lists
+
+library:
+  source-dirs: src
+  # when:
+  #   - condition: false
+  #     other-modules:
+  #       - Language.EO.Phi.Syntax.Test
+  #       - Language.EO.Phi.Syntax.ErrM
+  #       - Language.EO.Phi.Syntax.Skel
+  #       - Language.EO.Phi.Rules.Syntax.Test
+  #       - Language.EO.Phi.Rules.Syntax.ErrM
+  #       - Language.EO.Phi.Rules.Syntax.Skel
+
+executables:
+  free-foil-stlc:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - free-foil-stlc
+      - with-utf8
+      # - eo-phi-normalizer
+      # - optparse-applicative
+      # - aeson-pretty
+# tests:
+#   spec:
+#     main: Main.hs
+#     source-dirs: test
+#     ghc-options:
+#       - -threaded
+#       - -rtsopts
+#       - -with-rtsopts=-N
+#     dependencies:
+#       - eo-phi-normalizer
+#       - with-utf8
+#       - hspec
+#       - hspec-discover
+#       - QuickCheck
+#   doctests:
+#     main: Main.hs
+#     source-dirs:
+#       - test/doctests
+#       - src
+#     dependencies:
+#       - eo-phi-normalizer
+#       - doctest-parallel
+#     when:
+#     - condition: false
+#       other-modules:
+#         - Language.EO.Phi.Syntax.Test
+#         - Language.EO.Phi.Syntax.ErrM
