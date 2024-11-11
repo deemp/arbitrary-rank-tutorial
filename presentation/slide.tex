@@ -51,33 +51,85 @@
     \titlepage
 \end{frame}
 
-\begin{frame}    
-\tableofcontents[sectionstyle=show,
-subsectionstyle=show/shaded/hide,
-subsubsectionstyle=show/shaded/hide]
+\begin{frame}
+    \tableofcontents[sectionstyle=show,
+        subsectionstyle=show/shaded/hide,
+        subsubsectionstyle=show/shaded/hide]
 \end{frame}
 
 \section{Introduction}
 
-\begin{frame}{Title}
-    \begin{itemize}[<+-| alert+>] % stepwise alerts
-        \item \lipsum[1][1-4]
-        \item \lipsum[1][5-8]
-    \end{itemize}
-\end{frame}
-
-
-\section{Literature Review}
-
-\subsection{GPT3-derived Models DALLE \& CLIP}
-
-\begin{frame}
+\begin{frame}{Problem}
     \begin{itemize}
-        \item \lipsum[2][1-4]
-        \item \lipsum[2][5-9]
-        \item Results accessible at \newline \url{https://scholar.google.com}
+        % [<+-| alert+>] % stepwise alerts
+        \item Programming language researchers, enthusiasts, and students sometimes prototype new languages.
+        \item Some of the language authors try to make their languages user-friendly by supporting the language server protocol (LSP) \cite{noauthor_language_server_protocol_2024}.
+        \item Language servers for all mainstream languages support "go to definition", "lookup the type on hover", "rename all occurences".
+        \item There exist frameworks that support building languages integrated with the LSP, e.g., Langium \cite{noauthor_langium_nodate} for languages implemented in \texttt{TypeScript} and \texttt{lsp-tree-sitter} \cite{noauthor_neomuttlsp-tree-sitter_2024} for languages implemented in Python.
+        \item However, to our best knowledge, there is no such framework for languages implemented in Haskell.
     \end{itemize}
 \end{frame}
+
+\begin{frame}{Solution}
+    \begin{itemize}
+        % [<+-| alert+>] % stepwise alerts
+        \item Language servers share some features, such as "go to definition".
+        \item Our assumption is that some of these features can be implemented at least partially in a language-agnostic way.
+        \item A promising approach is to work with the Second-Order Abstract Syntax (SOAS) of a language.
+        \item SOAS allows to work with scope resolution ("go to definition"), variable bindings ("lookup the type on hover"), and substitution ("rename all occurences") in a language-agnostic way.
+        \item We plan to use the Free Foil \cite{kudasov_free_2024} to generate SOAS of a language.
+    \end{itemize}
+\end{frame}
+
+\section{Future Work}
+
+\subsection{Literature review}
+
+\begin{frame}{Literature review}
+    \begin{itemize}
+        \item Read \cite{maclaurin_foil_2022} and \cite{kudasov_free_2024}
+              % \item \lipsum[2][1-4]
+              % \item \lipsum[2][5-9]
+              % \item Results accessible at \newline \url{https://scholar.google.com}
+    \end{itemize}
+\end{frame}
+
+\subsection{Practice with Free Foil}
+
+\begin{frame}{Practice with Free Foil}
+    \begin{itemize}
+        \item Complete exercises with ASTs
+        \item Complete them with Free Foil
+    \end{itemize}
+\end{frame}
+
+\subsection{Practice with a simple typed language}
+
+\begin{frame}{Practice with a simple typed language}
+    \begin{itemize}
+        \item Implement a type checker and interpreter for a simple typed language, e.g. Simply Typed Lambda Calculus.
+        \item Features:
+              \begin{itemize}
+                  \item Single module on the input and the output
+                  \item Use BNFC for pretty-printing and parsing
+                  \item Use Free Foil and Template Haskell
+                  \item Show error location in the code
+              \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+% \section{Literature Review}
+
+% \subsection{GPT3-derived Models DALLE \& CLIP}
+
+% \begin{frame}
+%     \begin{itemize}
+%         \item \lipsum[2][1-4]
+%         \item \lipsum[2][5-9]
+%         \item Results accessible at \newline \url{https://scholar.google.com}
+%     \end{itemize}
+% \end{frame}
 
 
 % \section{Methods}
@@ -319,9 +371,9 @@ subsubsectionstyle=show/shaded/hide]
 \begin{frame}[allowframebreaks]
     \bibliography{ref}
     \bibliographystyle{ieeetr}
-    \nocite{*} % used here because no citation happens in slides
+    % \nocite{*} % used here because no citation happens in slides
     % if there are too many try use:
-    % \tiny\bibliographystyle{alpha}
+    \tiny\bibliographystyle{alpha}
 \end{frame}
 
 
