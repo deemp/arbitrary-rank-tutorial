@@ -77,7 +77,8 @@
         \item Language servers share some features, such as "go to definition".
         \item We assume that some of these features can be implemented in a language-agnostic framework for implementing new languages in Haskell.
         \item A promising approach is to work with the Second-Order Abstract Syntax (SOAS) \cite{fiore_formal_2022} of a new language.
-        \item SOAS may allow to work with scope resolution ("go to definition"), variable bindings ("lookup the type on hover"), and substitution ("rename all occurences") in a language-agnostic way.
+        \item The main idea of SOAS is to provide a language-agnostic machinery for describing variable introduction in AST.
+        \item This allows it to provide generic mechanisms for scope resolution ("go to definition"), variable bindings ("lookup the type on hover"), and substitution ("rename all occurences").
     \end{itemize}
 \end{frame}
 
