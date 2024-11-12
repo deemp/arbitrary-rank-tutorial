@@ -1,5 +1,5 @@
 name: free-foil-stlc
-synopsis: "An implementation of Simply typed lambda calculus using Free Foil"
+synopsis: "An implementation of simply typed lambda calculus using Free Foil"
 version: 0.0.1
 github: "deemp/query-driven-free-foil"
 license: BSD3
@@ -36,29 +36,7 @@ build-tools:
 
 dependencies:
   - base >= 4.7 && < 5
-  # - aeson
-  # - array >= 0.5.5.0
-  # - directory
-  # - filepath
-  # - yaml
-  # - mtl
-  # - PyF
-  # - lens
-  # - generic-lens
-  # - hspec
-  # - hspec-core
-  # - text
-  # - template-haskell
-  # - blaze-html
-  # - blaze-markup
-  # - scientific
-  # - file-embed >= 0.0.16.0
-  # - regex-compat
-  # - cereal
-  # - bytestring
-  # - hashable
-  # - unordered-containers
-  # - containers
+  - array >= 0.5.5.0
 
 default-extensions:
   - ImportQualifiedPost
@@ -76,15 +54,12 @@ ghc-options:
 
 library:
   source-dirs: src
-  # when:
-  #   - condition: false
-  #     other-modules:
-  #       - Language.EO.Phi.Syntax.Test
-  #       - Language.EO.Phi.Syntax.ErrM
-  #       - Language.EO.Phi.Syntax.Skel
-  #       - Language.EO.Phi.Rules.Syntax.Test
-  #       - Language.EO.Phi.Rules.Syntax.ErrM
-  #       - Language.EO.Phi.Rules.Syntax.Skel
+  when:
+    - condition: false
+      other-modules:
+        - Language.STLC.Syntax.Test
+        - Language.STLC.Syntax.ErrM
+        - Language.STLC.Syntax.Skel
 
 executables:
   free-foil-stlc:
@@ -97,33 +72,3 @@ executables:
     dependencies:
       - free-foil-stlc
       - with-utf8
-      # - eo-phi-normalizer
-      # - optparse-applicative
-      # - aeson-pretty
-# tests:
-#   spec:
-#     main: Main.hs
-#     source-dirs: test
-#     ghc-options:
-#       - -threaded
-#       - -rtsopts
-#       - -with-rtsopts=-N
-#     dependencies:
-#       - eo-phi-normalizer
-#       - with-utf8
-#       - hspec
-#       - hspec-discover
-#       - QuickCheck
-#   doctests:
-#     main: Main.hs
-#     source-dirs:
-#       - test/doctests
-#       - src
-#     dependencies:
-#       - eo-phi-normalizer
-#       - doctest-parallel
-#     when:
-#     - condition: false
-#       other-modules:
-#         - Language.EO.Phi.Syntax.Test
-#         - Language.EO.Phi.Syntax.ErrM
