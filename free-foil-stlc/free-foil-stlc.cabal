@@ -36,7 +36,6 @@ library
       Language.STLC.Syntax.Lex
       Language.STLC.Syntax.Par
       Language.STLC.Syntax.Print
-      Lib
   other-modules:
       Paths_free_foil_stlc
   hs-source-dirs:
