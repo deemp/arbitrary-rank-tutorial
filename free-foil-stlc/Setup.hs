@@ -30,22 +30,22 @@ main =
                       False
 #endif
             -- See the details on the command form in https://github.com/objectionary/eo-phi-normalizer/issues/347#issuecomment-2117097070
-          --   command = intercalate "; " $
-          --       [ "set -ex" ] <>
-          --       [ "chcp.com" | isWindows ] <>
-          --       [ "chcp.com 65001" | isWindows ] <>
-          --       [ "bnfc --haskell -d -p Language.EO.Phi --generic -o src/ grammar/EO/Phi/Syntax.cf"
-          --       , "cd src/Language/EO/Phi/Syntax"
-          --       , "alex Lex.x"
-          --       , "happy Par.y"
-          --       , "true"
-          --       ]
+            command = intercalate "; " $
+                [ "set -ex" ] <>
+                [ "chcp.com" | isWindows ] <>
+                [ "chcp.com 65001" | isWindows ] <>
+                [ "bnfc --haskell -d -p Language.STLC --generic -o src/ grammar/STLC/Syntax.cf"
+                , "cd src/Language/STLC/Syntax"
+                , "alex Lex.x"
+                , "happy Par.y"
+                , "true"
+                ]
 
-          --   fullCommand = "bash -c ' " <> command <> " '"
+            fullCommand = "bash -c ' " <> command <> " '"
 
-          -- putStrLn fullCommand
+          putStrLn fullCommand
 
-          -- _ <- callCommand fullCommand
+          _ <- callCommand fullCommand
 
           postConf simpleUserHooks args flags packageDesc localBuildInfo
       }
