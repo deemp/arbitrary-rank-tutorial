@@ -1,0 +1,27 @@
+token Var lower (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
+
+-- Indices denote precedence levels - see https://github.com/BNFC/bnfc/blob/35c66af24839c176bd12a5b8294e1d552d835c3b/document/tutorial/bnfc-tutorial.txt#L337
+
+ExpAbs.  Exp1 ::= "\\" Var "." Exp ;
+ExpApp.  Exp2 ::= Exp2 Exp3;
+ExpUnit. Exp3 ::= "()" ;
+ExpVar.  Exp4 ::= Var ;
+
+coercions Exp 4 ;
+
+TypeFunc. Type1 ::= Type1 "->" Type2 ;
+TypeUnit. Type2 ::= "unit" ;
+
+coercions Type 2 ;
+
+CtxVar. CtxVar ::= Var ":" Type ;
+separator CtxVar "," ;
+
+Ctx. Ctx ::= [CtxVar];
+
+ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;
+
+CommandTypeCheck. Command ::= "#typecheck" ExpUnderCtx "<=" Type ;
+CommandTypeSynth. Command ::= "#typesynth" ExpUnderCtx ;
+
+terminator Command ";" ;
