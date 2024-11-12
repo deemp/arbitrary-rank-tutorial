@@ -10,6 +10,7 @@ copyright: "2024 Danila Danko, Nickolay Kudasov, Nikita Strygin"
 extra-source-files:
   - README.md
   - CHANGELOG.md
+  - grammar/STLC/Syntax.cf
 
 verbatim:
   cabal-version: 1.24
