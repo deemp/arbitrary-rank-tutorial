@@ -89,6 +89,14 @@
 
             basePackages = pkgs.haskell.packages."ghc${ghcVersion}";
 
+            settings = {
+              hpack =
+                { super, ... }:
+                {
+                  custom = _: super.hpack_0_37_0;
+                };
+            };
+
             # Development shell configuration
             devShell = {
               hlsCheck.enable = false;
@@ -175,17 +183,22 @@
             bash.extra = bash.vars;
             commands = {
               tools = [
-                stack-wrapped
-                pkgs.mdsh
-                pkgs.mdbook
-                pkgs.mdbook-linkcheck
                 {
-                  expose = false;
+                  expose = true;
+                  packages = {
+                    stack = stack-wrapped;
+                    inherit (pkgs) mdsh mdbook mdbook-linkcheck;
+                    inherit (config.haskellProjects.default.outputs.finalPackages) hpack;
+                  };
+                }
+                {
                   packages =
                     let
                       hp = config.haskellProjects.default.outputs.finalPackages;
                     in
-                    (config.haskellProjects.default.defaults.devShell.tools hp) // { hpack = hp.hpack_0_37_0; };
+                    {
+                      cabal = hp.cabal-install;
+                    };
                 }
               ];
 
