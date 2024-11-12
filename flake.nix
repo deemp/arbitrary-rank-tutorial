@@ -144,9 +144,6 @@
             };
           };
 
-          # Default package & app.
-          apps.default = self'.packages.default;
-
           packages = mkShellApps { default = self'.packages.free-foil-stlc; };
 
           # buildStackProject arguments: https://github.com/NixOS/nixpkgs/blob/c7089236291045a523429e681bdaecb49bb501f3/pkgs/development/haskell-modules/generic-stack-builder.nix#L4-L11
