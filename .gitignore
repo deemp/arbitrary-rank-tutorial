@@ -1,3 +1,5 @@
 .direnv
 .stack-work
 dist-newstyle
+free-foil-stlc/src/Language/STLC/Syntax/*.bak
+free-foil-stlc/dist
