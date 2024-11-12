@@ -15,7 +15,7 @@
 \usepackage{graphicx,pstricks,listings,stackengine}
 \usepackage{lipsum}
 
-\author[Danko, Strygin]{Danila Danko \inst{1} \and Nikita Strygin \inst{1} \and \newline \newline {Supervisor: Nikolai Kudasov \inst{1}}}
+\author[Danko, Strygin]{Danila Danko, MS-SE \inst{1} \and Nikita Strygin, MS-SE \inst{1} \and \newline \newline {Supervisor: Nikolai Kudasov \inst{1}}}
 \title{Query-Driven Language Server Architecture using Second-Order Abstract Syntax}
 
 \institute{
@@ -57,40 +57,71 @@
         subsubsectionstyle=show/shaded/hide]
 \end{frame}
 
-\section{Introduction}
+\section{Context}
 
 \begin{frame}{Problem}
     \begin{itemize}
-        % [<+-| alert+>] % stepwise alerts
-        \item Programming language researchers, enthusiasts, and students sometimes prototype new languages.
-        \item Some of the language authors try to make their languages user-friendly by supporting the language server protocol (LSP) \cite{noauthor_language_server_protocol_2024}.
-        \item Language servers for all mainstream languages support "go to definition", "lookup the type on hover", "rename all occurences".
-        \item There exist frameworks that support building languages integrated with the LSP, e.g., Langium \cite{noauthor_langium_nodate} for languages implemented in \texttt{TypeScript} and \texttt{lsp-tree-sitter} \cite{noauthor_neomuttlsp-tree-sitter_2024} for languages implemented in Python.
-        \item However, to our best knowledge, there is no such framework for languages implemented in Haskell.
+        [<+-| alert+>] % stepwise alerts
+        \item There are language servers \cite{noauthor_language_server_protocol_2024} for mainstream languages such as C\#, Java, C++ \cite{lsp_implementations}. Such servers improve the developer experience by supporting the "go to definition", "lookup the type on hover", "rename all occurences" queries.
+        \item Multiple programming languages are implemented in Haskell \cite{github_haskell_programming_language}, \cite{hackage_formal_languages}, \cite{hackage_language}.
+        \item Only a half of the GitHub repositories for programming languages implemented in Haskell provide a language server \cite{github_lsp_module}.
+              % TODO check more accurately
+        \item There exist frameworks for TypeScript (\texttt{Langium}~\cite{noauthor_langium_nodate}) and Python (\texttt{lsp-tree-sitter}~\cite{noauthor_neomuttlsp-tree-sitter_2024}) that simplify integration with the LSP for new languages.
+        \item However, to our best knowledge, there is no such framework for languages implemented in Haskell!
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Solution}
     \begin{itemize}
-        % [<+-| alert+>] % stepwise alerts
+        [<+-| alert+>] % stepwise alerts
         \item Language servers share some features, such as "go to definition".
-        \item Our assumption is that some of these features can be implemented at least partially in a language-agnostic framework for implementing new languages in Haskell.
-        \item A promising approach is to work with the Second-Order Abstract Syntax (SOAS) of a language.
-        \item SOAS allows to work with scope resolution ("go to definition"), variable bindings ("lookup the type on hover"), and substitution ("rename all occurences") in a language-agnostic way.
-        \item We plan to use the Free Foil \cite{kudasov_free_2024} to generate the Haskell code for SOAS of a language.
+        \item We assume that some of these features can be implemented in a language-agnostic framework for implementing new languages in Haskell.
+        \item A promising approach is to work with the Second-Order Abstract Syntax (SOAS) \cite{fiore_formal_2022} of a new language.
+        \item SOAS may allow to work with scope resolution ("go to definition"), variable bindings ("lookup the type on hover"), and substitution ("rename all occurences") in a language-agnostic way.
     \end{itemize}
 \end{frame}
 
-\section{Future Work}
+\section{Contribution}
 
-\subsection{Literature review}
-
-\begin{frame}{Literature review}
+\begin{frame}{Contribution}
     \begin{itemize}
-        \item Read \cite{maclaurin_foil_2022} and \cite{kudasov_free_2024}
-              % \item \lipsum[2][1-4]
-              % \item \lipsum[2][5-9]
-              % \item Results accessible at \newline \url{https://scholar.google.com}
+        [<+-| alert+>] % stepwise alerts
+        \item We plan to implement in Haskell a language-agnostic framework that simplifies integration of new languages with LSP.
+        \item The framework will primarily be based on the \texttt{free-foil} \cite{hackage_free_foil} (SOAS manipulation), \texttt{BNFC} \cite{hackage_bnfc} (parsing), \texttt{lsp} \cite{hackage_lsp} (library for building LSP) packages.
+    \end{itemize}
+\end{frame}
+
+\section{Evaluation criteria}
+
+\begin{frame}{Metrics}
+    \begin{itemize}
+        [<+-| alert+>] % stepwise alerts
+        \item We plan to provide integration with LSP for Simply typed lambda calculus \cite{wiki_stlc} and Stella Core \cite{noauthor_fizrukstella_nodate} with and without our framework.
+        \item We will measure for both approaches and compare:
+              \begin{itemize}
+                  \item The lines of code required for integration and some other complexity metrics.
+                  \item The performance of the server on a large (probably generated) code base (approx.~10KLoC).
+              \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\section{Plan of work}
+
+\subsection{Review the literature}
+
+\begin{frame}{Review the literature}
+    \begin{itemize}
+        \item Read papers on SOAS \cite{fiore_formal_2022}, Foil \cite{maclaurin_foil_2022} and Free foil \cite{kudasov_free_2024}.
+        \item Read the \texttt{free-foil} package documentation \cite{hackage_free_foil}.
+    \end{itemize}
+\end{frame}
+
+\subsection{Preliminary results}
+
+\begin{frame}{Preliminary results}
+    \begin{itemize}
+        \item We created a repository \cite{github_query_driven_free_foil} for the thesis work.
+        \item We implemented a parser and pretty-printer of STLC as defined in \cite{dunfield_bidirectional_2020} using BNFC.
     \end{itemize}
 \end{frame}
 
@@ -98,26 +129,74 @@
 
 \begin{frame}{Practice with Free Foil}
     \begin{itemize}
-        \item Complete exercises with ASTs
-        \item Complete them with Free Foil
+        \item Complete exercises on AST manipulation provided by Nikolai.
+        \item Complete these exercises using Free foil.
     \end{itemize}
 \end{frame}
 
-\subsection{Practice with a simple typed language}
+\subsection{Practice with Simply typed lambda calculus (STLC)}
 
-\begin{frame}{Practice with a simple typed language}
+\begin{frame}{Type checker and interpreter for Simply typed lambda calculus (STLC)}
     \begin{itemize}
-        \item Implement a type checker and interpreter for a simple typed language, e.g. Simply Typed Lambda Calculus.
+        \item Implement a type checker and interpreter for STLC.
         \item Features:
               \begin{itemize}
-                  \item Single module on the input and the output
-                  \item Use BNFC for pretty-printing and parsing
-                  \item Use Free Foil and Template Haskell
-                  \item Show error location in the code
+                  \item Single module on the input and the output.
+                  \item Use BNFC for parsing and pretty-printing.
+                  \item Use Free Foil and Template Haskell.
+                  \item Show error location in the code.
               \end{itemize}
     \end{itemize}
 
 \end{frame}
+
+\begin{frame}{Language server for STLC}
+    \begin{itemize}
+        \item Implement a language server and a simple VS Code extension for STLC.
+        \item Use the \texttt{lsp} \cite{hackage_lsp} package.
+        \item Features:
+              \begin{itemize}
+                  \item Go to definition.
+                  \item Type on hover.
+                  \item Maybe something else that makes sense for STLC.
+              \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\subsection{Practice with Stella Core}
+
+\begin{frame}{Type checker and interpreter for Stella Core}
+    \begin{itemize}
+        \item Implement a type checker and interpreter for Stella Core.
+        \item Features:
+              \begin{itemize}
+                  \item Single module on the input and the output.
+                  \item Use BNFC for parsing and pretty-printing.
+                  \item Use Free Foil and Template Haskell.
+                  \item Show error location in the code.
+              \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Language server for Stella Core}
+    \begin{itemize}
+        \item Implement a language server, and a simple VS Code extension for Stella Core.
+        \item Use the \texttt{lsp} \cite{hackage_lsp} package.
+        \item Features:
+              \begin{itemize}
+                  \item Type and documentation on hover.
+                  \item Autocompletion.
+                  \item Inlay (type) hints.
+                  \item (Un)folding scopes.
+                  \item InfoView - a separate panel that shows context (what is in scope, the type of the current expression or goal)
+                  \item Something else.
+              \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
 
 % \section{Literature Review}
 
@@ -373,7 +452,7 @@
     \bibliographystyle{ieeetr}
     % \nocite{*} % used here because no citation happens in slides
     % if there are too many try use:
-    \tiny\bibliographystyle{alpha}
+    % \tiny\bibliographystyle{alpha}
 \end{frame}
 
 
