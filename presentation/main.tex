@@ -81,8 +81,8 @@
     \begin{itemize}
         [<+-| alert+>] % stepwise alerts
         \item Language servers share some features, such as "go to definition".
-        \item We assume that some of these features can be implemented in a language-agnostic framework for implementing new languages in Haskell.
-        \item A promising approach is to work with the Second-Order Abstract Syntax (SOAS) \cite{fiore_formal_2022} of a new language.
+        \item We assume that some of these features can be implemented in a Haskell framework that is independent of the target language (language-agnostic) for which LSP integration is developed.
+        \item A promising approach is to work with the Second-Order Abstract Syntax (SOAS) \cite{fiore_formal_2022} of the target language.
         \item The main idea of SOAS is to provide a language-agnostic machinery for describing variable introduction in AST.
         \item This allows it to provide generic mechanisms for scope resolution ("go to definition"), variable bindings ("lookup the type on hover"), and substitution ("rename all occurences").
     \end{itemize}
@@ -93,7 +93,7 @@
 \begin{frame}{Contribution}
     \begin{itemize}
         [<+-| alert+>] % stepwise alerts
-        \item We plan to implement in Haskell a language-agnostic framework that simplifies integration of new languages with LSP.
+        \item We plan to implement in Haskell a language-agnostic framework that simplifies integration with LSP of (new) languages written in Haskell.
         \item The framework will primarily be based on the \texttt{free-foil} \cite{hackage_free_foil} (SOAS manipulation), \texttt{BNFC} \cite{hackage_bnfc} (parsing), \texttt{lsp} \cite{hackage_lsp} (library for building LSP) packages.
     \end{itemize}
 \end{frame}
@@ -103,7 +103,7 @@
 \begin{frame}{Metrics}
     \begin{itemize}
         [<+-| alert+>] % stepwise alerts
-        \item We plan to provide integration with LSP for Simply typed lambda calculus \cite{wiki_stlc} and Stella Core \cite{noauthor_fizrukstella_nodate} with and without our framework.
+        \item We plan to provide integration with LSP for Simply typed lambda calculus (STLC) \cite{wiki_stlc} and Stella Core \cite{noauthor_fizrukstella_nodate} with (Approach 1) and without (Approach 2) our framework.
         \item We will measure for both approaches and compare:
               \begin{itemize}
                   \item The lines of code required for integration and some other complexity metrics.
@@ -143,7 +143,7 @@
 
 \subsection{Practice with Simply typed lambda calculus (STLC)}
 
-\begin{frame}{Type checker and interpreter for Simply typed lambda calculus (STLC)}
+\begin{frame}{Type checker and interpreter for STLC}
     \begin{itemize}
         \item Implement a type checker and interpreter for STLC.
         \item Features:
