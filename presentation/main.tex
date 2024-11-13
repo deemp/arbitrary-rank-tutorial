@@ -63,12 +63,19 @@
         subsubsectionstyle=show/shaded/hide]
 \end{frame}
 
-\section{Context}
+\section{Introduction}
+
+\begin{frame}{Context}
+    \begin{itemize}
+        [<+-| alert+>] % stepwise alerts
+        \item The Language Server Protocol \cite{noauthor_language_server_protocol_2024} standardized the protocol of communication between source code editors and language servers that provide language features like auto complete.
+        \item There are language servers for mainstream languages such as C\#, Java, C++ \cite{lsp_implementations}. Such servers improve the developer experience by supporting the "go to definition", "lookup the type on hover", "rename all occurences" queries.
+    \end{itemize}
+\end{frame}
 
 \begin{frame}{Problem}
     \begin{itemize}
         [<+-| alert+>] % stepwise alerts
-        \item There are language servers \cite{noauthor_language_server_protocol_2024} for mainstream languages such as C\#, Java, C++ \cite{lsp_implementations}. Such servers improve the developer experience by supporting the "go to definition", "lookup the type on hover", "rename all occurences" queries.
         \item Multiple programming languages are implemented in Haskell \cite{github_haskell_programming_language}, \cite{hackage_formal_languages}, \cite{hackage_language}.
         \item Only a half of the GitHub repositories for programming languages implemented in Haskell provide a language server \cite{github_lsp_module}.
               % TODO check more accurately
@@ -93,7 +100,7 @@
 \begin{frame}{Contribution}
     \begin{itemize}
         [<+-| alert+>] % stepwise alerts
-        \item We plan to implement in Haskell a language-agnostic framework that simplifies integration with LSP of (new) languages written in Haskell.
+        \item We want to implement in Haskell a language-agnostic framework that simplifies integration with LSP of (new) languages written in Haskell.
         \item The framework will primarily be based on the \texttt{free-foil} \cite{hackage_free_foil} (SOAS manipulation), \texttt{BNFC} \cite{hackage_bnfc} (parsing), \texttt{lsp} \cite{hackage_lsp} (library for building LSP) packages.
     \end{itemize}
 \end{frame}
