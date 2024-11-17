@@ -19,6 +19,10 @@
       url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
       flake = false;
     };
+    free-foil = {
+      url = "github:fizruk/free-foil";
+      flake = false;
+    };
   };
 
   outputs =
@@ -40,7 +44,6 @@
           ...
         }:
         let
-          ghcVersion = "966";
           stack-wrapped = pkgs.symlinkJoin {
             name = "stack"; # will be available as the usual `stack` in terminal
             paths = [ pkgs.stack ];
@@ -81,19 +84,32 @@
                 root = ./.;
                 fileset = lib.fileset.unions [
                   ./free-foil-stlc
+                  ./free-foil-exercises
                   ./cabal.project
                   ./README.md
                 ];
               }
             );
 
-            basePackages = pkgs.haskell.packages."ghc${ghcVersion}";
+            basePackages = pkgs.haskell.packages."ghc9101";
 
             settings = {
               hpack =
                 { super, ... }:
                 {
                   custom = _: super.hpack_0_37_0;
+                };
+              free-foil =
+                { super, ... }:
+                {
+                  custom =
+                    _: super.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
+                };
+              with-utf8 =
+                { super, ... }:
+                {
+                  custom =
+                    _: super.with-utf8_1_1_0_0;
                 };
             };
 

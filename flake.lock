@@ -76,6 +76,22 @@
         "type": "github"
       }
     },
+    "free-foil": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1730066026,
+        "narHash": "sha256-y6wt/u2zSGWQfbO5wgnOO336SwzwVEA33OkqiMpHn3I=",
+        "owner": "fizruk",
+        "repo": "free-foil",
+        "rev": "66534e8a13e86927a7c350ab9f5dafc0e4112e07",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fizruk",
+        "repo": "free-foil",
+        "type": "github"
+      }
+    },
     "haskell-flake": {
       "locked": {
         "lastModified": 1713084600,
@@ -131,6 +147,7 @@
         "flake-compat": "flake-compat",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils",
+        "free-foil": "free-foil",
         "haskell-flake": "haskell-flake",
         "nixpkgs": "nixpkgs",
         "systems": "systems",
