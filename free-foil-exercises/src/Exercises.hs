@@ -395,15 +395,6 @@ exampleGExpr3 = GExpr'Node (EFree'Add (GExpr'Var (VarId 1)) exampleGExpr2)
 -- >>> heightOfExpr exampleGExpr3
 -- 3
 
-gHeightOfExpr :: Functor f => (f (GExpr f a) -> a) -> GExpr f a -> a
-gHeightOfExpr f = 
-
--- gHeightOfEFree :: GExpr'
-
--- fNode = \case
---   GExpr'Var _ -> 0
---   GExpr'Node node -> gHeightOfExpr
-
 -- ### widthOfExpr
 
 data WidthState = WidthState {maxWidth :: Int, maxDepth :: Int}
