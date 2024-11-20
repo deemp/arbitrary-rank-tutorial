@@ -3,10 +3,24 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: happy-2.1.1@sha256:9aa9cdd41d5feef9315ec66b52d0a3d34ff0738aedfaea74321245405d916083,4995
+    pantry-tree:
+      sha256: e895d44895261499375670bb5adcac3a3b51d3be3d953661c9340820be326d01
+      size: 6282
+  original:
+    hackage: happy-2.1.1
+- completed:
+    hackage: happy-lib-2.1.1@sha256:17a5e966c08e92acd747e0a9e45640f054514d1324ff5ece522f60113e1fce74,5214
+    pantry-tree:
+      sha256: e9ac26336f6f367f623e2c7b74dadbd4e183c78db410e3de96f3fc25d42e85f9
+      size: 2492
+  original:
+    hackage: happy-lib-2.1.1
 snapshots:
 - completed:
-    sha256: 1e32b51d9082fdf6f3bd92accc9dfffd4ddaf406404427fb10bf76d2bc03cbbb
-    size: 720263
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/41.yaml
-  original: lts-22.41
+    sha256: f6d403206fdd3d7970a8b671870e9e25b4f7c29ad8f7a62cc0d872f9aaee477f
+    size: 678850
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2024/11/19.yaml
+  original: nightly-2024-11-19
