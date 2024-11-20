@@ -395,9 +395,18 @@ exampleGExpr3 = GExpr'Node (EFree'Add (GExpr'Var (VarId 1)) exampleGExpr2)
 -- >>> heightOfExpr exampleGExpr3
 -- 3
 
+gHeightOfExpr :: (Foldable f, Functor f) => GExpr f a -> Int
+gHeightOfExpr = foldGExpr ((+ 1) . foldr max 0) . fmap (const 1)
+
+-- >>> gHeightOfExpr exampleGExpr3
+-- 4
+
 -- ### widthOfExpr
 
-data WidthState = WidthState {maxWidth :: Int, maxDepth :: Int}
+data WidthState = WidthState {maxWidth :: Int, maxDepth :: Int} deriving (Show)
+
+defaultWidthState :: WidthState
+defaultWidthState = WidthState{maxWidth = 0, maxDepth = 0}
 
 widthOfExpr' :: ExprFree a -> WidthState
 widthOfExpr' ex =
@@ -409,11 +418,10 @@ widthOfExpr' ex =
         EFree'Add x y -> processBinOpNode x y
         EFree'Mul x y -> processBinOpNode x y
  where
-  defaultWidthState = WidthState{maxWidth = 0, maxDepth = 0}
   processBinOpNode (widthOfExpr' -> x) (widthOfExpr' -> y) =
     WidthState
       { maxWidth = maximum [(1 + x.maxDepth) + (1 + y.maxDepth), x.maxWidth, y.maxWidth]
-      , maxDepth = 1 + max x.maxDepth y.maxDepth
+      , maxDepth = 1 + maximum [x.maxDepth, y.maxDepth]
       }
 
 widthOfExpr :: ExprFree a -> Int
@@ -446,6 +454,27 @@ widthOfExpr = maxWidth . widthOfExpr'
 
 -- >>> widthOfExpr example7
 -- 3
+
+gWidthOfExpr' :: (Foldable f) => f WidthState -> WidthState
+gWidthOfExpr' f =
+  WidthState
+    { maxDepth = maxDepth'
+    , maxWidth = maxWidth'
+    }
+ where
+  maxWidth'1 = foldr (max . (.maxWidth)) 0 f
+  maxWidth'2 = foldr (\x acc -> 1 + x.maxDepth + acc) 0 f
+  maxWidth' = max maxWidth'1 maxWidth'2
+  maxDepth' = foldr (max . (+ 1) . (.maxDepth)) 0 f
+
+gWidthStateOfExpr :: (Foldable f, Functor f) => GExpr f a -> WidthState
+gWidthStateOfExpr = foldGExpr gWidthOfExpr' . fmap (const defaultWidthState)
+
+-- >>> gWidthStateOfExpr example7
+-- WidthState {maxWidth = 3, maxDepth = 2}
+
+-- >>> gWidthStateOfExpr exampleGExpr3
+-- WidthState {maxWidth = 4, maxDepth = 3}
 
 -- ### transGExpr
 
