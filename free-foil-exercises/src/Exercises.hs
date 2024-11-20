@@ -11,13 +11,11 @@
 module Exercises () where
 
 import Control.Monad (ap)
-import Data.Coerce (coerce)
 import Data.Foldable (Foldable (..))
 import Data.List (nub)
 import Data.Maybe (listToMaybe)
-import Data.Monoid
-import Data.Void (Void, absurd)
-import Unsafe.Coerce (unsafeCoerce)
+import Data.Monoid (Sum (..))
+import Data.Void (Void)
 
 data Expr a
   = Expr'Var a
