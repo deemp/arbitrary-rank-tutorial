@@ -7,7 +7,7 @@ cabal-version: 1.24
 name:           free-foil-stlc
 version:        0.0.1
 synopsis:       An implementation of simply typed lambda calculus using Free Foil
-description:    Please see the README on GitHub at <https://github.com/objectionary/eo-phi-normalizer#readme>
+description:    Please see the README on GitHub at <https://github.com/deemp/query-driven-free-foil#readme>
 homepage:       https://github.com/deemp/query-driven-free-foil#readme
 bug-reports:    https://github.com/deemp/query-driven-free-foil/issues
 author:         Danila Danko, Nickolay Kudasov, Nikita Strygin
