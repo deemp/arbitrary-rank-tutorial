@@ -474,7 +474,7 @@ gWidthStateOfExpr = foldGExpr gWidthOfExpr' . fmap (const defaultWidthState)
 -- ### transGExpr
 
 transGExpr :: (Functor g) => (forall x. f x -> g x) -> GExpr f a -> GExpr g a
-transGExpr f ex =
-  case ex of
-    GExpr'Var x -> GExpr'Var x
-    GExpr'Node node -> GExpr'Node (fmap (transGExpr f) (f node))
+transGExpr f = \case
+  GExpr'Var x -> GExpr'Var x
+  GExpr'Node node -> GExpr'Node (fmap (transGExpr f) (f node))
+
