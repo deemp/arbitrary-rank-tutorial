@@ -381,12 +381,11 @@ exampleGExpr3 = GExpr'Node (EFree'Add (GExpr'Var (VarId 1)) exampleGExpr2)
 -- >>> ppExprFree' exampleGExpr3
 -- "(x1 + (x2 + 3) * x2)"
 
--- +
-
--- |  \
--- x1  *
---     | \
---     +  x2
+-- [+]
+-- !  \
+-- x1  [*]
+--     |   \
+--     [+]  x2
 --     | \
 --     x2 3
 
@@ -428,12 +427,11 @@ widthOfExpr = maxWidth . widthOfExpr'
 -- >>> ppExprFree' exampleGExpr3
 -- "(x1 + (x2 + 3) * x2)"
 
--- +
-
--- |  \
--- x1  *
+-- [+]
+-- !  \
+-- x1 [*]
 --     | \
---     +  x2
+--    [+]  x2
 --     | \
 --     x2 3
 
@@ -444,10 +442,9 @@ widthOfExpr = maxWidth . widthOfExpr'
 -- "(4 + 3) * x2"
 
 -- [*]
-
--- |  \
+-- !  \
 -- +   x2
--- | \
+-- l \
 -- 4  3
 
 -- >>> widthOfExpr example7
