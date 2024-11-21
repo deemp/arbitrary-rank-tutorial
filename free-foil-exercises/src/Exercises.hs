@@ -12,6 +12,7 @@ module Exercises () where
 
 import Control.Monad (ap)
 import Data.Foldable (Foldable (..))
+import Data.Functor.Compose
 import Data.List (nub)
 import Data.Maybe (listToMaybe)
 import Data.Monoid (Sum (..))
@@ -478,3 +479,28 @@ transGExpr f = \case
   GExpr'Var x -> GExpr'Var x
   GExpr'Node node -> GExpr'Node (fmap (transGExpr f) (f node))
 
+-- ### cutoff
+
+cutoff :: (Functor f) => Int -> GExpr f a -> GExpr (Compose Maybe f) a
+cutoff depth = \case
+  GExpr'Var x -> if depth < 0 then GExpr'Node (Compose Nothing) else GExpr'Var x
+  GExpr'Node node -> GExpr'Node (fmap (cutoff (depth - 1)) (Compose (if (depth >= 0) then (Just node) else Nothing)))
+
+-- >>> ppExprFree' exampleGExpr3
+-- "(x1 + (x2 + 3) * x2)"
+
+-- >>> cutoff 1 exampleGExpr3
+-- GExpr'Node (Compose (Just (EFree'Add (GExpr'Var (VarId 1)) (GExpr'Node (Compose (Just (EFree'Mul (GExpr'Node (Compose Nothing)) (GExpr'Node (Compose Nothing)))))))))
+
+-- [+]
+-- !  \
+-- x1  [*]
+--      | \
+--      ?  ?
+
+-- >>> cutoff 0 exampleGExpr3
+-- GExpr'Node (Compose (Just (EFree'Add (GExpr'Node (Compose Nothing)) (GExpr'Node (Compose Nothing)))))
+
+-- [+]
+-- !  \
+-- ?  ?
