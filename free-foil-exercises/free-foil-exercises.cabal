@@ -28,6 +28,7 @@ custom-setup
 library
   exposed-modules:
       Exercises
+      ExercisesFreeFoil
   other-modules:
       Paths_free_foil_exercises
   hs-source-dirs:
