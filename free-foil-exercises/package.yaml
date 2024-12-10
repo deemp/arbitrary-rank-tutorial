@@ -45,3 +45,4 @@ library:
   source-dirs: src
   dependencies:
     - free-foil
+    - bifunctors
