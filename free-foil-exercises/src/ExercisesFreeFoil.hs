@@ -1,72 +1,85 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module ExercisesFreeFoil where
 
 import Control.Monad.Foil
 import Control.Monad.Free.Foil
-import Data.Bifoldable (Bifoldable)
-import Data.Bifunctor (Bifunctor)
+import Data.Bifoldable (Bifoldable (bifold, bifoldr))
+import Data.Bifunctor (Bifunctor (..))
 import Data.Bifunctor.Tannen
+import Data.Coerce (coerce)
+import Data.Monoid (Sum (..))
 
+foldAST :: (Bifunctor sig) => (Name t -> a) -> (sig a a -> a) -> AST binder sig n -> a
+foldAST fName fNode = \case
+  Var x -> fName (coerce x)
+  Node node ->
+    fNode
+      ( bimap
+          (\(ScopedAST _ ast) -> foldAST fName fNode ast)
+          (foldAST fName fNode)
+          node
+      )
 
-class A a where
-  abra :: a -> a
+sizeOfAST :: (Bifunctor sig, Bifoldable sig) => AST binder sig n -> Int
+sizeOfAST = getSum . foldAST (const 1) bifold
 
-class B b where
-  bebra :: b -> b
-  
--- t :: (A a => B a) => B a => a -> a
--- t x = x
+bifoldrSame :: (Bifoldable p) => (a -> c -> c) -> c -> p a a -> c
+bifoldrSame f = bifoldr f f
 
--- foldGExpr :: (Bifunctor sig) => (sig  a -> a) -> AST binder sig n -> a
--- foldGExpr phi = \case
---   Var x -> x`
---   Node node -> phi (fmap (foldGExpr phi) node)
+heightOfAST :: (Bifunctor sig, Bifoldable sig) => AST binder sig n -> Int
+heightOfAST = foldAST (const 0) ((+ 1) . bifoldrSame max 0)
 
-sizeOfAST :: (Bifunctor sig) => AST binder sig n -> Int
-sizeOfAST = _
+data WidthState = WidthState
+  { maxWidth :: Int
+  , maxDepth :: Int
+  }
+  deriving (Show)
 
-heightOfAST :: (Bifunctor sig) => AST binder sig n -> Int
-heightOfAST = _
+defaultWidthState :: WidthState
+defaultWidthState = WidthState{maxWidth = 0, maxDepth = 0}
 
-widthOfAST :: (Bifunctor sig) => AST binder sig n -> Int
-widthOfAST = _
+widthOfAST :: (Bifunctor sig, Bifoldable sig) => AST binder sig n -> WidthState
+widthOfAST = foldAST (const defaultWidthState) go
+ where
+  -- ast' = bimap (const defaultWidthState) (const defaultWidthState) ast
+  go :: (Bifoldable sig) => sig WidthState WidthState -> WidthState
+  go f =
+    WidthState
+      { maxDepth = maxDepth'
+      , maxWidth = maxWidth'
+      }
+   where
+    maxWidth'1 = bifoldrSame (max . (.maxWidth)) 0 f
+    maxWidth'2 = bifoldrSame (\x acc -> 1 + x.maxDepth + acc) 0 f
+    maxWidth' = max maxWidth'1 maxWidth'2
+    maxDepth' = bifoldrSame (max . (+ 1) . (.maxDepth)) 0 f
 
-freeVarsOfAST :: (Bifoldable sig) => AST binder sig n -> [Name n]
-freeVarsOfAST = _
+freeVarsOfAST :: (Bifunctor sig, Bifoldable sig) => AST binder sig n -> [Name n]
+freeVarsOfAST = \case
+  Var x -> [x]
+  -- TODO should we extract "Name l"-s?
+  Node node -> bifold (bimap (const []) freeVarsOfAST node)
 
-stringFromAST :: (sig String String -> String) -> AST binder sig n -> String
-stringFromAST = _
+stringFromAST :: (Bifunctor sig) => (Name t -> String) -> (sig String String -> String) -> AST binder sig n -> String
+stringFromAST f g = foldAST f g
 
--- stringFromType :: Type n -> String
--- stringFromType = _
-
--- stringFromExp :: Exp n -> String
--- stringFromExp = _
-
--- substitute' :: Scope o -> (Name i -> AST sig o) -> AST sig i -> AST sig o
--- substitute' = _
-
--- comm :: ExpSig scope term -> ExpSig scope term
--- comm (EAddSig l r) = EAddSig r l
--- comm node = node
-
--- transAST' ::
---   (Bifunctor sig) =>
---   (forall m. sig (ScopedAST binder sig m) (AST binder sig m) -> sig (ScopedAST binder sig m) (AST binder sig m)) ->
---   AST binder sig n ->
---   AST binder sig' n
--- transAST' = _
+transAST' ::
+  (Bifunctor sig) =>
+  ( forall m.
+    sig (ScopedAST binder sig m) (AST binder sig m) ->
+    sig' (ScopedAST binder sig' m) (AST binder sig' m)
+  ) ->
+  AST binder sig n ->
+  AST binder sig' n
+transAST' = _
 
 -- transAST :: (Bifunctor sig) => (forall x y. sig x y -> sig' x y) -> AST binder sig n -> AST binder sig' n
 -- transAST = _
+
 -- cutoff :: (Bifunctor sig) => Int -> AST binder sig n -> AST binder (Tannen Maybe sig) n
 -- cutoff = _
--- foldAST :: (Bifunctor sig) => (Name n -> a) -> (sig a a -> a) -> AST binder sig n -> a
--- foldAST = _
-
--- evalExp :: Exp VoidS -> Int
--- evalExp = _
