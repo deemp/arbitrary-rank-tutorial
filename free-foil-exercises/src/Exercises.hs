@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -14,7 +15,7 @@ import Control.Monad (ap)
 import Data.Foldable (Foldable (..))
 import Data.Functor.Compose
 import Data.List (nub)
-import Data.Maybe (listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Monoid (Sum (..))
 import Data.Void (Void)
 
@@ -367,10 +368,10 @@ sizeOfExpr ex = getSum (foldGExpr (\x -> 1 + fold x) (const 1 <$> ex))
 
 heightOfExpr :: ExprFree a -> Int
 heightOfExpr = \case
-  GExpr'Var _ -> 0
+  GExpr'Var _ -> 1
   GExpr'Node node ->
     case node of
-      EFree'Lit _ -> 0
+      EFree'Lit _ -> 1
       EFree'Add x y -> getNodeHeight x y
       EFree'Mul x y -> getNodeHeight x y
    where
@@ -391,7 +392,7 @@ exampleGExpr3 = GExpr'Node (EFree'Add (GExpr'Var (VarId 1)) exampleGExpr2)
 --     x2 3
 
 -- >>> heightOfExpr exampleGExpr3
--- 3
+-- 4
 
 gHeightOfExpr :: (Foldable f, Functor f) => GExpr f a -> Int
 gHeightOfExpr = foldGExpr ((+ 1) . foldr max 0) . fmap (const 1)
@@ -401,10 +402,10 @@ gHeightOfExpr = foldGExpr ((+ 1) . foldr max 0) . fmap (const 1)
 
 -- ### widthOfExpr
 
-data WidthState = WidthState {maxWidth :: Int, maxDepth :: Int} deriving (Show)
+data WidthState = WidthState {maxWidth :: Int, maxHeight :: Int} deriving (Show)
 
 defaultWidthState :: WidthState
-defaultWidthState = WidthState{maxWidth = 0, maxDepth = 0}
+defaultWidthState = WidthState{maxWidth = 0, maxHeight = 0}
 
 widthOfExpr' :: ExprFree a -> WidthState
 widthOfExpr' ex =
@@ -418,8 +419,8 @@ widthOfExpr' ex =
  where
   processBinOpNode (widthOfExpr' -> x) (widthOfExpr' -> y) =
     WidthState
-      { maxWidth = maximum [(1 + x.maxDepth) + (1 + y.maxDepth), x.maxWidth, y.maxWidth]
-      , maxDepth = 1 + maximum [x.maxDepth, y.maxDepth]
+      { maxWidth = maximum [(1 + x.maxHeight) + (1 + y.maxHeight), x.maxWidth, y.maxWidth]
+      , maxHeight = 1 + maximum [x.maxHeight, y.maxHeight]
       }
 
 widthOfExpr :: ExprFree a -> Int
@@ -451,26 +452,48 @@ widthOfExpr = maxWidth . widthOfExpr'
 -- >>> widthOfExpr example7
 -- 3
 
+getMax2 :: (Foldable f, Ord a) => (b -> a) -> f b -> Maybe (a, a)
+getMax2 f g = res
+ where
+  (max1, max2) =
+    foldr
+      ( \(Just . f -> x) (t1, t2) ->
+          if
+            | x > t1 -> (x, t1)
+            | x > t2 -> (t1, x)
+            | otherwise -> (t1, t2)
+      )
+      (Nothing, Nothing)
+      g
+  res = (,) <$> max1 <*> max2
+
+-- >>> getMax2 id [1,3,7,1,8,3,9,3]
+-- Just (9,8)
+
 gWidthOfExpr' :: (Foldable f) => f WidthState -> WidthState
 gWidthOfExpr' f =
   WidthState
-    { maxDepth = maxDepth'
+    { maxHeight = maxHeight'
     , maxWidth = maxWidth'
     }
  where
   maxWidth'1 = foldr (max . (.maxWidth)) 0 f
-  maxWidth'2 = foldr (\x acc -> 1 + x.maxDepth + acc) 0 f
+  -- TODO fix get 2 largest elements
+  maxWidth'2 =
+    case getMax2 (.maxHeight) f of
+      Just (x1, x2) -> 2 + x1 + x2
+      Nothing -> 0
   maxWidth' = max maxWidth'1 maxWidth'2
-  maxDepth' = foldr (max . (+ 1) . (.maxDepth)) 0 f
+  maxHeight' = foldr (max . (+ 1) . (.maxHeight)) 0 f
 
 gWidthStateOfExpr :: (Foldable f, Functor f) => GExpr f a -> WidthState
 gWidthStateOfExpr = foldGExpr gWidthOfExpr' . fmap (const defaultWidthState)
 
 -- >>> gWidthStateOfExpr example7
--- WidthState {maxWidth = 3, maxDepth = 2}
+-- WidthState {maxWidth = 3, maxHeight = 2}
 
 -- >>> gWidthStateOfExpr exampleGExpr3
--- WidthState {maxWidth = 4, maxDepth = 3}
+-- WidthState {maxWidth = 4, maxHeight = 3}
 
 -- ### transGExpr
 
@@ -481,16 +504,24 @@ transGExpr f = \case
 
 -- ### cutoff
 
-cutoff :: (Functor f) => Int -> GExpr f a -> GExpr (Compose Maybe f) a
+cutoff :: (Functor f) => Int -> GExpr f a -> GExpr (Compose Maybe f) (Maybe a)
 cutoff depth = \case
-  GExpr'Var x -> if depth < 0 then GExpr'Node (Compose Nothing) else GExpr'Var x
-  GExpr'Node node -> GExpr'Node (fmap (cutoff (depth - 1)) (Compose (if (depth >= 0) then (Just node) else Nothing)))
+  GExpr'Var x -> GExpr'Var $ cond x
+  GExpr'Node node -> GExpr'Node $ fmap (cutoff (depth - 1)) (Compose (cond node))
+ where
+  cond x = if (depth < 0) then Nothing else (Just x)
+
+-- t :: Maybe [Int]
+-- t = Just [1]
+
+-- t' :: Compose Maybe [] a
+-- t' = Compose (Just [])
 
 -- >>> ppExprFree' exampleGExpr3
 -- "(x1 + (x2 + 3) * x2)"
 
 -- >>> cutoff 1 exampleGExpr3
--- GExpr'Node (Compose (Just (EFree'Add (GExpr'Var (VarId 1)) (GExpr'Node (Compose (Just (EFree'Mul (GExpr'Node (Compose Nothing)) (GExpr'Node (Compose Nothing)))))))))
+-- GExpr'Node (Compose (Just (EFree'Add (GExpr'Var (Just (VarId 1))) (GExpr'Node (Compose (Just (EFree'Mul (GExpr'Node (Compose Nothing)) (GExpr'Var Nothing))))))))
 
 -- [+]
 -- !  \
@@ -499,7 +530,7 @@ cutoff depth = \case
 --      ?  ?
 
 -- >>> cutoff 0 exampleGExpr3
--- GExpr'Node (Compose (Just (EFree'Add (GExpr'Node (Compose Nothing)) (GExpr'Node (Compose Nothing)))))
+-- GExpr'Node (Compose (Just (EFree'Add (GExpr'Var Nothing) (GExpr'Node (Compose Nothing)))))
 
 -- [+]
 -- !  \
