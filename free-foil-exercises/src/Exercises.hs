@@ -15,7 +15,7 @@ import Control.Monad (ap)
 import Data.Foldable (Foldable (..))
 import Data.Functor.Compose
 import Data.List (nub)
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (listToMaybe)
 import Data.Monoid (Sum (..))
 import Data.Void (Void)
 
@@ -472,21 +472,24 @@ getMax2 g h = res
 -- >>> getMax2 id [1,3,7,1,8,3,9,3]
 -- Just (9,8)
 
+getMaxWidth2 :: (Foldable f, Ord a, Num a) => (b -> a) -> f b -> a
+getMaxWidth2 getter f =
+  case getMax2 getter f of
+    Just (x1, x2) -> 2 + x1 + x2
+    Nothing -> 0
+
 gWidthOfExpr' :: (Foldable f) => f WidthState -> WidthState
-gWidthOfExpr' f =
-  WidthState
-    { maxHeight = maxHeight'
-    , maxWidth = maxWidth'
-    }
+gWidthOfExpr' f = res
  where
-  maxWidth'1 = foldr (max . (.maxWidth)) 0 f
-  -- TODO fix get 2 largest elements
-  maxWidth'2 =
-    case getMax2 (.maxHeight) f of
-      Just (x1, x2) -> 2 + x1 + x2
-      Nothing -> 0
-  maxWidth' = max maxWidth'1 maxWidth'2
   maxHeight' = foldr (max . (+ 1) . (.maxHeight)) 0 f
+  maxWidth'1 = foldr (max . (.maxWidth)) 0 f
+  maxWidth'2 = getMaxWidth2 (.maxHeight) f
+  maxWidth' = maximum [maxWidth'1, maxWidth'2, maxHeight']
+  res =
+    WidthState
+      { maxHeight = maxHeight'
+      , maxWidth = maxWidth'
+      }
 
 gWidthStateOfExpr :: (Foldable f, Functor f) => GExpr f a -> WidthState
 gWidthStateOfExpr = foldGExpr gWidthOfExpr' . fmap (const defaultWidthState)
