@@ -9,7 +9,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Exercises () where
+module Exercises where
 
 import Control.Monad (ap)
 import Data.Foldable (Foldable (..))
@@ -453,18 +453,18 @@ widthOfExpr = maxWidth . widthOfExpr'
 -- 3
 
 getMax2 :: (Foldable f, Ord a) => (b -> a) -> f b -> Maybe (a, a)
-getMax2 f g = res
+getMax2 g h = res
  where
   (max1, max2) =
     foldr
-      ( \(Just . f -> x) (t1, t2) ->
+      ( \(Just . g -> x) (t1, t2) ->
           if
             | x > t1 -> (x, t1)
             | x > t2 -> (t1, x)
             | otherwise -> (t1, t2)
       )
       (Nothing, Nothing)
-      g
+      h
   res = (,) <$> max1 <*> max2
 
 -- >>> getMax2 id [1,3,7,1,8,3,9,3]
