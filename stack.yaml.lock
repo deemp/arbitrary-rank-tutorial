@@ -20,7 +20,7 @@ packages:
     hackage: happy-lib-2.1.1
 snapshots:
 - completed:
-    sha256: f6d403206fdd3d7970a8b671870e9e25b4f7c29ad8f7a62cc0d872f9aaee477f
-    size: 678850
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2024/11/19.yaml
-  original: nightly-2024-11-19
+    sha256: 96d941a6c484efb750ceab66a2dd177caa580391a4e2e4afb14fc4e9f536846f
+    size: 621372
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/1/6.yaml
+  original: nightly-2025-01-06
