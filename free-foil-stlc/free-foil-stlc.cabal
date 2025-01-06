@@ -45,7 +45,7 @@ library
       ImportQualifiedPost
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-tools:
-      alex ==3.5.1.0
+      alex ==3.5.2.0
     , happy ==2.1.1
   build-tool-depends:
       BNFC:bnfc ==2.9.5
@@ -64,7 +64,7 @@ executable free-foil-stlc
       ImportQualifiedPost
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -threaded -rtsopts -with-rtsopts=-N
   build-tools:
-      alex ==3.5.1.0
+      alex ==3.5.2.0
     , happy ==2.1.1
   build-tool-depends:
       BNFC:bnfc ==2.9.5
