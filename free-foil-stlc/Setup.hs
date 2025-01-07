@@ -1,4 +1,5 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 -- Source: https://github.com/haskell/cabal/issues/6726#issuecomment-918663262
@@ -7,48 +8,58 @@
 -- for the parsers included in Ogma.
 module Main (main) where
 
+import Control.Exception (Handler (..), SomeException, catches, displayException, evaluate)
 import Data.List (intercalate)
 import Distribution.Simple (defaultMainWithHooks, hookedPrograms, postConf, preBuild, simpleUserHooks)
 import Distribution.Simple.Program (Program (..), findProgramVersion, simpleProgram)
-import System.Exit (ExitCode (..))
+import Main.Utf8 (withUtf8)
+import System.Exit (ExitCode (..), exitWith)
+import System.IO.CodePage (withCP65001)
 import System.Process (callCommand)
+
+withCorrectLocale :: IO a -> IO a
+withCorrectLocale act = do
+  let withCorrectLocale' = withCP65001 . withUtf8
+  withCorrectLocale' act
+    `catches` [ Handler $ \(x :: ExitCode) -> exitWith x
+              , Handler $ \(x :: SomeException) ->
+                  withCorrectLocale' do
+                    putStrLn (displayException x)
+                    exitWith (ExitFailure 1)
+              ]
 
 -- | Run BNFC, happy, and alex on the grammar before the actual build step.
 --
 -- All options for bnfc are hard-coded here.
 main :: IO ()
 main =
-  defaultMainWithHooks $
-    simpleUserHooks
-      { hookedPrograms = [bnfcProgram]
-      , postConf = \args flags packageDesc localBuildInfo -> do
-          let
-            isWindows =
-#ifdef mingw32_HOST_OS
-                      True
-#else
-                      False
-#endif
-            -- See the details on the command form in https://github.com/objectionary/eo-phi-normalizer/issues/347#issuecomment-2117097070
-            command = intercalate "; " $
-                [ "set -ex" ] <>
-                [ "chcp.com" | isWindows ] <>
-                [ "chcp.com 65001" | isWindows ] <>
-                [ "bnfc --haskell -d -p Language.STLC --generic -o src/ grammar/STLC/Syntax.cf"
-                , "cd src/Language/STLC/Syntax"
-                , "alex Lex.x"
-                , "happy Par.y"
-                , "true"
-                ]
+  withCorrectLocale $
+    defaultMainWithHooks $
+      simpleUserHooks
+        { hookedPrograms = [bnfcProgram]
+        , postConf = \args flags packageDesc localBuildInfo -> do
+            let
+              -- See the details on the command form in https://github.com/objectionary/eo-phi-normalizer/issues/347#issuecomment-2117097070
+              command =
+                intercalate
+                  "; "
+                  [ "set -ex"
+                  , "bnfc --haskell -d -p Language.STLC --generic -o src/ grammar/STLC/Syntax.cf"
+                  , "cd src/Language/STLC/Syntax"
+                  , "alex Lex.x"
+                  , "happy --ghc Par.y"
+                  , "rm -f ErrM.hs Skel.hs Test.hs Abs.hs.bak Print.hs.bak"
+                  , "true"
+                  ]
 
-            fullCommand = "bash -c ' " <> command <> " '"
+              fullCommand = "bash -c ' " <> command <> " '"
 
-          putStrLn fullCommand
+            putStrLn fullCommand
 
-          _ <- callCommand fullCommand
+            _ <- callCommand fullCommand
 
-          postConf simpleUserHooks args flags packageDesc localBuildInfo
-      }
+            postConf simpleUserHooks args flags packageDesc localBuildInfo
+        }
 
 -- | NOTE: This should be in Cabal.Distribution.Simple.Program.Builtin.
 bnfcProgram :: Program
