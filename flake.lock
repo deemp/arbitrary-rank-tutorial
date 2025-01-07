@@ -23,6 +23,22 @@
         "type": "github"
       }
     },
+    "fcf-family": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1729973139,
+        "narHash": "sha256-p8j9SR+BlGHUbSqNbqMU1uRUEedXOHQJXzACkWqeh8E=",
+        "owner": "lysxia",
+        "repo": "fcf-family",
+        "rev": "f02c581963c59e68014961931111bbd6e87caa69",
+        "type": "gitlab"
+      },
+      "original": {
+        "owner": "lysxia",
+        "repo": "fcf-family",
+        "type": "gitlab"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -109,11 +125,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1730958623,
-        "narHash": "sha256-JwQZIGSYnRNOgDDoIgqKITrPVil+RMWHsZH1eE1VGN0=",
+        "lastModified": 1736134818,
+        "narHash": "sha256-30sOEZ8CFK2nTTMdkhaNrfVlIi3rWTNV0Z5z+NmpFNI=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "85f7e662eda4fa3a995556527c87b2524b691933",
+        "rev": "3df3c47c19dc90fec35359e89ffb52b34d2b0e94",
         "type": "github"
       },
       "original": {
@@ -144,6 +160,7 @@
     "root": {
       "inputs": {
         "devshell": "devshell",
+        "fcf-family": "fcf-family",
         "flake-compat": "flake-compat",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils",

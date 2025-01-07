@@ -28,7 +28,9 @@ custom-setup:
   dependencies:
     - base >= 4.11.0.0 && < 5.0
     - Cabal >= 2.4.0.1 && < 4.0
+    - code-page
     - process >= 1.6.3.0
+    - with-utf8
 
 build-tools:
   alex: "== 3.5.2.0"
@@ -36,8 +38,13 @@ build-tools:
   BNFC:bnfc: "== 2.9.5"
 
 dependencies:
-  - base >= 4.7 && < 5
   - array >= 0.5.5.0
+  - base >= 4.7 && < 5
+  - bifunctors
+  - containers
+  - free-foil
+  - kind-generics
+  - kind-generics-th
 
 default-extensions:
   - ImportQualifiedPost

@@ -23,6 +23,10 @@
       url = "github:fizruk/free-foil";
       flake = false;
     };
+    fcf-family = {
+      url = "gitlab:lysxia/fcf-family";
+      flake = false;
+    };
   };
 
   outputs =
@@ -71,6 +75,13 @@
           bash.vars = ''
             export LC_ALL=C.UTF-8
           '';
+          jailbreakUnbreak =
+            pkg:
+            pkgs.haskell.lib.doJailbreak (
+              pkg.overrideAttrs (_: {
+                meta = { };
+              })
+            );
         in
         {
           # Our only Haskell project. You can have multiple projects, but this template
@@ -102,14 +113,22 @@
               free-foil =
                 { super, ... }:
                 {
-                  custom =
-                    _: super.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
+                  custom = _: super.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
                 };
               with-utf8 =
                 { super, ... }:
                 {
-                  custom =
-                    _: super.with-utf8_1_1_0_0;
+                  custom = _: super.with-utf8_1_1_0_0;
+                };
+              fcf-family =
+                { super, ... }:
+                {
+                  custom = _: super.callCabal2nix "fcf-family" "${inputs.fcf-family}/fcf-family" { };
+                };
+              kind-generics-th =
+                { super, ... }:
+                {
+                  custom = _: jailbreakUnbreak super.kind-generics-th;
                 };
             };
 
