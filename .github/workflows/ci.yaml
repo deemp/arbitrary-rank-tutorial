@@ -29,9 +29,9 @@ jobs:
         id: restore
         with:
           # restore a cache using this key
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          primary-key: nix-${{ matrix.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # if there's no cache hit, restore a cache by this prefix
-          restore-prefixes-first-match: nix-${{ runner.os }}-
+          restore-prefixes-first-match: nix-${{ matrix.os }}-
           paths: |
             ~/.stack
             **/.stack-work
@@ -53,14 +53,14 @@ jobs:
         if: always() && steps.restore.outputs.hit-primary-key != 'true'
         with:
           # save a cache using this key
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          primary-key: nix-${{ matrix.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # collect garbage until Nix store size (in bytes) is at most this number
           # before trying to save a new cache
           gc-max-store-size: 1073741824
           # do purge caches
           purge: true
           # purge all versions of the cache
-          purge-prefixes: nix-${{ runner.os }}-
+          purge-prefixes: nix-${{ matrix.os }}-
           # created more than this number of seconds ago relative to the start of the `Post Restore` phase
           purge-created: 0
           # except the version with the `primary-key`, if it exists
