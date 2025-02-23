@@ -1,4 +1,6 @@
 {
-    "haskell.manageHLS": "PATH",
-    "latex-workshop.formatting.latex": "latexindent"
+  "haskell.manageHLS": "PATH",
+  "haskell.formattingProvider": "fourmolu",
+  "latex-workshop.formatting.latex": "latexindent",
+  "nix.formatterPath": "nixfmt"
 }
