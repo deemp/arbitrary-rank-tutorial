@@ -44,9 +44,7 @@ jobs:
         run: nix build
 
       - name: Build with cabal
-        run: |
-          cabal update
-          nix develop --profile ./foo -c cabal build all
+        run: nix develop --profile ./foo -c 'cabal update && cabal build all'
 
       - name: Build with stack
         run: nix develop --profile ./foo -c stack build
