@@ -33,9 +33,9 @@ custom-setup:
     - with-utf8
 
 build-tools:
-  alex: "== 3.5.2.0"
-  happy: "== 2.1.1"
-  BNFC:bnfc: "== 2.9.5"
+  alex: ">= 3.5.2.0"
+  happy: ">= 2.1.1"
+  BNFC:bnfc: ">= 2.9.5"
 
 dependencies:
   - array >= 0.5.5.0
