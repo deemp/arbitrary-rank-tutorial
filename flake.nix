@@ -239,7 +239,8 @@
                 {
                   expose = true;
                   packages = {
-                    inherit (pkgs) mdsh mdbook mdbook-linkcheck;
+                    inherit (pkgs) mdsh;
+                    nixfmt = pkgs.nixfmt-rfc-style;
                     inherit (configDefault.finalPackages) alex happy BNFC;
                     hpack = haskellPackages.hpack_0_37_0;
                     inherit (haskellPackages) haskell-language-server;
@@ -247,7 +248,7 @@
                     # cabal-install 3.14.1.0
                     # if you get `<...>alex: cannot execute: required file not found`,
                     # `rm -rf ~/.cabal/store/ghc-9.10.1*`
-                    inherit (haskellPackages) cabal-install;
+                    cabal = haskellPackages.cabal-install;
 
                     # https://github.com/haskell/cabal/issues/10717#issuecomment-2571718442
                     # cabal-install 3.12.1.0
