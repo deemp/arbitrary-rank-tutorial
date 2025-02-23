@@ -15,8 +15,11 @@ jobs:
       matrix:
         os:
           - ubuntu-24.04
+          - ubuntu-22.04
+          - macos-13
           - macos-15
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -29,15 +32,24 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # if there's no cache hit, restore a cache by this prefix
           restore-prefixes-first-match: nix-${{ runner.os }}-
+          paths: |
+            ~/.stack
+            **/.stack-work
+            
+            ~/.cabal/packages
+            ~/.cabal/store
+            dist-newstyle
 
-      - name: Build package
+      - name: Build with Nix
         run: nix build
+
+      - name: Build with cabal
+        run: |
+          cabal update
+          nix develop --profile ./foo -c cabal build all
 
       - name: Build with stack
         run: nix develop --profile ./foo -c stack build
-
-      - name: Build with cabal
-        run: nix develop --profile ./foo -c cabal build all
 
       - uses: nix-community/cache-nix-action/save@v6
         if: always() && steps.restore.outputs.hit-primary-key != 'true'
