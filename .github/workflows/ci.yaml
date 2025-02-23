@@ -22,6 +22,14 @@ jobs:
     continue-on-error: true
     permissions:
       actions: write
+    env:
+      paths: |
+        ~/.stack
+        **/.stack-work
+
+        ~/.cabal/packages
+        ~/.cabal/store
+        dist-newstyle
     steps:
       - uses: actions/checkout@v4
 
@@ -31,16 +39,10 @@ jobs:
         id: restore
         with:
           # restore a cache using this key
-          primary-key: nix-${{ matrix.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # if there's no cache hit, restore a cache by this prefix
-          restore-prefixes-first-match: nix-${{ matrix.os }}-
-          paths: |
-            ~/.stack
-            **/.stack-work
-            
-            ~/.cabal/packages
-            ~/.cabal/store
-            dist-newstyle
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          paths: ${{ env.paths }}
 
       - name: Build with Nix
         run: nix build
@@ -54,15 +56,16 @@ jobs:
       - uses: nix-community/cache-nix-action/save@v6
         if: always() && steps.restore.outputs.hit-primary-key != 'true'
         with:
+          paths: ${{ env.paths }}
           # save a cache using this key
-          primary-key: nix-${{ matrix.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # collect garbage until Nix store size (in bytes) is at most this number
           # before trying to save a new cache
           gc-max-store-size: 1073741824
           # do purge caches
           purge: true
           # purge all versions of the cache
-          purge-prefixes: nix-${{ matrix.os }}-
+          purge-prefixes: nix-${{ runner.os }}-
           # created more than this number of seconds ago relative to the start of the `Post Restore` phase
           purge-created: 0
           # except the version with the `primary-key`, if it exists
