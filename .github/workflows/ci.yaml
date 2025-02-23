@@ -36,7 +36,7 @@ jobs:
           # except the version with the `primary-key`, if it exists
           purge-primary-key: never
 
-      - name: Build
+      - name: nix build
         run: nix build
 
   devshell:
@@ -71,4 +71,6 @@ jobs:
           purge-primary-key: never
 
       - name: nix develop
-        run: nix develop --profile ./foo
+        run: |
+          nix develop --profile ./foo -c stack build
+          nix develop --profile ./foo -c cabal build all
