@@ -10,4 +10,4 @@ import Main.Utf8 (withUtf8)
 
 main :: IO ()
 main = withUtf8 do
-    putStrLn $ printTree ("#typecheck x:unit |- \\x.(\\z.z) x <= unit" :: Command)
+  putStrLn $ printTree ("#typecheck x:unit |- \\x.(\\z.z) x <= unit" :: Command)

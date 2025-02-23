@@ -402,8 +402,7 @@ gHeightOfExpr = foldGExpr ((+ 1) . foldr max 0) . fmap (const 1)
 
 -- ### widthOfExpr
 
-data WidthState
-  = WidthState {maxWidth :: Int, maxHeight :: Int}
+data WidthState = WidthState {maxWidth :: Int, maxHeight :: Int}
   deriving (Show, Eq)
 
 defaultWidthState :: WidthState

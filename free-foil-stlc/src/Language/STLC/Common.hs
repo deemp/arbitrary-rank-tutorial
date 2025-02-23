@@ -33,4 +33,3 @@ unsafeParseWith parser input =
 
 -- >>> printTree $ ("#typecheck x : unit |- \\x.(\\z.z) x <= unit -> unit" :: Command)
 -- "#typecheck x : unit |- \\ x . (\\ z . z) x <= unit -> unit"
-

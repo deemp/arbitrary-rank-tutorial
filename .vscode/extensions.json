@@ -1,8 +1,8 @@
 {
-    "recommendations": [
-        "haskell.haskell",
-        "justusadam.language-haskell",
-        "mkhl.direnv",
-        "jnoortheen.nix-ide"
-    ]
+  "recommendations": [
+    "haskell.haskell",
+    "justusadam.language-haskell",
+    "mkhl.direnv",
+    "jnoortheen.nix-ide"
+  ]
 }
