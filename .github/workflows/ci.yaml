@@ -8,38 +8,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * 0"
-    
+
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: nixbuild/nix-quick-install-action@v29
-
-      - name: Restore and cache Nix store
-        uses: nix-community/cache-nix-action@v6
-        with:
-          # restore and save a cache using this key
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
-          # if there's no cache hit, restore a cache by this prefix
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          # collect garbage until Nix store size (in bytes) is at most this number
-          # before trying to save a new cache
-          gc-max-store-size: 1073741824
-          # do purge caches
-          purge: true
-          # purge all versions of the cache
-          purge-prefixes: cache-${{ runner.os }}-
-          # created more than this number of seconds ago relative to the start of the `Post Restore` phase
-          purge-created: 0
-          # except the version with the `primary-key`, if it exists
-          purge-primary-key: never
-
-      - name: nix build
-        run: nix build
-
-  devshell:
     strategy:
       matrix:
         os:
@@ -51,26 +22,36 @@ jobs:
 
       - uses: nixbuild/nix-quick-install-action@v29
 
-      - name: Restore and cache Nix store
-        uses: nix-community/cache-nix-action@v6
+      - uses: nix-community/cache-nix-action/restore@v6
+        id: restore
         with:
-          # restore and save a cache using this key
+          # restore a cache using this key
           primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # if there's no cache hit, restore a cache by this prefix
           restore-prefixes-first-match: nix-${{ runner.os }}-
+
+      - name: Build package
+        run: nix build
+
+      - name: Build with stack
+        run: nix develop --profile ./foo -c stack build
+
+      - name: Build with cabal
+        run: nix develop --profile ./foo -c cabal build all
+
+      - uses: nix-community/cache-nix-action/save@v6
+        if: always() && steps.restore.outputs.hit-primary-key != 'true'
+        with:
+          # save a cache using this key
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # collect garbage until Nix store size (in bytes) is at most this number
           # before trying to save a new cache
           gc-max-store-size: 1073741824
           # do purge caches
           purge: true
           # purge all versions of the cache
-          purge-prefixes: cache-${{ runner.os }}-
+          purge-prefixes: nix-${{ runner.os }}-
           # created more than this number of seconds ago relative to the start of the `Post Restore` phase
           purge-created: 0
           # except the version with the `primary-key`, if it exists
           purge-primary-key: never
-
-      - name: nix develop
-        run: |
-          nix develop --profile ./foo -c stack build
-          nix develop --profile ./foo -c cabal build all
