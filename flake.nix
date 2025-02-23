@@ -121,6 +121,7 @@
             );
 
             packages = {
+              # TODO make sure these packages are useful anywhere
               alex.source = "3.5.2.0";
               happy.source = "2.1.5";
               happy-lib.source = "2.1.5";
@@ -155,7 +156,6 @@
                 haskell-language-server = null;
                 ghcid = null;
               };
-              extraLibraries = hp: { inherit (hp) BNFC alex happy; };
             };
 
             # What should haskell-flake add to flake outputs?
@@ -168,11 +168,9 @@
 
           configDefault = {
             outputs = config.haskellProjects.default.outputs;
-            inherit (configDefault.outputs) finalPackages devShell;
+            haskellPackages = configDefault.outputs.finalPackages;
+            inherit (configDefault.outputs) devShell;
           };
-        in
-        {
-          inherit haskellProjects;
 
           # Auto formatters. This also adds a flake check to ensure that the
           # source tree was auto formatted.
@@ -185,7 +183,7 @@
               # TODO suggest treefmt-nix use the latexindent from perlpackages to not load the texlive
               # https://github.com/numtide/treefmt-nix/blob/main/programs/latexindent.nix
               # https://github.com/cmhughes/latexindent.pl
-              latexindent.enable = true;
+              # latexindent.enable = true;
               fourmolu = {
                 enable = true;
                 ghcOpts = [
@@ -205,20 +203,22 @@
 
           packages = mkShellApps { default = self'.packages.free-foil-stlc; };
 
+          ghc = builtins.head (
+            builtins.filter (
+              x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
+            ) configDefault.devShell.nativeBuildInputs
+          );
+
           legacyPackages = {
             stackShell =
               { ... }:
               # buildStackProject arguments: https://github.com/NixOS/nixpkgs/blob/7395957192312b3db2ea4e8e29f58a557d17bb45/pkgs/development/haskell-modules/generic-stack-builder.nix#L12-L20
               pkgs.haskell.lib.buildStackProject ({
                 name = "stack-shell";
-                ghc = builtins.head (
-                  builtins.filter (
-                    x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
-                  ) configDefault.devShell.nativeBuildInputs
-                );
+                inherit ghc;
                 buildInputs =
                   let
-                    hp = configDefault.finalPackages;
+                    hp = configDefault.haskellPackages;
                   in
                   [
                     hp.alex
@@ -230,20 +230,22 @@
 
           # Default shell.
           devshells.default = {
-            packagesFrom = [
-              configDefault.devShell
-              config.treefmt.build.devShell
-            ];
             commands = {
               tools = [
                 {
                   expose = true;
                   packages = {
                     inherit (pkgs) mdsh;
-                    nixfmt = pkgs.nixfmt-rfc-style;
-                    inherit (configDefault.finalPackages) alex happy BNFC;
+
+                    treefmt = self'.formatter;
+
+                    inherit ghc;
+
                     hpack = haskellPackages.hpack_0_37_0;
                     inherit (haskellPackages) haskell-language-server;
+
+                    inherit (configDefault.haskellPackages) alex happy;
+                    bnfc = configDefault.haskellPackages.BNFC;
 
                     # cabal-install 3.14.1.0
                     # if you get `<...>alex: cannot execute: required file not found`,
@@ -271,6 +273,15 @@
               ];
             };
           };
+        in
+        {
+          inherit
+            treefmt
+            devshells
+            haskellProjects
+            packages
+            legacyPackages
+            ;
         };
     };
 
