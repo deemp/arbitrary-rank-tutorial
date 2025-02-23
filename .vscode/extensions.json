@@ -3,6 +3,8 @@
     "haskell.haskell",
     "justusadam.language-haskell",
     "mkhl.direnv",
-    "jnoortheen.nix-ide"
+    "jnoortheen.nix-ide",
+    "davidanson.vscode-markdownlint",
+    "esbenp.prettier-vscode"
   ]
 }
