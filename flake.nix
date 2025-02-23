@@ -180,8 +180,12 @@
             projectRootFile = "flake.nix";
             programs = {
               nixfmt.enable = true;
-              hlint.enable = true;
               shellcheck.enable = true;
+              # TODO update to "3.24.4" in nixpkgs
+              # TODO suggest treefmt-nix use the latexindent from perlpackages to not load the texlive
+              # https://github.com/numtide/treefmt-nix/blob/main/programs/latexindent.nix
+              # https://github.com/cmhughes/latexindent.pl
+              latexindent.enable = true;
               fourmolu = {
                 enable = true;
                 ghcOpts = [
@@ -192,19 +196,19 @@
               prettier.enable = true;
             };
             settings = {
-              formatter = rec {
-                fourmolu.excludes = [ "**/*.cabal" ];
-                hlint.excludes = fourmolu.excludes;
-              };
+              global.excludes = [
+                "**.{gitignore,png,pdf,cabal,project,cf,bib}"
+                "free-foil-stlc/src/Language/STLC/Syntax/*"
+              ];
             };
           };
 
           packages = mkShellApps { default = self'.packages.free-foil-stlc; };
 
-          # buildStackProject arguments: https://github.com/NixOS/nixpkgs/blob/c7089236291045a523429e681bdaecb49bb501f3/pkgs/development/haskell-modules/generic-stack-builder.nix#L4-L11
           legacyPackages = {
             stackShell =
               { ... }:
+              # buildStackProject arguments: https://github.com/NixOS/nixpkgs/blob/7395957192312b3db2ea4e8e29f58a557d17bb45/pkgs/development/haskell-modules/generic-stack-builder.nix#L12-L20
               pkgs.haskell.lib.buildStackProject ({
                 name = "stack-shell";
                 ghc = builtins.head (
