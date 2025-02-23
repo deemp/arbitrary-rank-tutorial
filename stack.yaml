@@ -1,8 +1,5 @@
-resolver: nightly-2025-01-06
+resolver: nightly-2025-02-20
 packages:
   - free-foil-stlc
   - free-foil-exercises
 notify-if-nix-on-path: false
-extra-deps:
-  - happy-2.1.1
-  - happy-lib-2.1.1
