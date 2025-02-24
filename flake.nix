@@ -253,13 +253,19 @@
               })
               saveFromGC
               ;
-          };
+            cabalUpdate = {
+              runtimeInputs = [ buildTools.cabal ];
+              text = ''
+                INDEX_STATE=$(
+                  grep index-state cabal.project \
+                  | sed -e 's/index-state: \(.*\)$/\1/'
+                )
 
-          ghc = builtins.head (
-            builtins.filter (
-              x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
-            ) configDefault.devShell.nativeBuildInputs
-          );
+                cabal update hackage.haskell.org,"$INDEX_STATE"
+              '';
+              meta.description = "Update cabal's Hackage index using index-state from `cabal.project`.";
+            };
+          };
 
           legacyPackages = {
             stackShell =
@@ -304,7 +310,7 @@
                   {
                     prefix = "nix run .#";
                     packages = {
-                      free-foil-stlc = self'.packages.default;
+                      inherit (self'.packages) free-foil-stlc cabalUpdate;
                     };
                   }
                 ];
