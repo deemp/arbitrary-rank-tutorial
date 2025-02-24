@@ -26,7 +26,8 @@
       flake = false;
     };
     all-cabal-hashes = {
-      url = "github:commercialhaskell/all-cabal-hashes/hackage";
+      # See https://github.com/commercialhaskell/all-cabal-hashes/commit/7df06e37007b36a36952a4c434561651d28714a5
+      url = "github:commercialhaskell/all-cabal-hashes/7df06e37007b36a36952a4c434561651d28714a5";
       flake = false;
     };
     bnfc = {
