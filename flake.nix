@@ -236,48 +236,62 @@
           };
 
           # Default shell.
-          devshells.default = {
-            commands = {
-              tools = [
-                {
-                  expose = true;
-                  packages = {
-                    inherit (pkgs) mdsh;
+          devshells = {
+            default = {
+              commands = {
+                tools = [
+                  {
+                    expose = true;
+                    packages = {
+                      inherit (pkgs) mdsh;
 
-                    treefmt = self'.formatter;
+                      treefmt = self'.formatter;
 
-                    inherit ghc;
+                      inherit ghc;
 
-                    hpack = haskellPackages.hpack_0_37_0;
+                      hpack = haskellPackages.hpack_0_37_0;
 
-                    inherit (haskellPackages) haskell-language-server;
+                      inherit (haskellPackages) haskell-language-server;
 
-                    inherit (buildTools) alex happy bnfc;
+                      inherit (buildTools) alex happy bnfc;
 
-                    # cabal-install 3.14.1.0
-                    # if you get `<...>alex: cannot execute: required file not found`,
-                    # `rm -rf ~/.cabal/store/ghc-9.10.1*`
-                    cabal = pkgs.cabal-install;
+                      # cabal-install 3.14.1.0
+                      # if you get `<...>alex: cannot execute: required file not found`,
+                      # `rm -rf ~/.cabal/store/ghc-9.10.1*`
+                      cabal = pkgs.cabal-install;
 
-                    # https://github.com/haskell/cabal/issues/10717#issuecomment-2571718442
-                    # cabal-install 3.12.1.0
-                    # requires running cabal v1-build in package directories
-                    # inherit (inputs.nixpkgs-old.legacyPackages.${system}) cabal-install;
+                      # https://github.com/haskell/cabal/issues/10717#issuecomment-2571718442
+                      # cabal-install 3.12.1.0
+                      # requires running cabal v1-build in package directories
+                      # inherit (inputs.nixpkgs-old.legacyPackages.${system}) cabal-install;
 
-                    # it just works
-                    stack = stack-wrapped;
-                  };
-                }
-              ];
+                      # it just works
+                      stack = stack-wrapped;
+                    };
+                  }
+                ];
 
-              scripts = [
-                {
-                  prefix = "nix run .#";
-                  packages = {
-                    free-foil-stlc = self'.packages.default;
-                  };
-                }
-              ];
+                scripts = [
+                  {
+                    prefix = "nix run .#";
+                    packages = {
+                      free-foil-stlc = self'.packages.default;
+                    };
+                  }
+                ];
+              };
+            };
+            demo = {
+              commands = {
+                tools = [
+                  {
+                    expose = true;
+                    packages = {
+                      inherit (self'.packages) free-foil-stlc;
+                    };
+                  }
+                ];
+              };
             };
           };
         in
