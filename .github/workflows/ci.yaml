@@ -50,10 +50,8 @@ jobs:
       - name: Build with cabal
         if: always()
         run: |
-          nix develop -c bash -c '
-            cabal update
-            cabal build all
-          '
+          nix run .#cabalUpdate
+          nix develop -c cabal build all
 
       - name: Build with stack
         if: always()
