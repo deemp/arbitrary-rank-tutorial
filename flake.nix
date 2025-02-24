@@ -249,6 +249,7 @@
                 derivations = [
                   self'.devShells.default
                   self'.packages.default
+                  self'.packages.cabalUpdate
                 ];
               })
               saveFromGC
