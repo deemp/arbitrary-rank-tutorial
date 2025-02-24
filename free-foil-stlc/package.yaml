@@ -30,6 +30,10 @@ description: Please see the README on GitHub at <https://github.com/deemp/query-
 # - [BNFC](https://github.com/BNFC/bnfc)
 # Though they're Haskell packages, it's easier to provide them via Nix
 # than via [build-tool-depends](https://cabal.readthedocs.io/en/3.4/cabal-package.html#pkg-field-build-tool-depends)
+# 
+# See: 
+# - https://github.com/haskell/cabal/issues/8434#issuecomment-1652017630
+# - https://gist.github.com/ScottFreeCode/ef9f254e2dd91544bba4a068852fc81f
 custom-setup:
   dependencies:
     - base >= 4.11.0.0 && < 5.0
