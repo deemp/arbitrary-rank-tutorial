@@ -217,6 +217,7 @@
             };
           };
 
+          # TODO generateOptparseApplicativeCompletions
           packages = mkShellApps { default = self'.packages.free-foil-stlc; };
 
           ghc = builtins.head (
@@ -228,6 +229,7 @@
           legacyPackages = {
             stackShell =
               { ... }:
+              # stack-shell may be necessary later if some C libraries should be provided
               # buildStackProject arguments: https://github.com/NixOS/nixpkgs/blob/7395957192312b3db2ea4e8e29f58a557d17bb45/pkgs/development/haskell-modules/generic-stack-builder.nix#L12-L20
               pkgs.haskell.lib.buildStackProject ({
                 name = "stack-shell";
@@ -282,6 +284,7 @@
               };
             };
             demo = {
+              # TODO source optparse-applicative completions in shellHook
               commands = {
                 tools = [
                   {
