@@ -24,6 +24,12 @@ verbatim:
 # common to point users to the README.md file.
 description: Please see the README on GitHub at <https://github.com/deemp/query-driven-free-foil#readme>
 
+# Running Setup.hs requires:
+# - [happy](https://github.com/haskell/happy)
+# - [alex](https://github.com/haskell/alex)
+# - [BNFC](https://github.com/BNFC/bnfc)
+# Though they're Haskell packages, it's easier to provide them via Nix
+# than via [build-tool-depends](https://cabal.readthedocs.io/en/3.4/cabal-package.html#pkg-field-build-tool-depends)
 custom-setup:
   dependencies:
     - base >= 4.11.0.0 && < 5.0
@@ -31,11 +37,6 @@ custom-setup:
     - code-page
     - process >= 1.6.3.0
     - with-utf8
-
-build-tools:
-  alex: ">= 3.5.2.0"
-  happy: ">= 2.1.1"
-  BNFC:bnfc: ">= 2.9.5"
 
 dependencies:
   - array >= 0.5.5.0
