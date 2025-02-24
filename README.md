@@ -3,7 +3,8 @@
 ## Run `free-foil-stlc`
 
 ```console
-nix run github:deemp/query-driven-free-foil#free-foil-stlc
+nix develop github:deemp/query-driven-free-foil#demo
+free-foil-stlc
 ```
 
 ## Develop the project
