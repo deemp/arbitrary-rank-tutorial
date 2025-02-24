@@ -149,6 +149,11 @@
                 free-foil = default;
                 fcf-family = default;
                 kind-generics = default;
+                free-foil-stlc.extraBuildTools = [
+                  buildTools.alex
+                  buildTools.happy
+                  buildTools.bnfc
+                ];
               };
 
             # Development shell configuration
@@ -175,6 +180,11 @@
             outputs = config.haskellProjects.default.outputs;
             haskellPackages = configDefault.outputs.finalPackages;
             inherit (configDefault.outputs) devShell;
+          };
+
+          buildTools = {
+            inherit (configDefault.haskellPackages) alex happy;
+            bnfc = configDefault.haskellPackages.BNFC;
           };
 
           # Auto formatters. This also adds a flake check to ensure that the
@@ -238,10 +248,10 @@
                     inherit ghc;
 
                     hpack = haskellPackages.hpack_0_37_0;
+
                     inherit (haskellPackages) haskell-language-server;
 
-                    inherit (configDefault.haskellPackages) alex happy;
-                    bnfc = configDefault.haskellPackages.BNFC;
+                    inherit (buildTools) alex happy bnfc;
 
                     # cabal-install 3.14.1.0
                     # if you get `<...>alex: cannot execute: required file not found`,
