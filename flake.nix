@@ -29,6 +29,10 @@
       url = "github:commercialhaskell/all-cabal-hashes/hackage";
       flake = false;
     };
+    bnfc = {
+      url = "github:deemp/bnfc";
+      flake = false;
+    };
   };
 
   outputs =
@@ -117,6 +121,7 @@
                 with-utf8 = super.with-utf8_1_1_0_0;
                 fcf-family = super.callCabal2nix "fcf-family" "${inputs.fcf-family}/fcf-family" { };
                 kind-generics-th = jailbreakUnbreak super.kind-generics-th;
+                BNFC = super.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
               }
             );
 

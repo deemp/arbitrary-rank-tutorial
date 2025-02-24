@@ -17,6 +17,22 @@
         "type": "github"
       }
     },
+    "bnfc": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1740386985,
+        "narHash": "sha256-X9BBjcT0d3s+srIL12DyCc63No+ksnrnMnurqQkgjf4=",
+        "owner": "deemp",
+        "repo": "bnfc",
+        "rev": "29e6cf7cba2b42f1b9eb9bbf6b27173dd4a01830",
+        "type": "github"
+      },
+      "original": {
+        "owner": "deemp",
+        "repo": "bnfc",
+        "type": "github"
+      }
+    },
     "devshell": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -183,6 +199,7 @@
     "root": {
       "inputs": {
         "all-cabal-hashes": "all-cabal-hashes",
+        "bnfc": "bnfc",
         "devshell": "devshell",
         "fcf-family": "fcf-family",
         "flake-compat": "flake-compat",
