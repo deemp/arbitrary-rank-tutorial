@@ -190,6 +190,25 @@
           buildTools = {
             inherit (configDefault.haskellPackages) alex happy;
             bnfc = configDefault.haskellPackages.BNFC;
+
+            # cabal-install 3.14.1.0
+            # if you get `<...>alex: cannot execute: required file not found`,
+            # `rm -rf ~/.cabal/store/ghc-9.10.1*`
+            cabal = pkgs.cabal-install;
+
+            # https://github.com/haskell/cabal/issues/10717#issuecomment-2571718442
+            # cabal-install 3.12.1.0
+            # requires running cabal v1-build in package directories
+            # inherit (inputs.nixpkgs-old.legacyPackages.${system}) cabal-install;
+
+            # it just works
+            stack = stack-wrapped;
+
+            ghc = builtins.head (
+              builtins.filter (
+                x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
+              ) configDefault.devShell.nativeBuildInputs
+            );
           };
 
           # Auto formatters. This also adds a flake check to ensure that the
@@ -249,7 +268,7 @@
               # buildStackProject arguments: https://github.com/NixOS/nixpkgs/blob/7395957192312b3db2ea4e8e29f58a557d17bb45/pkgs/development/haskell-modules/generic-stack-builder.nix#L12-L20
               pkgs.haskell.lib.buildStackProject ({
                 name = "stack-shell";
-                inherit ghc;
+                inherit (buildTools) ghc;
               });
           };
 
@@ -265,26 +284,18 @@
 
                       treefmt = self'.formatter;
 
-                      inherit ghc;
-
                       hpack = haskellPackages.hpack_0_37_0;
 
                       inherit (haskellPackages) haskell-language-server;
 
-                      inherit (buildTools) alex happy bnfc;
-
-                      # cabal-install 3.14.1.0
-                      # if you get `<...>alex: cannot execute: required file not found`,
-                      # `rm -rf ~/.cabal/store/ghc-9.10.1*`
-                      cabal = pkgs.cabal-install;
-
-                      # https://github.com/haskell/cabal/issues/10717#issuecomment-2571718442
-                      # cabal-install 3.12.1.0
-                      # requires running cabal v1-build in package directories
-                      # inherit (inputs.nixpkgs-old.legacyPackages.${system}) cabal-install;
-
-                      # it just works
-                      stack = stack-wrapped;
+                      inherit (buildTools)
+                        alex
+                        happy
+                        bnfc
+                        cabal
+                        stack
+                        ghc
+                        ;
                     };
                   }
                 ];
