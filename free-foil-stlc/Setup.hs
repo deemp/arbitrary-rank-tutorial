@@ -13,7 +13,7 @@ import Data.List (intercalate)
 import Distribution.Simple (defaultMainWithHooks, hookedPrograms, postConf, preBuild, simpleUserHooks)
 import Distribution.Simple.Program (Program (..), findProgramVersion, simpleProgram)
 import Main.Utf8 (withUtf8)
-import System.Exit (ExitCode (..), exitWith)
+import System.Exit (ExitCode (..), exitWith, exitFailure)
 import System.IO.CodePage (withCP65001)
 import System.Process (callCommand)
 
@@ -25,7 +25,7 @@ withCorrectLocale act = do
               , Handler $ \(x :: SomeException) ->
                   withCorrectLocale' do
                     putStrLn (displayException x)
-                    exitWith (ExitFailure 1)
+                    exitFailure
               ]
 
 -- | Run BNFC, happy, and alex on the grammar before the actual build step.
