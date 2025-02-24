@@ -221,15 +221,6 @@
               pkgs.haskell.lib.buildStackProject ({
                 name = "stack-shell";
                 inherit ghc;
-                buildInputs =
-                  let
-                    hp = configDefault.haskellPackages;
-                  in
-                  [
-                    hp.alex
-                    hp.happy
-                    hp.BNFC
-                  ];
               });
           };
 
