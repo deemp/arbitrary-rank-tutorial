@@ -1,21 +1,77 @@
 # Query-Driven Language Server Architecture using Second-Order Abstract Syntax
 
-## Develop the project
-
-### Start a Nix devshell
-
-1. Run `nix develop`
-
-### Build with Cabal
+## Run `free-foil-stlc`
 
 ```console
-cabal build all
+nix run github:deemp/query-driven-free-foil#free-foil-stlc
 ```
 
-### Set up Nix and Stack
+## Develop the project
+
+Clone the repository.
 
 ```console
-stack build
+git clone https://github.com/deemp/query-driven-free-foil
+```
+
+### Build and run with Nix
+
+Build `free-foil-stlc`.
+
+```console
+nix build .#free-foil-stlc
+```
+
+Run with Nix.
+
+```console
+nix run .#free-foil-stlc
+```
+
+### Build and run with Cabal
+
+Start a Nix devShell.
+
+```console
+nix develop
+```
+
+Update the Hackage index.
+
+```console
+cabal update
+```
+
+Build `free-foil-stlc`.
+
+```console
+cabal build free-foil-stlc
+```
+
+Run `free-foil-stlc`.
+
+```console
+cabal run free-foil-stlc
+```
+
+### Build with Stack
+
+Start a Nix devShell.
+
+```console
+nix develop
+```
+
+Build `free-foil-stlc`.
+
+```console
+stack build free-foil-stlc
+```
+
+Run `free-foil-stlc`.
+
+```console
+stack run free-foil-stlc
 ```
 
 ### Set up direnv
