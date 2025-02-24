@@ -34,6 +34,10 @@
       url = "github:deemp/bnfc";
       flake = false;
     };
+    cache-nix-action = {
+      url = "github:nix-community/cache-nix-action";
+      flake = false;
+    };
   };
 
   outputs =
@@ -218,7 +222,19 @@
           };
 
           # TODO generateOptparseApplicativeCompletions
-          packages = mkShellApps { default = self'.packages.free-foil-stlc; };
+          packages = mkShellApps {
+            default = self'.packages.free-foil-stlc;
+            inherit
+              (import "${inputs.cache-nix-action}/saveFromGC.nix" {
+                inherit pkgs inputs;
+                derivations = [
+                  self'.devShells.default
+                  self'.packages.default
+                ];
+              })
+              saveFromGC
+              ;
+          };
 
           ghc = builtins.head (
             builtins.filter (

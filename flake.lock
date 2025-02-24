@@ -33,6 +33,22 @@
         "type": "github"
       }
     },
+    "cache-nix-action": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1740351137,
+        "narHash": "sha256-zkwwih8CcnZ91KAW6L7kGnJoptNx2iwdh8h05zcWH3A=",
+        "owner": "nix-community",
+        "repo": "cache-nix-action",
+        "rev": "f3b2117088fb18d8f68732afa26453ee53d7c5cd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "cache-nix-action",
+        "type": "github"
+      }
+    },
     "devshell": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -200,6 +216,7 @@
       "inputs": {
         "all-cabal-hashes": "all-cabal-hashes",
         "bnfc": "bnfc",
+        "cache-nix-action": "cache-nix-action",
         "devshell": "devshell",
         "fcf-family": "fcf-family",
         "flake-compat": "flake-compat",
