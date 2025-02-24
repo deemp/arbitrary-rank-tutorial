@@ -57,7 +57,7 @@ nix develop
 Update the Hackage index.
 
 ```console
-cabal update
+nix run .#cabalUpdate
 ```
 
 Build `free-foil-stlc`.
