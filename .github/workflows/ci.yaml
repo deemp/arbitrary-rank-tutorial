@@ -45,19 +45,22 @@ jobs:
           paths: ${{ env.paths }}
 
       - name: Build with Nix
-        run: nix build
+        run: nix build --no-link
 
       - name: Build with cabal
         if: always()
         run: |
-          nix develop --profile ./foo -c bash -c '
+          nix develop -c bash -c '
             cabal update
             cabal build all
           '
 
       - name: Build with stack
         if: always()
-        run: nix develop --profile ./foo -c stack build
+        run: nix develop -c stack build
+        
+      - name: Save paths from GC
+        run: nix profile install .#saveFromGC
 
       - uses: nix-community/cache-nix-action/save@v6
         if: always() && steps.restore.outputs.hit-primary-key != 'true'
