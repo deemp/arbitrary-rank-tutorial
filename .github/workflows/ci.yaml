@@ -48,14 +48,16 @@ jobs:
         run: nix build
 
       - name: Build with cabal
+        if: always()
         run: |
           nix develop --profile ./foo -c bash -c '
-            export LC_ALL=C.UTF-8
+            ${{ runner.os == 'Linux' && 'export LC_ALL=C.utf8' || ''}}
             cabal update
             cabal build all
           '
 
       - name: Build with stack
+        if: always()
         run: nix develop --profile ./foo -c stack build
 
       - uses: nix-community/cache-nix-action/save@v6
