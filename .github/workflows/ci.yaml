@@ -51,7 +51,6 @@ jobs:
         if: always()
         run: |
           nix develop --profile ./foo -c bash -c '
-            ${{ runner.os == 'Linux' && 'export LC_ALL=C.utf8' || ''}}
             cabal update
             cabal build all
           '
