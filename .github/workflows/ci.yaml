@@ -25,12 +25,13 @@ jobs:
     permissions:
       actions: write
     env:
+      # https://cabal.readthedocs.io/en/stable/config.html#directories
       paths: |
         ~/.stack
         **/.stack-work
 
-        ~/.cabal/packages
-        ~/.cabal/store
+        ~/.cache/cabal/packages
+        ~/.cache/cabal/store
         dist-newstyle
     steps:
       - uses: actions/checkout@v4
