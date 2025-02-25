@@ -58,6 +58,7 @@ jobs:
         run: nix develop -c stack build
         
       - name: Save paths from GC
+        if: always()
         run: nix profile install .#saveFromGC
 
       - uses: nix-community/cache-nix-action/save@v6
