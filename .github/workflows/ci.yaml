@@ -68,7 +68,7 @@ jobs:
         run: nix profile install .#saveFromGC
 
       - uses: nix-community/cache-nix-action/save@v6
-        if: always() && steps.restore.outputs.hit-primary-key != 'true'
+        if: always()
         with:
           paths: ${{ env.paths }}
           # save a cache using this key
