@@ -257,12 +257,7 @@
             cabalUpdate = {
               runtimeInputs = [ buildTools.cabal ];
               text = ''
-                INDEX_STATE=$(
-                  grep index-state cabal.project \
-                  | sed -e 's/index-state: \(.*\)$/\1/'
-                )
-
-                cabal update hackage.haskell.org,"$INDEX_STATE"
+                cabal update hackage.haskell.org,@"${builtins.toString inputs.all-cabal-hashes.lastModified}"
               '';
               meta.description = "Update cabal's Hackage index using index-state from `cabal.project`.";
             };
