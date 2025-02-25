@@ -14,6 +14,7 @@ jobs:
     strategy:
       matrix:
         os:
+          - ubuntu-24.04-arm
           - ubuntu-24.04
           - ubuntu-22.04
           - macos-14
@@ -32,16 +33,21 @@ jobs:
         dist-newstyle
     steps:
       - uses: actions/checkout@v4
-
-      - uses: nixbuild/nix-quick-install-action@v29
+      
+      # TODO
+      # switch to nixbuild/nix-quick-install-action
+      # after https://github.com/nixbuild/nix-quick-install-action/pull/58 is merged
+      - uses: deemp/nix-quick-install-action@v29
+        with:
+          nix_archives_url: https://github.com/deemp/nix-quick-install-action/releases/download/v29
 
       - uses: nix-community/cache-nix-action/restore@v6
         id: restore
         with:
           # restore a cache using this key
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # if there's no cache hit, restore a cache by this prefix
-          restore-prefixes-first-match: nix-${{ runner.os }}-
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
           paths: ${{ env.paths }}
 
       - name: Build with Nix
@@ -56,7 +62,7 @@ jobs:
       - name: Build with stack
         if: always()
         run: nix develop -c stack build
-        
+
       - name: Save paths from GC
         if: always()
         run: nix profile install .#saveFromGC
@@ -66,14 +72,14 @@ jobs:
         with:
           paths: ${{ env.paths }}
           # save a cache using this key
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # collect garbage until Nix store size (in bytes) is at most this number
           # before trying to save a new cache
           gc-max-store-size: 1073741824
           # do purge caches
           purge: true
           # purge all versions of the cache
-          purge-prefixes: nix-${{ runner.os }}-
+          purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
           # created more than this number of seconds ago relative to the start of the `Post Restore` phase
           purge-created: 0
           # except the version with the `primary-key`, if it exists
