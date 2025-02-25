@@ -196,22 +196,6 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/072a6db25e947df2f31aab9eccd0ab75d5b2da11.tar.gz"
       }
     },
-    "nixpkgs-old": {
-      "locked": {
-        "lastModified": 1735160951,
-        "narHash": "sha256-9h91U6BBNnzShwzlC+r/aXB+WyN3S140lYQbHH95bc0=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "c792c60b8a97daa7efe41a6e4954497ae410e0c1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "c792c60b8a97daa7efe41a6e4954497ae410e0c1",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "all-cabal-hashes": "all-cabal-hashes",
@@ -224,7 +208,6 @@
         "free-foil": "free-foil",
         "haskell-flake": "haskell-flake",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-old": "nixpkgs-old",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix"
       }

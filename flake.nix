@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    nixpkgs-old.url = "github:nixos/nixpkgs/c792c60b8a97daa7efe41a6e4954497ae410e0c1";
     devshell = {
       url = "github:deemp/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -191,17 +190,8 @@
             inherit (configDefault.haskellPackages) alex happy;
             bnfc = configDefault.haskellPackages.BNFC;
 
-            # cabal-install 3.14.1.0
-            # if you get `<...>alex: cannot execute: required file not found`,
-            # `rm -rf ~/.cabal/store/ghc-9.10.1*`
             cabal = pkgs.cabal-install;
 
-            # https://github.com/haskell/cabal/issues/10717#issuecomment-2571718442
-            # cabal-install 3.12.1.0
-            # requires running cabal v1-build in package directories
-            # inherit (inputs.nixpkgs-old.legacyPackages.${system}) cabal-install;
-
-            # it just works
             stack = stack-wrapped;
 
             ghc = builtins.head (
