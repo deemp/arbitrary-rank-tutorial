@@ -51,8 +51,6 @@ jobs:
           # if there's no cache hit, restore a cache by this prefix
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
           paths: ${{ env.paths }}
-          
-      - uses: mxschmitt/action-tmate@v3
 
       - name: Build with Nix
         run: nix build --no-link
