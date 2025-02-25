@@ -35,9 +35,9 @@ jobs:
       - uses: actions/checkout@v4
       
       # TODO
-      # switch to nixbuild/nix-quick-install-action
-      # after https://github.com/nixbuild/nix-quick-install-action/pull/58 is merged
-      - uses: deemp/nix-quick-install-action@v29
+      # use the tagged version and remove `with`
+      # after the new action version is released
+      - uses: nixbuild/nix-quick-install-action@73e45e62a28aba99d0b31a37a1c9ddee360878a6
         with:
           nix_archives_url: https://github.com/deemp/nix-quick-install-action/releases/download/v29
 
