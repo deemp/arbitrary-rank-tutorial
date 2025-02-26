@@ -57,10 +57,12 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
           paths: ${{ steps.get-cache-paths.outputs.cache-paths }}
 
-      - name: Build with Nix
-        run: nix build --no-link
+      - name: Build and run with Nix
+        run: |
+          nix build --no-link
+          nix run
 
-      - name: Build with cabal
+      - name: Build and run with Cabal
         if: always()
         run: |
           nix develop .#ci-build -c bash -c '
@@ -68,7 +70,7 @@ jobs:
             cabal run free-foil-stlc
           '
 
-      - name: Build with stack
+      - name: Build and run with Stack
         if: always()
         run: |
           nix develop .#ci-build -c bash -c '
