@@ -180,42 +180,30 @@
           devTools =
             let
               output = config.haskellProjects.default.outputs;
+              wrapTool =
+                pkgsName: pname: flags:
+                let
+                  pkg = pkgs.${pkgsName};
+                in
+                pkgs.symlinkJoin {
+                  name = pname;
+                  paths = [ pkg ];
+                  meta = pkg.meta;
+                  version = pkg.version;
+                  buildInputs = [ pkgs.makeWrapper ];
+                  postBuild = ''
+                    wrapProgram $out/bin/${pname} \
+                      --add-flags "${flags}"
+                  '';
+                };
             in
             {
               inherit (output.finalPackages) alex happy hpack;
 
               bnfc = output.finalPackages.BNFC;
 
-              cabal = pkgs.symlinkJoin {
-                name = "cabal";
-                paths = [ pkgs.cabal-install ];
-                meta = pkgs.cabal-install.meta;
-                version = pkgs.cabal-install.version;
-                buildInputs = [ pkgs.makeWrapper ];
-                postBuild = ''
-                  wrapProgram $out/bin/cabal \
-                    --add-flags "\
-                      -v0 \
-                    "
-                '';
-              };
-
-              stack = pkgs.symlinkJoin {
-                name = "stack";
-                paths = [ pkgs.stack ];
-                meta = pkgs.stack.meta;
-                version = pkgs.stack.version;
-                buildInputs = [ pkgs.makeWrapper ];
-                postBuild = ''
-                  wrapProgram $out/bin/stack \
-                    --add-flags "\
-                      --silent \
-                      --no-nix \
-                      --system-ghc \
-                      --no-install-ghc \
-                    "
-                '';
-              };
+              cabal = wrapTool "cabal-install" "cabal" "-v0";
+              stack = wrapTool "stack" "stack" "--silent --no-nix --system-ghc --no-install-ghc";
 
               ghc = builtins.head (
                 builtins.filter (
