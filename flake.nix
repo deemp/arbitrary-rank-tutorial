@@ -312,17 +312,14 @@
             # Otherwise, stack will use its resolver and build missing packages.
             # Check it with `rm -r $(stack path --stack-root); stack build --dry-run`.
             ci-build = pkgs.mkShell {
-              buildInputs = builtins.attrValues {
-                inherit (buildTools)
-                  cabal
-                  stack
-                  ghc
-
-                  alex
-                  happy
-                  bnfc
-                  ;
-              };
+              buildInputs = with buildTools; [
+                cabal
+                stack
+                ghc
+                alex
+                happy
+                bnfc
+              ];
             };
           };
         in
