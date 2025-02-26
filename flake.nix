@@ -20,11 +20,6 @@
       url = "gitlab:lysxia/fcf-family";
       flake = false;
     };
-    all-cabal-hashes = {
-      # See https://github.com/commercialhaskell/all-cabal-hashes/commit/7df06e37007b36a36952a4c434561651d28714a5
-      url = "github:commercialhaskell/all-cabal-hashes/7df06e37007b36a36952a4c434561651d28714a5";
-      flake = false;
-    };
     bnfc = {
       url = "github:deemp/bnfc";
       flake = false;
@@ -88,13 +83,6 @@
 
           haskellPackages = pkgs.haskell.packages."ghc9101";
 
-          basePackagesDefault =
-            overrides:
-            haskellPackages.override {
-              all-cabal-hashes = inputs.all-cabal-hashes;
-              inherit overrides;
-            };
-
           # Our only Haskell project. You can have multiple projects, but this template
           # has only one.
           # See https://github.com/srid/haskell-flake/blob/master/example/flake.nix
@@ -113,21 +101,29 @@
               }
             );
 
-            basePackages = basePackagesDefault (
-              self: super: {
-                free-foil = super.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
-                with-utf8 = super.with-utf8_1_1_0_0;
-                fcf-family = super.callCabal2nix "fcf-family" "${inputs.fcf-family}/fcf-family" { };
-                kind-generics-th = jailbreakUnbreak super.kind-generics-th;
-                BNFC = super.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
-              }
-            );
+            basePackages = haskellPackages.override {
+              overrides =
+                self: super:
+                let
+                  packageFromHackage =
+                    pkg: ver: sha256:
+                    super.callHackageDirect { inherit pkg ver sha256; } { };
+                in
+                {
+                  free-foil = super.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
+                  with-utf8 = super.with-utf8_1_1_0_0;
+                  fcf-family = super.callCabal2nix "fcf-family" "${inputs.fcf-family}/fcf-family" { };
+                  kind-generics-th = jailbreakUnbreak super.kind-generics-th;
+                  BNFC = super.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
 
-            packages = {
-              # TODO make sure these packages are useful anywhere
-              alex.source = "3.5.2.0";
-              happy.source = "2.1.5";
-              happy-lib.source = "2.1.5";
+                  # Simply use Hackage instead of overriding all-cabal-hashes (~2GB unpacked)
+                  # https://github.com/NixOS/nixpkgs/blob/21d55dd87e040944379bfe0574d9e24caf3dec20/pkgs/development/haskell-modules/make-package-set.nix#L28
+                  alex = packageFromHackage "alex" "3.5.2.0" "sha256-hTkBDe30UkUVx1MTa4BjpYK5nyYlULCylZEniW6sSnA=";
+                  happy = packageFromHackage "happy" "2.1.5" "sha256-rM6CpEFZRen8ogFIOGjKEmUzYPT7dor/SQVVL8RzLwE=";
+                  happy-lib =
+                    packageFromHackage "happy-lib" "2.1.5"
+                      "sha256-XzWzDiJUBTxuliE5RN6MOeIdKzQQD1NurDrtZ/dW4OQ=";
+                };
             };
 
             settings =
@@ -242,13 +238,6 @@
               })
               saveFromGC
               ;
-            cabalUpdate = {
-              runtimeInputs = [ buildTools.cabal ];
-              text = ''
-                cabal update hackage.haskell.org,@"${builtins.toString inputs.all-cabal-hashes.lastModified}"
-              '';
-              meta.description = "Update cabal's Hackage index.";
-            };
           };
 
           devshells = {
@@ -278,7 +267,7 @@
                   {
                     prefix = "nix run .#";
                     packages = {
-                      inherit (self'.packages) free-foil-stlc cabalUpdate;
+                      inherit (self'.packages) free-foil-stlc;
                     };
                   }
                   {
