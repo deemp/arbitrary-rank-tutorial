@@ -63,14 +63,18 @@ jobs:
       - name: Build with cabal
         if: always()
         run: |
-          nix develop -c cabal build all
-          nix develop -c cabal run free-foil-stlc
+          nix develop .#ci-build -c bash -c '
+            cabal build all
+            cabal run free-foil-stlc
+          '
 
       - name: Build with stack
         if: always()
         run: |
-          nix develop -c stack build
-          nix develop -c stack run free-foil-stlc
+          nix develop .#ci-build -c bash -c '
+            stack build
+            stack run free-foil-stlc
+          '
 
       - name: Save paths from GC
         if: always()
