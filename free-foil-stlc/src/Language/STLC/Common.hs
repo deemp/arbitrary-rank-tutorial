@@ -1,10 +1,10 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Language.STLC.Common where
 
 import Data.String (IsString (..))
 import Language.STLC.Syntax.Abs
 import Language.STLC.Syntax.Lex (Token)
 import Language.STLC.Syntax.Par
-import Language.STLC.Syntax.Print
 
 -- $setup
 -- >>> :set -XOverloadedStrings

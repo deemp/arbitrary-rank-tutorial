@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
@@ -112,7 +113,7 @@ instance (Bifoldable sig) => Foldable (Foldable' sig) where
   foldr :: (a -> b -> b) -> b -> Foldable' sig a -> b
   foldr f z (Foldable' s) = bifoldrSame f z s
 
-widthOfAST :: (Bifunctor sig, Bifoldable sig, Show (Foldable' sig WidthState)) => AST binder sig n -> WidthState
+widthOfAST :: (Bifunctor sig, Bifoldable sig) => AST binder sig n -> WidthState
 widthOfAST = foldAST (const defaultWidthState) (gWidthOfExpr' . Foldable')
 
 test3 :: Bool
