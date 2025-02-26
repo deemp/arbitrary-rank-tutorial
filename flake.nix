@@ -232,7 +232,6 @@
                 ];
                 derivations = [
                   self'.packages.default
-                  self'.packages.cabalUpdate
                   self'.devShells.ci-build
                 ];
               })
