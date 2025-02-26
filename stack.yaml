@@ -1,3 +1,5 @@
+# https://docs.haskellstack.org/en/stable/configure/yaml/project/#snapshot
+# https://docs.haskellstack.org/en/stable/configure/yaml/project/#resolver
 resolver: ghc-9.10.1
 packages:
   - free-foil-stlc
