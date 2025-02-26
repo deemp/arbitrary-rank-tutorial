@@ -49,7 +49,6 @@ dependencies:
   - containers
   - free-foil
   - kind-generics
-  - kind-generics-th
 
 default-extensions:
   - ImportQualifiedPost
