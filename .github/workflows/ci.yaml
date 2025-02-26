@@ -30,16 +30,16 @@ jobs:
       - name: Get cache paths
         id: get-cache-paths
         run: |
-          echo 'cache-paths<<EOM' >>"$GITHUB_OUTPUT"
+          echo 'cache-paths<<EOM' >> "$GITHUB_OUTPUT"
 
           # https://cabal.readthedocs.io/en/stable/config.html#directories
-          echo "$(cabal path --cache-home)" >>"$GITHUB_OUTPUT"
+          echo "$(cabal path --cache-home -v0)" >> "$GITHUB_OUTPUT"
           echo 'dist-newstyle' >>"$GITHUB_OUTPUT"
 
-          echo "$(stack path --stack-root)" >>"$GITHUB_OUTPUT"
-          echo '**/.stack-work' >>"$GITHUB_OUTPUT"
+          echo "$(stack path --stack-root --silent)" >> "$GITHUB_OUTPUT"
+          echo '**/.stack-work' >> "$GITHUB_OUTPUT"
 
-          echo 'EOM' >>"$GITHUB_OUTPUT"
+          echo 'EOM' >> "$GITHUB_OUTPUT"
 
       # TODO
       # use the tagged version and remove `with`
