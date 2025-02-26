@@ -12,10 +12,6 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-compat = {
-      url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
-      flake = false;
-    };
     free-foil = {
       url = "github:fizruk/free-foil";
       flake = false;
@@ -62,16 +58,14 @@
             name = "stack"; # will be available as the usual `stack` in terminal
             paths = [ pkgs.stack ];
             meta = pkgs.stack.meta;
+            version = pkgs.stack.version;
             buildInputs = [ pkgs.makeWrapper ];
             postBuild = ''
               wrapProgram $out/bin/stack \
                 --add-flags "\
+                  --no-nix \
                   --system-ghc \
                   --no-install-ghc \
-                  --nix \
-                  --no-nix-pure \
-                  --nix-shell-file stack.nix \
-                  --nix-path nixpkgs=${inputs.nixpkgs} \
                 "
             '';
           };
@@ -253,18 +247,6 @@
             };
           };
 
-          legacyPackages = {
-            stackShell =
-              { ... }:
-              # stack-shell may be necessary later if some C libraries should be provided
-              # buildStackProject arguments: https://github.com/NixOS/nixpkgs/blob/7395957192312b3db2ea4e8e29f58a557d17bb45/pkgs/development/haskell-modules/generic-stack-builder.nix#L12-L20
-              pkgs.haskell.lib.buildStackProject ({
-                name = "stack-shell";
-                inherit (buildTools) ghc;
-              });
-          };
-
-          # Default shell.
           devshells = {
             default = {
               commands = {
@@ -316,6 +298,29 @@
               };
             };
           };
+
+          devShells = {
+            # If need C libraries, use LD_LIBRARY_PATH + pkgs.lib.makeLibraryPath.
+            # https://docs.haskellstack.org/en/stable/topics/nix_integration/#supporting-both-nix-and-non-nix-developers
+            # 
+            # In stack.yaml, use ghc-* resolver that matches ghcWithPackages available in the devShell.
+            # https://discourse.nixos.org/t/using-yesod-devel-without-building-dependencies/5827/3
+            # Otherwise, stack will use its resolver and build missing packages.
+            # Check it with `rm -r $(stack path --stack-root); stack build --dry-run`.
+            ci-build = pkgs.mkShell {
+              buildInputs = builtins.attrValues {
+                inherit (buildTools)
+                  cabal
+                  stack
+                  ghc
+
+                  alex
+                  happy
+                  bnfc
+                  ;
+              };
+            };
+          };
         in
         {
           inherit
@@ -323,7 +328,7 @@
             devshells
             haskellProjects
             packages
-            legacyPackages
+            devShells
             ;
         };
     };
