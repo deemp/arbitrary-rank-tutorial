@@ -1,4 +1,4 @@
-resolver: nightly-2025-02-20
+resolver: ghc-9.10.1
 packages:
   - free-foil-stlc
   - free-foil-exercises
