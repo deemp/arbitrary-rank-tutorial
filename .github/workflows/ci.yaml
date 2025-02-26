@@ -57,8 +57,6 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
           paths: ${{ steps.get-cache-paths.outputs.cache-paths }}
 
-      - uses: mxschmitt/action-tmate@v3
-
       - name: Build with Nix
         run: nix build --no-link
 
