@@ -230,10 +230,14 @@
             inherit
               (import "${inputs.cache-nix-action}/saveFromGC.nix" {
                 inherit pkgs inputs;
+                inputsExclude = [
+                  inputs.devshell
+                  inputs.treefmt-nix
+                ];
                 derivations = [
-                  self'.devShells.default
                   self'.packages.default
                   self'.packages.cabalUpdate
+                  self'.devShells.ci-build
                 ];
               })
               saveFromGC
