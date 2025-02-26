@@ -16,10 +16,6 @@
       url = "github:fizruk/free-foil";
       flake = false;
     };
-    fcf-family = {
-      url = "gitlab:lysxia/fcf-family";
-      flake = false;
-    };
     bnfc = {
       url = "github:deemp/bnfc";
       flake = false;
@@ -49,22 +45,6 @@
           ...
         }:
         let
-          stack-wrapped = pkgs.symlinkJoin {
-            name = "stack"; # will be available as the usual `stack` in terminal
-            paths = [ pkgs.stack ];
-            meta = pkgs.stack.meta;
-            version = pkgs.stack.version;
-            buildInputs = [ pkgs.makeWrapper ];
-            postBuild = ''
-              wrapProgram $out/bin/stack \
-                --add-flags "\
-                  --no-nix \
-                  --system-ghc \
-                  --no-install-ghc \
-                "
-            '';
-          };
-
           mkShellApps = lib.mapAttrs (
             name: value:
             if !(lib.isDerivation value) && lib.isAttrs value then
@@ -72,14 +52,6 @@
             else
               value
           );
-
-          jailbreakUnbreak =
-            pkg:
-            pkgs.haskell.lib.doJailbreak (
-              pkg.overrideAttrs (_: {
-                meta = { };
-              })
-            );
 
           haskellPackages = pkgs.haskell.packages."ghc9101";
 
@@ -102,24 +74,40 @@
             );
 
             basePackages = haskellPackages.override {
+              # If need to remove dependency bounds
+              # https://github.com/balsoft/lambda-launcher/blob/c4621b41989ff63b7241cf2a65335b4880f532e0/flake.nix#L17-L23
               overrides =
                 self: super:
                 let
+                  # Simply use Hackage instead of overriding all-cabal-hashes (~2GB unpacked)
+                  # https://github.com/NixOS/nixpkgs/blob/21d55dd87e040944379bfe0574d9e24caf3dec20/pkgs/development/haskell-modules/make-package-set.nix#L28
                   packageFromHackage =
                     pkg: ver: sha256:
                     super.callHackageDirect { inherit pkg ver sha256; } { };
                 in
                 {
+                  # direct dependencies
+
                   free-foil = super.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
                   with-utf8 = super.with-utf8_1_1_0_0;
-                  fcf-family = super.callCabal2nix "fcf-family" "${inputs.fcf-family}/fcf-family" { };
-                  kind-generics-th = jailbreakUnbreak super.kind-generics-th;
-                  BNFC = super.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
 
-                  # Simply use Hackage instead of overriding all-cabal-hashes (~2GB unpacked)
-                  # https://github.com/NixOS/nixpkgs/blob/21d55dd87e040944379bfe0574d9e24caf3dec20/pkgs/development/haskell-modules/make-package-set.nix#L28
+                  # build tools
+
                   alex = packageFromHackage "alex" "3.5.2.0" "sha256-hTkBDe30UkUVx1MTa4BjpYK5nyYlULCylZEniW6sSnA=";
+                  BNFC = super.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
                   happy = packageFromHackage "happy" "2.1.5" "sha256-rM6CpEFZRen8ogFIOGjKEmUzYPT7dor/SQVVL8RzLwE=";
+                  hpack = super.hpack_0_37_0;
+
+                  # indirect dependencies
+
+                  ## needed by free-foil
+
+                  fcf-family =
+                    packageFromHackage "fcf-family" "0.2.0.2"
+                      "sha256-tfoOpYoHmt++8cXfr+PwjA6A/DohTA0yYJqigmqqL6U=";
+
+                  ## needed by happy
+
                   happy-lib =
                     packageFromHackage "happy-lib" "2.1.5"
                       "sha256-XzWzDiJUBTxuliE5RN6MOeIdKzQQD1NurDrtZ/dW4OQ=";
@@ -134,20 +122,39 @@
                 };
               in
               {
-                alex = default;
-                happy = default;
-                happy-lib = default;
-                BNFC = default;
-                hedgehog = default;
+                # local packages
+
+                free-foil-stlc = default // {
+                  extraBuildTools = with devTools; [
+                    alex
+                    happy
+                    bnfc
+                  ];
+                };
+
+                # direct dependencies
+
+                free-foil = {
+                  check = false;
+                };
                 with-utf8 = default;
-                free-foil = default;
-                fcf-family = default;
+
+                # build tools
+
+                alex = default;
+                BNFC = default;
+                happy = default;
+                hpack = default;
+
+                # indirect dependencies
+
+                ## needed by free-foil
+
                 kind-generics = default;
-                free-foil-stlc.extraBuildTools = [
-                  buildTools.alex
-                  buildTools.happy
-                  buildTools.bnfc
-                ];
+
+                ## needed by happy
+
+                happy-lib = default;
               };
 
             # Development shell configuration
@@ -170,26 +177,54 @@
             ]; # Wire all but the devShell
           };
 
-          configDefault = {
-            outputs = config.haskellProjects.default.outputs;
-            haskellPackages = configDefault.outputs.finalPackages;
-            inherit (configDefault.outputs) devShell;
-          };
+          devTools =
+            let
+              output = config.haskellProjects.default.outputs;
+            in
+            {
+              inherit (output.finalPackages) alex happy hpack;
 
-          buildTools = {
-            inherit (configDefault.haskellPackages) alex happy;
-            bnfc = configDefault.haskellPackages.BNFC;
+              bnfc = output.finalPackages.BNFC;
 
-            cabal = pkgs.cabal-install;
+              cabal = pkgs.symlinkJoin {
+                name = "cabal";
+                paths = [ pkgs.cabal-install ];
+                meta = pkgs.cabal-install.meta;
+                version = pkgs.cabal-install.version;
+                buildInputs = [ pkgs.makeWrapper ];
+                postBuild = ''
+                  wrapProgram $out/bin/cabal \
+                    --add-flags "\
+                      -v0 \
+                    "
+                '';
+              };
 
-            stack = stack-wrapped;
+              stack = pkgs.symlinkJoin {
+                name = "stack";
+                paths = [ pkgs.stack ];
+                meta = pkgs.stack.meta;
+                version = pkgs.stack.version;
+                buildInputs = [ pkgs.makeWrapper ];
+                postBuild = ''
+                  wrapProgram $out/bin/stack \
+                    --add-flags "\
+                      --silent \
+                      --no-nix \
+                      --system-ghc \
+                      --no-install-ghc \
+                    "
+                '';
+              };
 
-            ghc = builtins.head (
-              builtins.filter (
-                x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
-              ) configDefault.devShell.nativeBuildInputs
-            );
-          };
+              ghc = builtins.head (
+                builtins.filter (
+                  x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
+                ) output.devShell.nativeBuildInputs
+              );
+
+              inherit (haskellPackages) haskell-language-server;
+            };
 
           # Auto formatters. This also adds a flake check to ensure that the
           # source tree was auto formatted.
@@ -246,17 +281,15 @@
                   {
                     expose = true;
                     packages = {
-                      hpack = haskellPackages.hpack_0_37_0;
-
-                      inherit (haskellPackages) haskell-language-server;
-
-                      inherit (buildTools)
+                      inherit (devTools)
                         alex
                         happy
                         bnfc
                         cabal
                         stack
                         ghc
+                        hpack
+                        haskell-language-server
                         ;
                     };
                   }
@@ -300,7 +333,7 @@
             # Otherwise, stack will use its resolver and build missing packages.
             # Check it with `rm -r $(stack path --stack-root); stack build --dry-run`.
             ci-build = pkgs.mkShell {
-              buildInputs = with buildTools; [
+              buildInputs = with devTools; [
                 cabal
                 stack
                 ghc

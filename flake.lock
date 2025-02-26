@@ -53,22 +53,6 @@
         "type": "github"
       }
     },
-    "fcf-family": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1737741346,
-        "narHash": "sha256-yweYsPNhe5gMHNAxO3hURdT32IFAkyaI21Z7/0bzzw0=",
-        "owner": "lysxia",
-        "repo": "fcf-family",
-        "rev": "731a37a6371c33c4c99f1fb8f34cfdafd145f129",
-        "type": "gitlab"
-      },
-      "original": {
-        "owner": "lysxia",
-        "repo": "fcf-family",
-        "type": "gitlab"
-      }
-    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
@@ -169,7 +153,6 @@
         "bnfc": "bnfc",
         "cache-nix-action": "cache-nix-action",
         "devshell": "devshell",
-        "fcf-family": "fcf-family",
         "flake-parts": "flake-parts",
         "free-foil": "free-foil",
         "haskell-flake": "haskell-flake",
