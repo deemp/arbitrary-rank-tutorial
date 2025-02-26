@@ -268,18 +268,7 @@
                 tools = [
                   {
                     expose = true;
-                    packages = {
-                      inherit (devTools)
-                        alex
-                        happy
-                        bnfc
-                        cabal
-                        stack
-                        ghc
-                        hpack
-                        haskell-language-server
-                        ;
-                    };
+                    packages = devTools;
                   }
                 ];
 
