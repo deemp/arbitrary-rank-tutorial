@@ -24,18 +24,23 @@ jobs:
     continue-on-error: true
     permissions:
       actions: write
-    env:
-      # https://cabal.readthedocs.io/en/stable/config.html#directories
-      paths: |
-        ~/.stack
-        **/.stack-work
-
-        ~/.cache/cabal/packages
-        ~/.cache/cabal/store
-        dist-newstyle
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Get cache paths
+        id: get-cache-paths
+        run: |
+          echo 'cache-paths<<EOM' >>"$GITHUB_OUTPUT"
+
+          # https://cabal.readthedocs.io/en/stable/config.html#directories
+          echo "$(cabal path --cache-home)" >>"$GITHUB_OUTPUT"
+          echo 'dist-newstyle' >>"$GITHUB_OUTPUT"
+
+          echo "$(stack path --stack-root)" >>"$GITHUB_OUTPUT"
+          echo '**/.stack-work' >>"$GITHUB_OUTPUT"
+
+          echo 'EOM' >>"$GITHUB_OUTPUT"
+
       # TODO
       # use the tagged version and remove `with`
       # after the new action version is released
@@ -50,7 +55,7 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # if there's no cache hit, restore a cache by this prefix
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
-          paths: ${{ env.paths }}
+          paths: ${{ steps.get-cache-paths.outputs.cache-paths }}
 
       - uses: mxschmitt/action-tmate@v3
 
@@ -74,7 +79,7 @@ jobs:
       - uses: nix-community/cache-nix-action/save@v6
         if: always()
         with:
-          paths: ${{ env.paths }}
+          paths: ${{ steps.get-cache-paths.outputs.cache-paths }}
           # save a cache using this key
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           # collect garbage until Nix store size (in bytes) is at most this number
