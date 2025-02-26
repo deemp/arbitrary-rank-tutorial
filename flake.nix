@@ -247,7 +247,7 @@
               text = ''
                 cabal update hackage.haskell.org,@"${builtins.toString inputs.all-cabal-hashes.lastModified}"
               '';
-              meta.description = "Update cabal's Hackage index using index-state from `cabal.project`.";
+              meta.description = "Update cabal's Hackage index.";
             };
           };
 
@@ -258,10 +258,6 @@
                   {
                     expose = true;
                     packages = {
-                      inherit (pkgs) mdsh;
-
-                      treefmt = self'.formatter;
-
                       hpack = haskellPackages.hpack_0_37_0;
 
                       inherit (haskellPackages) haskell-language-server;
@@ -284,6 +280,10 @@
                     packages = {
                       inherit (self'.packages) free-foil-stlc cabalUpdate;
                     };
+                  }
+                  {
+                    prefix = "nix fmt";
+                    help = "Format files.";
                   }
                 ];
               };
