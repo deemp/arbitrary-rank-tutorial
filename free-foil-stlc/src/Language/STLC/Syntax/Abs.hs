@@ -24,22 +24,61 @@ import qualified Data.Data    as C (Data, Typeable)
 import qualified GHC.Generics as C (Generic)
 
 type Program = Program' BNFC'Position
-data Program' a = Program a [Decl' a]
+data Program' a = Program a [Statement' a]
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-type Decl = Decl' BNFC'Position
-data Decl' a
-    = DeclFunSig a Var (Type' a)
-    | DeclFun a Var (Exp' a)
-    | DeclFunWhere a Var (Exp' a) [Decl' a]
+type ImportItem = ImportItem' BNFC'Position
+data ImportItem' a
+    = ImportItemGlob a
+    | ImportItemGlobAs a ModuleName
+    | ImportItemNames a [ImportItemName' a]
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type ImportItemName = ImportItemName' BNFC'Position
+data ImportItemName' a
+    = ImportItemNameModule a ModuleName | ImportItemNameVar a Var
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type Location = Location' BNFC'Position
+data Location' a
+    = LocationLocal a ModuleName | LocationPath a String
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type Statement = Statement' BNFC'Position
+data Statement' a
+    = StatementModule a ModuleName [Statement' a]
+    | StatementImportLocal a (ImportItem' a) (Location' a)
+    | StatementFunSig a Var (Type' a)
+    | StatementFun a Var (Exp' a)
+    | StatementFunWhere a Var (Exp' a) [Statement' a]
+    | StatementExport a [ExportItem' a]
+    | StatementCommandTypeCheck a (ExpUnderCtx' a) (Type' a)
+    | StatementCommandTypeSynth a (ExpUnderCtx' a) (SynthResult' a)
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type ExportItem = ExportItem' BNFC'Position
+data ExportItem' a
+    = ExportItemModuleName a ModuleName | ExportItemVar a Var
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type SynthResult = SynthResult' BNFC'Position
+data SynthResult' a
+    = SynthResultType a (Type' a) | SynthResultUnknown a
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 type Exp = Exp' BNFC'Position
 data Exp' a
     = ExpApp a (Exp' a) (Exp' a)
     | ExpAbs a Var (Exp' a)
+    | ExpPlus a (Exp' a) (Exp' a)
     | ExpVar a Var
     | ExpNumber a Integer
+    | ExpAccessor a [Accessor' a]
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type Accessor = Accessor' BNFC'Position
+data Accessor' a
+    = AccessorModuleName a ModuleName | AccessorVar a Var
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 type Type = Type' BNFC'Position
@@ -58,18 +97,10 @@ type ExpUnderCtx = ExpUnderCtx' BNFC'Position
 data ExpUnderCtx' a = ExpUnderCtx a (Ctx' a) (Exp' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-type SynthResult = SynthResult' BNFC'Position
-data SynthResult' a
-    = SynthResultType a (Type' a) | SynthResultUnknown a
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
-
-type Command = Command' BNFC'Position
-data Command' a
-    = CommandTypeCheck a (ExpUnderCtx' a) (Type' a)
-    | CommandTypeSynth a (ExpUnderCtx' a) (SynthResult' a)
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
-
 newtype Var = Var String
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic, Data.String.IsString)
+
+newtype ModuleName = ModuleName String
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic, Data.String.IsString)
 
 -- | Start position (line, column) of something.
@@ -91,18 +122,56 @@ instance HasPosition Program where
   hasPosition = \case
     Program p _ -> p
 
-instance HasPosition Decl where
+instance HasPosition ImportItem where
   hasPosition = \case
-    DeclFunSig p _ _ -> p
-    DeclFun p _ _ -> p
-    DeclFunWhere p _ _ _ -> p
+    ImportItemGlob p -> p
+    ImportItemGlobAs p _ -> p
+    ImportItemNames p _ -> p
+
+instance HasPosition ImportItemName where
+  hasPosition = \case
+    ImportItemNameModule p _ -> p
+    ImportItemNameVar p _ -> p
+
+instance HasPosition Location where
+  hasPosition = \case
+    LocationLocal p _ -> p
+    LocationPath p _ -> p
+
+instance HasPosition Statement where
+  hasPosition = \case
+    StatementModule p _ _ -> p
+    StatementImportLocal p _ _ -> p
+    StatementFunSig p _ _ -> p
+    StatementFun p _ _ -> p
+    StatementFunWhere p _ _ _ -> p
+    StatementExport p _ -> p
+    StatementCommandTypeCheck p _ _ -> p
+    StatementCommandTypeSynth p _ _ -> p
+
+instance HasPosition ExportItem where
+  hasPosition = \case
+    ExportItemModuleName p _ -> p
+    ExportItemVar p _ -> p
+
+instance HasPosition SynthResult where
+  hasPosition = \case
+    SynthResultType p _ -> p
+    SynthResultUnknown p -> p
 
 instance HasPosition Exp where
   hasPosition = \case
     ExpApp p _ _ -> p
     ExpAbs p _ _ -> p
+    ExpPlus p _ _ -> p
     ExpVar p _ -> p
     ExpNumber p _ -> p
+    ExpAccessor p _ -> p
+
+instance HasPosition Accessor where
+  hasPosition = \case
+    AccessorModuleName p _ -> p
+    AccessorVar p _ -> p
 
 instance HasPosition Type where
   hasPosition = \case
@@ -120,14 +189,4 @@ instance HasPosition Ctx where
 instance HasPosition ExpUnderCtx where
   hasPosition = \case
     ExpUnderCtx p _ _ -> p
-
-instance HasPosition SynthResult where
-  hasPosition = \case
-    SynthResultType p _ -> p
-    SynthResultUnknown p -> p
-
-instance HasPosition Command where
-  hasPosition = \case
-    CommandTypeCheck p _ _ -> p
-    CommandTypeSynth p _ _ -> p
 

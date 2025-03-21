@@ -1,24 +1,65 @@
 token Var lower (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
+token ModuleName upper (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
 
 layout toplevel ;
 layout "where" ;
 
--- Indices denote precedence levels - see https://github.com/BNFC/bnfc/blob/35c66af24839c176bd12a5b8294e1d552d835c3b/document/tutorial/bnfc-tutorial.txt#L337
+comment "--" ;
 
-Program. Program ::= [Decl] ;
+Program. Program ::= [Statement] ;
 
-DeclFunSig.   Decl ::= Var ":" Type ;
-DeclFun.      Decl ::= Var "=" Exp ;
-DeclFunWhere. Decl ::= Var "=" Exp "where" "{" [Decl] "}" ;
+ImportItemGlob. ImportItem ::= "*";
+ImportItemGlobAs. ImportItem ::= "*" "as" ModuleName;
+ImportItemNames. ImportItem ::= "{" [ ImportItemName ] "}" ;
 
-terminator Decl ";";
+
+ImportItemNameModule. ImportItemName ::= ModuleName ;
+ImportItemNameVar.    ImportItemName ::= Var ;
+
+separator ImportItemName ",";
+
+LocationLocal. Location ::= ModuleName;
+LocationPath. Location ::= String;
+
+StatementModule.        Statement ::= "module" ModuleName "where" "{" [ Statement ] "}";
+StatementImportLocal.   Statement ::= "import" ImportItem "from" Location ;
+StatementFunSig.        Statement ::= Var ":" Type ;
+StatementFun.           Statement ::= Var "=" Exp ;
+StatementFunWhere.      Statement ::= Var "=" Exp "where" "{" [Statement] "}" ;
+StatementExport. Statement ::= "export" [ ExportItem ];
+
+ExportItemModuleName. ExportItem ::= ModuleName;
+ExportItemVar.        ExportItem ::= Var;
+
+separator ExportItem ",";
+
+-- TODO Remove from the program before processing 
+-- and throw a syntax error on them
+-- or, move to another file
+-- Though it's much easier to leave these commands as is
+StatementCommandTypeCheck. Statement ::= "#typecheck" ExpUnderCtx "<=" Type ;
+StatementCommandTypeSynth. Statement ::= "#typesynth" ExpUnderCtx "=>" SynthResult ;
+
+terminator Statement ";";
+
+SynthResultType.    SynthResult ::= "!" Type ;
+SynthResultUnknown. SynthResult ::= "?" ;
+
 
 ExpApp.  Exp1 ::= "(" Exp ")" Exp ;
 ExpAbs.  Exp2 ::= "\\" Var "." Exp ;
-ExpVar.  Exp3 ::= Var ;
-ExpNumber. Exp4 ::= Integer ;
 
-coercions Exp 4;
+ExpPlus. Exp3 ::= Exp3 "+" Exp4 ;
+ExpVar.  Exp4 ::= Var ;
+ExpNumber. Exp5 ::= Integer ;
+ExpAccessor. Exp6 ::= "#" [Accessor];
+
+coercions Exp 6;
+
+AccessorModuleName. Accessor ::= ModuleName;
+AccessorVar.        Accessor ::= Var;
+
+separator Accessor ".";
 
 TypeUnit. Type1 ::= "Int" ;
 TypeFunc. Type2 ::= Type "->" Type ;
@@ -31,106 +72,3 @@ separator CtxVar "," ;
 Ctx. Ctx ::= [CtxVar];
 
 ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;
-
-SynthResultType.    SynthResult ::= "!" Type ;
-SynthResultUnknown. SynthResult ::= "?" ;
-
--- TODO Remove from the program before processing and throw a syntax error on them
--- or, move to another file
--- Though it's much easier to leave these commands as is
-
-CommandTypeCheck. Command ::= "#typecheck" ExpUnderCtx "<=" Type ;
-CommandTypeSynth. Command ::= "#typesynth" ExpUnderCtx "=>" SynthResult ;
-
-terminator Command ";" ;
-
-{- 
--- f({a, b}: { a : Int, b : Int = 3})
--- 
--- a : ()
--- a = undefined
---   where {
---     b : Int
---     b = 3
---     ;
---     c : B
---     c = b
---   }
-
-- Ctx. Ctx ::= [CtxVar];
-
-- ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;
-- }
-{-
-program.stlc
-
-a : Int
-a = b + c
-  where {
-    b : Int
-    b = 3
-    ;
-    c : Int
-    c = 4
-  }
-
-- program
-  type
-  ctx:
-    - 
-
-(1 + 2) : Int, 3 : Int |- 1 + 2 + 3 <= Int
-1 : Int, 2 : Int,  3 : Int |- (1 + 2) + 3 <= Int
-1 : Int, 2 : Int,  3 : Int |- (1 + 2) + 3 <= Int
-
-
-Int + Int + Int
-
-#typecheck x : Int |- 
-{
-b + c
-  where {
-    b : Int
-    b = 3
-    ;
-    c : Int
-    c = 4
-  }
-} <= Int
-
--}
-
-{-
-#typecheck 
-
-
-|- e1 <= Int    |- e2 <= Int
----------------------------
-e1 + e2 => Int
-
-
-- Literal
-
-
------------   -----------
-|- 1 <= Int   |- 2 <= Int
-------------------
-|- 1 + 2 => ??
-
--}
-
-{-
-
-a : Int
-b : Int
-c = ()
-
-#typecheck {a + b} <= Int
-
-#typecheck {a + c} <= _|_
-
-#typesynth {a + b} => Int
-
-#typesynth {a + c} => _|_
-
--}

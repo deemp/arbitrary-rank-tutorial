@@ -22,7 +22,6 @@ instance IsString Exp where fromString = unsafeParseWith pExp
 instance IsString Type where fromString = unsafeParseWith pType
 instance IsString Ctx where fromString = unsafeParseWith pCtx
 instance IsString ExpUnderCtx where fromString = unsafeParseWith pExpUnderCtx
-instance IsString Command where fromString = unsafeParseWith pCommand
 instance IsString Program where fromString = unsafeParseWith pProgram
 
 parseWith :: ([Token] -> Either String a) -> String -> Either String a
@@ -44,12 +43,56 @@ unsafeParseWith parser input =
 -- >>> printTree $ ("#typecheck x : Int |- \\x.(\\z.z) x <= Int -> Int" :: Command)
 -- "#typecheck x : Int |- \\ x . (\\ z . z) x <= Int -> Int"
 
--- >>> Pretty . printTree . fromString @Program <$> (readFile "free-foil-stlc/test/data/Program.stlc")
--- a : Int;
--- a = (b) c where
+-- >>> printModule name = Pretty . (\x -> "==========\n" <> name <> "\n==========\n" <> x) . printTree . fromString @Program <$> (readFile ("free-foil-stlc/test/data/" <> name))
+-- >>> printModule "Lib.ms"
+-- >>> printModule "Program.ms"
+-- ==========
+-- Lib.ms
+-- ==========
+-- piLike = 314;
+-- export piLike;
+-- ==========
+-- Program.ms
+-- ==========
+-- global : Int;
+-- global = 3;
+-- module Hello where
 -- {
---   b : Int -> Int;
---   b = id;
---   c : Int;
---   c = 3;
 -- };
+-- module Hello where
+-- {
+--   import * as Lib from "./Lib.stlc";
+--   module Local where
+--   {
+--     local = global;
+--   };
+--   application : Int;
+--   application = (whereFunction) whereExpression where
+--   {
+--     whereFunction : Int -> Int;
+--     whereFunction = id;
+--     whereExpression = global + 5 + # Lib . piLike + # Local . local;
+--   };
+--   piLike = # Lib . piLike + 10;
+--   shadow = 5;
+--   export shadow;
+--   shadow = 8;
+--   export shadow;
+--   g = 6 + 7 + application;
+--   export application, piLike, g;
+-- };
+-- module World where
+-- {
+--   import * from Hello;
+--   shadow = shadow;
+--   #typecheck |- shadow <= Int;
+--   import
+--   {
+--     piLike
+--   }
+--   from "./Lib.stlc";
+--   t = \ p . application + piLike + global + shadow + g + p;
+-- };
+-- #typecheck |- # World . t <= Int -> Int;
+-- #typesynth |- # World . t => ! Int -> Int;
+-- #typesynth s : Int |- # World . shadow + s => ?;
