@@ -36,6 +36,7 @@ library
   exposed-modules:
       Language.STLC.Common
       Language.STLC.Syntax.Abs
+      Language.STLC.Syntax.Layout
       Language.STLC.Syntax.Lex
       Language.STLC.Syntax.Par
       Language.STLC.Syntax.Print

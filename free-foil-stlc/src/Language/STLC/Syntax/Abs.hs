@@ -2,38 +2,132 @@
 
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- | The abstract syntax of language Syntax.
 
 module Language.STLC.Syntax.Abs where
 
-import Prelude (String)
-import qualified Prelude as C (Eq, Ord, Show, Read)
+import Prelude (Integer, String)
+import qualified Prelude as C
+  ( Eq, Ord, Show, Read
+  , Functor, Foldable, Traversable
+  , Int, Maybe(..)
+  )
 import qualified Data.String
 
 import qualified Data.Data    as C (Data, Typeable)
 import qualified GHC.Generics as C (Generic)
 
-data Exp = ExpAbs Var Exp | ExpApp Exp Exp | ExpUnit | ExpVar Var
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic)
+type Program = Program' BNFC'Position
+data Program' a = Program a [Decl' a]
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-data Type = TypeFunc Type Type | TypeUnit
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic)
+type Decl = Decl' BNFC'Position
+data Decl' a
+    = DeclFunSig a Var (Type' a)
+    | DeclFun a Var (Exp' a)
+    | DeclFunWhere a Var (Exp' a) [Decl' a]
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-data CtxVar = CtxVar Var Type
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic)
+type Exp = Exp' BNFC'Position
+data Exp' a
+    = ExpApp a (Exp' a) (Exp' a)
+    | ExpAbs a Var (Exp' a)
+    | ExpVar a Var
+    | ExpNumber a Integer
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-data Ctx = Ctx [CtxVar]
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic)
+type Type = Type' BNFC'Position
+data Type' a = TypeUnit a | TypeFunc a (Type' a) (Type' a)
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-data ExpUnderCtx = ExpUnderCtx Ctx Exp
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic)
+type CtxVar = CtxVar' BNFC'Position
+data CtxVar' a = CtxVar a Var (Type' a)
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-data Command
-    = CommandTypeCheck ExpUnderCtx Type | CommandTypeSynth ExpUnderCtx
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic)
+type Ctx = Ctx' BNFC'Position
+data Ctx' a = Ctx a [CtxVar' a]
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type ExpUnderCtx = ExpUnderCtx' BNFC'Position
+data ExpUnderCtx' a = ExpUnderCtx a (Ctx' a) (Exp' a)
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type SynthResult = SynthResult' BNFC'Position
+data SynthResult' a
+    = SynthResultType a (Type' a) | SynthResultUnknown a
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type Command = Command' BNFC'Position
+data Command' a
+    = CommandTypeCheck a (ExpUnderCtx' a) (Type' a)
+    | CommandTypeSynth a (ExpUnderCtx' a) (SynthResult' a)
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 newtype Var = Var String
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic, Data.String.IsString)
+
+-- | Start position (line, column) of something.
+
+type BNFC'Position = C.Maybe (C.Int, C.Int)
+
+pattern BNFC'NoPosition :: BNFC'Position
+pattern BNFC'NoPosition = C.Nothing
+
+pattern BNFC'Position :: C.Int -> C.Int -> BNFC'Position
+pattern BNFC'Position line col = C.Just (line, col)
+
+-- | Get the start position of something.
+
+class HasPosition a where
+  hasPosition :: a -> BNFC'Position
+
+instance HasPosition Program where
+  hasPosition = \case
+    Program p _ -> p
+
+instance HasPosition Decl where
+  hasPosition = \case
+    DeclFunSig p _ _ -> p
+    DeclFun p _ _ -> p
+    DeclFunWhere p _ _ _ -> p
+
+instance HasPosition Exp where
+  hasPosition = \case
+    ExpApp p _ _ -> p
+    ExpAbs p _ _ -> p
+    ExpVar p _ -> p
+    ExpNumber p _ -> p
+
+instance HasPosition Type where
+  hasPosition = \case
+    TypeUnit p -> p
+    TypeFunc p _ _ -> p
+
+instance HasPosition CtxVar where
+  hasPosition = \case
+    CtxVar p _ _ -> p
+
+instance HasPosition Ctx where
+  hasPosition = \case
+    Ctx p _ -> p
+
+instance HasPosition ExpUnderCtx where
+  hasPosition = \case
+    ExpUnderCtx p _ _ -> p
+
+instance HasPosition SynthResult where
+  hasPosition = \case
+    SynthResultType p _ -> p
+    SynthResultUnknown p -> p
+
+instance HasPosition Command where
+  hasPosition = \case
+    CommandTypeCheck p _ _ -> p
+    CommandTypeSynth p _ _ -> p
 

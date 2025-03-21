@@ -139,40 +139,59 @@ instance Print Double where
 
 instance Print Language.STLC.Syntax.Abs.Var where
   prt _ (Language.STLC.Syntax.Abs.Var i) = doc $ showString i
-instance Print Language.STLC.Syntax.Abs.Exp where
+instance Print (Language.STLC.Syntax.Abs.Program' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.ExpAbs var exp -> prPrec i 1 (concatD [doc (showString "\\"), prt 0 var, doc (showString "."), prt 0 exp])
-    Language.STLC.Syntax.Abs.ExpApp exp1 exp2 -> prPrec i 2 (concatD [prt 2 exp1, prt 3 exp2])
-    Language.STLC.Syntax.Abs.ExpUnit -> prPrec i 3 (concatD [doc (showString "()")])
-    Language.STLC.Syntax.Abs.ExpVar var -> prPrec i 4 (concatD [prt 0 var])
+    Language.STLC.Syntax.Abs.Program _ decls -> prPrec i 0 (concatD [prt 0 decls])
 
-instance Print Language.STLC.Syntax.Abs.Type where
+instance Print (Language.STLC.Syntax.Abs.Decl' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.TypeFunc type_1 type_2 -> prPrec i 1 (concatD [prt 1 type_1, doc (showString "->"), prt 2 type_2])
-    Language.STLC.Syntax.Abs.TypeUnit -> prPrec i 2 (concatD [doc (showString "unit")])
+    Language.STLC.Syntax.Abs.DeclFunSig _ var type_ -> prPrec i 0 (concatD [prt 0 var, doc (showString ":"), prt 0 type_])
+    Language.STLC.Syntax.Abs.DeclFun _ var exp -> prPrec i 0 (concatD [prt 0 var, doc (showString "="), prt 0 exp])
+    Language.STLC.Syntax.Abs.DeclFunWhere _ var exp decls -> prPrec i 0 (concatD [prt 0 var, doc (showString "="), prt 0 exp, doc (showString "where"), doc (showString "{"), prt 0 decls, doc (showString "}")])
 
-instance Print Language.STLC.Syntax.Abs.CtxVar where
+instance Print [Language.STLC.Syntax.Abs.Decl' a] where
+  prt _ [] = concatD []
+  prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
+
+instance Print (Language.STLC.Syntax.Abs.Exp' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.CtxVar var type_ -> prPrec i 0 (concatD [prt 0 var, doc (showString ":"), prt 0 type_])
+    Language.STLC.Syntax.Abs.ExpApp _ exp1 exp2 -> prPrec i 1 (concatD [doc (showString "("), prt 0 exp1, doc (showString ")"), prt 0 exp2])
+    Language.STLC.Syntax.Abs.ExpAbs _ var exp -> prPrec i 2 (concatD [doc (showString "\\"), prt 0 var, doc (showString "."), prt 0 exp])
+    Language.STLC.Syntax.Abs.ExpVar _ var -> prPrec i 3 (concatD [prt 0 var])
+    Language.STLC.Syntax.Abs.ExpNumber _ n -> prPrec i 4 (concatD [prt 0 n])
 
-instance Print [Language.STLC.Syntax.Abs.CtxVar] where
+instance Print (Language.STLC.Syntax.Abs.Type' a) where
+  prt i = \case
+    Language.STLC.Syntax.Abs.TypeUnit _ -> prPrec i 1 (concatD [doc (showString "Int")])
+    Language.STLC.Syntax.Abs.TypeFunc _ type_1 type_2 -> prPrec i 2 (concatD [prt 0 type_1, doc (showString "->"), prt 0 type_2])
+
+instance Print (Language.STLC.Syntax.Abs.CtxVar' a) where
+  prt i = \case
+    Language.STLC.Syntax.Abs.CtxVar _ var type_ -> prPrec i 0 (concatD [prt 0 var, doc (showString ":"), prt 0 type_])
+
+instance Print [Language.STLC.Syntax.Abs.CtxVar' a] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
-instance Print Language.STLC.Syntax.Abs.Ctx where
+instance Print (Language.STLC.Syntax.Abs.Ctx' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.Ctx ctxvars -> prPrec i 0 (concatD [prt 0 ctxvars])
+    Language.STLC.Syntax.Abs.Ctx _ ctxvars -> prPrec i 0 (concatD [prt 0 ctxvars])
 
-instance Print Language.STLC.Syntax.Abs.ExpUnderCtx where
+instance Print (Language.STLC.Syntax.Abs.ExpUnderCtx' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.ExpUnderCtx ctx exp -> prPrec i 0 (concatD [prt 0 ctx, doc (showString "|-"), prt 0 exp])
+    Language.STLC.Syntax.Abs.ExpUnderCtx _ ctx exp -> prPrec i 0 (concatD [prt 0 ctx, doc (showString "|-"), prt 0 exp])
 
-instance Print Language.STLC.Syntax.Abs.Command where
+instance Print (Language.STLC.Syntax.Abs.SynthResult' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.CommandTypeCheck expunderctx type_ -> prPrec i 0 (concatD [doc (showString "#typecheck"), prt 0 expunderctx, doc (showString "<="), prt 0 type_])
-    Language.STLC.Syntax.Abs.CommandTypeSynth expunderctx -> prPrec i 0 (concatD [doc (showString "#typesynth"), prt 0 expunderctx])
+    Language.STLC.Syntax.Abs.SynthResultType _ type_ -> prPrec i 0 (concatD [doc (showString "!"), prt 0 type_])
+    Language.STLC.Syntax.Abs.SynthResultUnknown _ -> prPrec i 0 (concatD [doc (showString "?")])
 
-instance Print [Language.STLC.Syntax.Abs.Command] where
+instance Print (Language.STLC.Syntax.Abs.Command' a) where
+  prt i = \case
+    Language.STLC.Syntax.Abs.CommandTypeCheck _ expunderctx type_ -> prPrec i 0 (concatD [doc (showString "#typecheck"), prt 0 expunderctx, doc (showString "<="), prt 0 type_])
+    Language.STLC.Syntax.Abs.CommandTypeSynth _ expunderctx synthresult -> prPrec i 0 (concatD [doc (showString "#typesynth"), prt 0 expunderctx, doc (showString "=>"), prt 0 synthresult])
+
+instance Print [Language.STLC.Syntax.Abs.Command' a] where
   prt _ [] = concatD []
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]

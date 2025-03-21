@@ -28,7 +28,7 @@ $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
 
-@rsyms = \\ | \. | \( \) | \( | \) | \- \> | \: | \, | \| \- | \# "typecheck" | \< \= | \# "typesynth" | \;
+@rsyms = \: | \= | \{ | \} | \; | \( | \) | \\ | \. | \- \> | \, | \| \- | \! | \? | \# "typecheck" | \< \= | \# "typesynth" | \= \>
 
 :-
 
@@ -46,6 +46,10 @@ $s [$u # [\t \n \r \  \! \' \( \) \, \. \: \; \? \[ \] \{ \| \} \⟦ \⟧]] *
 -- Keywords and Ident
 $l $i*
     { tok (eitherResIdent TV) }
+
+-- Integer
+$d+
+    { tok TI }
 
 {
 -- | Create a token with position.
@@ -150,13 +154,14 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "." 8
-    (b "()" 4
-       (b "#typesynth" 2 (b "#typecheck" 1 N N) (b "(" 3 N N))
-       (b "," 6 (b ")" 5 N N) (b "->" 7 N N)))
-    (b "\\" 12
-       (b ";" 10 (b ":" 9 N N) (b "<=" 11 N N))
-       (b "|-" 14 (b "unit" 13 N N) N))
+  b "<=" 11
+    (b "," 6
+       (b "#typesynth" 3
+          (b "#typecheck" 2 (b "!" 1 N N) N) (b ")" 5 (b "(" 4 N N) N))
+       (b ":" 9 (b "." 8 (b "->" 7 N N) N) (b ";" 10 N N)))
+    (b "\\" 16
+       (b "?" 14 (b "=>" 13 (b "=" 12 N N) N) (b "Int" 15 N N))
+       (b "|-" 19 (b "{" 18 (b "where" 17 N N) N) (b "}" 20 N N)))
   where
   b s n = B bs (TS bs n)
     where

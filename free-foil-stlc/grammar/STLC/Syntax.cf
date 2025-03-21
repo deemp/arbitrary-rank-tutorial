@@ -1,18 +1,29 @@
 token Var lower (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
 
+layout toplevel ;
+layout "where" ;
+
 -- Indices denote precedence levels - see https://github.com/BNFC/bnfc/blob/35c66af24839c176bd12a5b8294e1d552d835c3b/document/tutorial/bnfc-tutorial.txt#L337
 
-ExpAbs.  Exp1 ::= "\\" Var "." Exp ;
-ExpApp.  Exp2 ::= Exp2 Exp3;
-ExpUnit. Exp3 ::= "()" ;
-ExpVar.  Exp4 ::= Var ;
+Program. Program ::= [Decl] ;
 
-coercions Exp 4 ;
+DeclFunSig.   Decl ::= Var ":" Type ;
+DeclFun.      Decl ::= Var "=" Exp ;
+DeclFunWhere. Decl ::= Var "=" Exp "where" "{" [Decl] "}" ;
 
-TypeFunc. Type1 ::= Type1 "->" Type2 ;
-TypeUnit. Type2 ::= "unit" ;
+terminator Decl ";";
 
-coercions Type 2 ;
+ExpApp.  Exp1 ::= "(" Exp ")" Exp ;
+ExpAbs.  Exp2 ::= "\\" Var "." Exp ;
+ExpVar.  Exp3 ::= Var ;
+ExpNumber. Exp4 ::= Integer ;
+
+coercions Exp 4;
+
+TypeUnit. Type1 ::= "Int" ;
+TypeFunc. Type2 ::= Type "->" Type ;
+
+coercions Type 2;
 
 CtxVar. CtxVar ::= Var ":" Type ;
 separator CtxVar "," ;
@@ -21,7 +32,105 @@ Ctx. Ctx ::= [CtxVar];
 
 ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;
 
+SynthResultType.    SynthResult ::= "!" Type ;
+SynthResultUnknown. SynthResult ::= "?" ;
+
+-- TODO Remove from the program before processing and throw a syntax error on them
+-- or, move to another file
+-- Though it's much easier to leave these commands as is
+
 CommandTypeCheck. Command ::= "#typecheck" ExpUnderCtx "<=" Type ;
-CommandTypeSynth. Command ::= "#typesynth" ExpUnderCtx ;
+CommandTypeSynth. Command ::= "#typesynth" ExpUnderCtx "=>" SynthResult ;
 
 terminator Command ";" ;
+
+{- 
+-- f({a, b}: { a : Int, b : Int = 3})
+-- 
+-- a : ()
+-- a = undefined
+--   where {
+--     b : Int
+--     b = 3
+--     ;
+--     c : B
+--     c = b
+--   }
+
+- Ctx. Ctx ::= [CtxVar];
+
+- ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;
+- }
+{-
+program.stlc
+
+a : Int
+a = b + c
+  where {
+    b : Int
+    b = 3
+    ;
+    c : Int
+    c = 4
+  }
+
+- program
+  type
+  ctx:
+    - 
+
+(1 + 2) : Int, 3 : Int |- 1 + 2 + 3 <= Int
+1 : Int, 2 : Int,  3 : Int |- (1 + 2) + 3 <= Int
+1 : Int, 2 : Int,  3 : Int |- (1 + 2) + 3 <= Int
+
+
+Int + Int + Int
+
+#typecheck x : Int |- 
+{
+b + c
+  where {
+    b : Int
+    b = 3
+    ;
+    c : Int
+    c = 4
+  }
+} <= Int
+
+-}
+
+{-
+#typecheck 
+
+
+|- e1 <= Int    |- e2 <= Int
+---------------------------
+e1 + e2 => Int
+
+
+- Literal
+
+
+-----------   -----------
+|- 1 <= Int   |- 2 <= Int
+------------------
+|- 1 + 2 => ??
+
+-}
+
+{-
+
+a : Int
+b : Int
+c = ()
+
+#typecheck {a + b} <= Int
+
+#typecheck {a + c} <= _|_
+
+#typesynth {a + b} => Int
+
+#typesynth {a + c} => _|_
+
+-}
