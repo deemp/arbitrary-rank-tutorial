@@ -43,15 +43,15 @@ module Hello where {
       whereFunction : Int -> Int;
       whereFunction = id;
       
-      -- `#Lib.piLike` means access to `piLike` defined in the module `Lib`.
+      -- `#Lib.externalConst` means access to `externalConst` defined in the module `Lib`.
       -- `+` means addition.
       
-      whereExpression = global + 5 + #Lib.piLike + #Local.local;
+      whereExpression = global + 5 + #Lib.externalConst + #Local.local;
     };
     
   -- `*` means multiplication.
   
-  piLike = #Lib.piLike + 10;
+  externalConst = #Lib.externalConst + 10;
   
   
   shadow = 5;
@@ -69,7 +69,7 @@ module Hello where {
   
   g = (6 + 7) + application;
   
-  export application, piLike, g;
+  export application, externalConst, g;
 };
 
 module World where {
@@ -85,11 +85,11 @@ module World where {
   
   #typecheck |- shadow <= Int;
   
-  -- Import only `piLike` from the file.
+  -- Import only `externalConst` from the file.
   
-  import { piLike } from "./Lib.stlc";
+  import { externalConst } from "./Lib.stlc";
   
-  t = \p . application + piLike + global + shadow + g + p;
+  t = \p. application + externalConst + global + shadow + g + p;
 };
 
 #typecheck |- #World.t <= Int -> Int;

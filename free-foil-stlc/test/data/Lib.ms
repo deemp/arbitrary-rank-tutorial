@@ -1,3 +1,3 @@
-piLike = 314;
+externalConst = 314;
 
-export piLike;
+export externalConst;
