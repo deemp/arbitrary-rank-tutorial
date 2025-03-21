@@ -1,9 +1,10 @@
 -- Statement order matters.
--- No mutability.
 -- Shadowing is allowed.
+-- No mutability.
 -- The syntax of the program (e.g., in this file) and the body of a module is the same.
 
 -- Type annotation.
+-- Must be provided before the definition.
 
 global : Int;
 
@@ -56,16 +57,22 @@ module Hello where {
   
   shadow = 5;
   
-  -- `export` the `shadow` definition and the type annotation if available.
+  -- Export (make visible from outside of the module) the `shadow` definition and its type annotation if available.
   
   export shadow;
   
-  shadow = 8;
+  shadowRef = shadow;
   
-  -- shadows the previous `export shadow`.
-  -- `shadow = 8` is exported instead.
+  shadow = shadow + 8;
+  
+  -- Shadow the previous `export shadow`.
+  -- The latter `shadow` is exported instead.
   
   export shadow;
+  
+  -- The `shadowRef` with the value `5` is exported.
+  
+  export shadowRef;
   
   g = (6 + 7) + application;
   

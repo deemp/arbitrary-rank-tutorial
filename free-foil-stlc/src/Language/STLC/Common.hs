@@ -49,8 +49,8 @@ unsafeParseWith parser input =
 -- ==========
 -- Lib.ms
 -- ==========
--- piLike = 314;
--- export piLike;
+-- externalConst = 314;
+-- export externalConst;
 -- ==========
 -- Program.ms
 -- ==========
@@ -71,15 +71,17 @@ unsafeParseWith parser input =
 --   {
 --     whereFunction : Int -> Int;
 --     whereFunction = id;
---     whereExpression = global + 5 + # Lib . piLike + # Local . local;
+--     whereExpression = global + 5 + # Lib . externalConst + # Local . local;
 --   };
---   piLike = # Lib . piLike + 10;
+--   externalConst = # Lib . externalConst + 10;
 --   shadow = 5;
 --   export shadow;
---   shadow = 8;
+--   shadowRef = shadow;
+--   shadow = shadow + 8;
 --   export shadow;
+--   export shadowRef;
 --   g = 6 + 7 + application;
---   export application, piLike, g;
+--   export application, externalConst, g;
 -- };
 -- module World where
 -- {
@@ -88,10 +90,10 @@ unsafeParseWith parser input =
 --   #typecheck |- shadow <= Int;
 --   import
 --   {
---     piLike
+--     externalConst
 --   }
 --   from "./Lib.stlc";
---   t = \ p . application + piLike + global + shadow + g + p;
+--   t = \ p . application + externalConst + global + shadow + g + p;
 -- };
 -- #typecheck |- # World . t <= Int -> Int;
 -- #typesynth |- # World . t => ! Int -> Int;
