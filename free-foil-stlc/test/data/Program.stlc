@@ -1,0 +1,11 @@
+
+
+a : Int;
+a = (b) c where
+{
+  b : Int -> Int;
+  b = id;
+  
+  c : Int;
+  c = 3
+}
