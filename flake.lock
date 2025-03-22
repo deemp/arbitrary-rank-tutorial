@@ -32,6 +32,21 @@
         "type": "github"
       }
     },
+    "call-flake": {
+      "locked": {
+        "lastModified": 1742090266,
+        "narHash": "sha256-11/dQG/vjpfMi4D7ku2o1UtUMf8Sud0KJ/Le44zHIc8=",
+        "owner": "divnix",
+        "repo": "call-flake",
+        "rev": "43d690d3cec58cd78edc746163505c8cd5d1c9db",
+        "type": "github"
+      },
+      "original": {
+        "owner": "divnix",
+        "repo": "call-flake",
+        "type": "github"
+      }
+    },
     "devshell": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -148,15 +163,33 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/072a6db25e947df2f31aab9eccd0ab75d5b2da11.tar.gz"
       }
     },
+    "query-driven-free-foil": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1742641628,
+        "narHash": "sha256-sHAK1fkvNQ0Fk0LIyd58rjfOToUcUh90ry/aaT5fapo=",
+        "owner": "deemp",
+        "repo": "query-driven-free-foil",
+        "rev": "9ad719772ca49ac0f023703248b3e403baa660ca",
+        "type": "github"
+      },
+      "original": {
+        "owner": "deemp",
+        "repo": "query-driven-free-foil",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "bnfc": "bnfc",
         "cache-nix-action": "cache-nix-action",
+        "call-flake": "call-flake",
         "devshell": "devshell",
         "flake-parts": "flake-parts",
         "free-foil": "free-foil",
         "haskell-flake": "haskell-flake",
         "nixpkgs": "nixpkgs",
+        "query-driven-free-foil": "query-driven-free-foil",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix"
       }

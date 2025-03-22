@@ -24,6 +24,11 @@
       url = "github:nix-community/cache-nix-action";
       flake = false;
     };
+    query-driven-free-foil = {
+      url = "github:deemp/query-driven-free-foil";
+      flake = false;
+    };
+    call-flake.url = "github:divnix/call-flake";
   };
 
   outputs =
@@ -247,7 +252,29 @@
 
           # TODO generateOptparseApplicativeCompletions
           packages = mkShellApps {
-            default = self'.packages.free-foil-stlc;
+            # TODO update the query-driven-free-foil sometimes
+            default =
+              let
+                mkIncremental =
+                  packagePrev: packageCur:
+                  let
+                    inherit (pkgs.haskell.lib.compose) overrideCabal;
+
+                    result-incremental-outputs = overrideCabal (drv: {
+                      doInstallIntermediates = true;
+                      enableSeparateIntermediatesOutput = true;
+                    }) packagePrev;
+
+                    result = overrideCabal (drv: {
+                      previousIntermediates = result-incremental-outputs.intermediates;
+                    }) packageCur;
+                  in
+                  result;
+
+                packagePrev = (inputs.call-flake inputs.query-driven-free-foil.outPath).packages.${system}.default;
+              in
+              mkIncremental packagePrev self'.packages.free-foil-stlc;
+
             inherit
               (import "${inputs.cache-nix-action}/saveFromGC.nix" {
                 inherit pkgs inputs;
