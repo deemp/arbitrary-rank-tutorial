@@ -23,6 +23,7 @@ instance IsString Type where fromString = unsafeParseWith pType
 instance IsString Ctx where fromString = unsafeParseWith pCtx
 instance IsString ExpUnderCtx where fromString = unsafeParseWith pExpUnderCtx
 instance IsString Program where fromString = unsafeParseWith pProgram
+instance IsString Statement where fromString = unsafeParseWith pStatement
 
 parseWith :: ([Token] -> Either String a) -> String -> Either String a
 parseWith parser input = parser tokens
