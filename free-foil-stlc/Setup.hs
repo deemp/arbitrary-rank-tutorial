@@ -13,7 +13,7 @@ import Data.List (intercalate)
 import Distribution.Simple (defaultMainWithHooks, hookedPrograms, postConf, preBuild, simpleUserHooks)
 import Distribution.Simple.Program (Program (..), findProgramVersion, simpleProgram)
 import Main.Utf8 (withUtf8)
-import System.Exit (ExitCode (..), exitWith, exitFailure)
+import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO.CodePage (withCP65001)
 import System.Process (callCommand)
 
@@ -48,7 +48,7 @@ main =
                   , "cd src/Language/STLC/Syntax"
                   , "alex Lex.x"
                   , "happy --ghc Par.y"
-                  , "rm -f ErrM.hs Skel.hs Test.hs Abs.hs.bak Print.hs.bak"
+                  , "rm -f {ErrM,Skel,Test}.hs *.bak"
                   , "true"
                   ]
 
