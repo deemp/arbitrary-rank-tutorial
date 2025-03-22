@@ -262,6 +262,14 @@
               })
               saveFromGC
               ;
+            cabalConfigureFreeFoilStlc = {
+              # https://github.com/haskell/cabal/issues/3020#issuecomment-170725625
+              text = "
+                rm -f dist-newstyle/build/*/ghc-*/free-foil-stlc-*/cache/config
+                cabal build --only-configure free-foil-stlc
+              ";
+              meta.description = "Force configure the free-foil-stlc package.";
+            };
           };
 
           devshells = {
@@ -278,7 +286,7 @@
                   {
                     prefix = "nix run .#";
                     packages = {
-                      inherit (self'.packages) free-foil-stlc;
+                      inherit (self'.packages) free-foil-stlc cabalConfigureFreeFoilStlc;
                     };
                   }
                   {
