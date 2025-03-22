@@ -264,6 +264,13 @@
               ;
             cabalConfigureFreeFoilStlc = {
               # https://github.com/haskell/cabal/issues/3020#issuecomment-170725625
+              runtimeInputs = [
+                devTools.cabal
+                devTools.ghc
+                devTools.bnfc
+                devTools.happy
+                devTools.alex
+              ];
               text = "
                 rm -f dist-newstyle/build/*/ghc-*/free-foil-stlc-*/cache/config
                 cabal build --only-configure free-foil-stlc
