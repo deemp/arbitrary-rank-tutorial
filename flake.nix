@@ -53,7 +53,9 @@
               value
           );
 
-          haskellPackages = pkgs.haskell.packages."ghc9101";
+          ghcVersion = "9101";
+
+          haskellPackages = pkgs.haskell.packages."ghc${ghcVersion}";
 
           # Our only Haskell project. You can have multiple projects, but this template
           # has only one.
