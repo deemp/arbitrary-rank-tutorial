@@ -212,7 +212,7 @@
               cabal = wrapTool "cabal-install" "cabal" "-v0 -fnix";
               
               # TODO pass flags to commands somehow
-              stack = wrapTool "stack" "stack" "--silent --no-nix --system-ghc --no-install-ghc";
+              stack = wrapTool "stack" "stack" "--no-nix --system-ghc --no-install-ghc";
 
               ghc = builtins.head (
                 builtins.filter (
