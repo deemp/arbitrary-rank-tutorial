@@ -103,7 +103,6 @@
                   alex = packageFromHackage "alex" "3.5.2.0" "sha256-hTkBDe30UkUVx1MTa4BjpYK5nyYlULCylZEniW6sSnA=";
                   BNFC = super.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
                   happy = packageFromHackage "happy" "2.1.5" "sha256-rM6CpEFZRen8ogFIOGjKEmUzYPT7dor/SQVVL8RzLwE=";
-                  hpack = super.hpack_0_37_0;
 
                   # indirect dependencies
 
@@ -151,7 +150,6 @@
                 alex = default;
                 BNFC = default;
                 happy = default;
-                hpack = default;
 
                 # indirect dependencies
 
@@ -205,7 +203,9 @@
                 };
             in
             {
-              inherit (output.finalPackages) alex happy hpack;
+              hpack = pkgs.haskellPackages.hpack_0_37_0;
+
+              inherit (output.finalPackages) alex happy;
 
               bnfc = output.finalPackages.BNFC;
 
