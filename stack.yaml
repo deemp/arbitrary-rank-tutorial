@@ -5,3 +5,8 @@ packages:
   - free-foil-stlc
   - free-foil-exercises
 notify-if-nix-on-path: false
+# TODO move to Nix
+# E.g., create an alias for stack build where the flag is set
+flags:
+  free-foil-stlc:
+    nix: true

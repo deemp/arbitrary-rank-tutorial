@@ -210,8 +210,7 @@
               bnfc = output.finalPackages.BNFC;
 
               cabal = wrapTool "cabal-install" "cabal" "-v0 -fnix";
-              
-              # TODO pass flags to commands somehow
+
               stack = wrapTool "stack" "stack" "--no-nix --system-ghc --no-install-ghc";
 
               ghc = builtins.head (
