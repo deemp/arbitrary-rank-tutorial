@@ -74,6 +74,7 @@
                 fileset = lib.fileset.unions [
                   ./free-foil-stlc
                   ./free-foil-exercises
+                  ./scope-graphs-modular-stlc
                   ./cabal.project
                   ./README.md
                 ];

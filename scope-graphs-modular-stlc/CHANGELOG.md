@@ -1,4 +1,4 @@
-# Changelog for `free-foil-stlc`
+# Changelog for `scope-graphs-modular-stlc`
 
 All notable changes to this project will be documented in this file.
 

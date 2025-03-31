@@ -3,9 +3,9 @@
 
 module Main where
 
-import Language.STLC.Common ()
-import Language.STLC.Syntax.Abs (Statement)
-import Language.STLC.Syntax.Print (printTree)
+import Language.ModularSTLC.Common ()
+import Language.ModularSTLC.Syntax.Abs (Statement)
+import Language.ModularSTLC.Syntax.Print (printTree)
 import Main.Utf8 (withUtf8)
 
 main :: IO ()

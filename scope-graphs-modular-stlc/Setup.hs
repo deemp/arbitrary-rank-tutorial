@@ -44,8 +44,8 @@ main =
                 intercalate
                   "; "
                   [ "set -ex"
-                  , "bnfc --haskell --functor -d -p Language.STLC --generic -o src/ grammar/STLC/Syntax.cf"
-                  , "cd src/Language/STLC/Syntax"
+                  , "bnfc --haskell --functor -d -p Language.ModularSTLC --generic -o src/ grammar/ModularSTLC/Syntax.cf"
+                  , "cd src/Language/ModularSTLC/Syntax"
                   , "alex Lex.x"
                   , "happy --ghc Par.y"
                   , "rm -f {ErrM,Skel,Test}.hs *.bak"

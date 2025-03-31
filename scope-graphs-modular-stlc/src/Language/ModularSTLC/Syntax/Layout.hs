@@ -6,13 +6,13 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Language.STLC.Syntax.Layout where
+module Language.ModularSTLC.Syntax.Layout where
 
 import Prelude
 import Data.Maybe ( fromMaybe, listToMaybe, mapMaybe )
 import qualified Data.List as List
 
-import Language.STLC.Syntax.Lex
+import Language.ModularSTLC.Syntax.Lex
   ( Posn(..), Tok(..), Token(..), TokSymbol(..)
   , prToken, tokenLineCol, tokenPos, tokenPosn
   )

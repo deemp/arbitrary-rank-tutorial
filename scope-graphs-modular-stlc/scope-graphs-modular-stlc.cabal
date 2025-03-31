@@ -4,9 +4,9 @@ cabal-version: 1.24
 --
 -- see: https://github.com/sol/hpack
 
-name:           free-foil-stlc
+name:           scope-graphs-modular-stlc
 version:        0.0.1
-synopsis:       An implementation of simply typed lambda calculus using Free Foil
+synopsis:       An implementation of simply typed lambda calculus using scope graphs
 description:    Please see the README on GitHub at <https://github.com/deemp/query-driven-free-foil#readme>
 homepage:       https://github.com/deemp/query-driven-free-foil#readme
 bug-reports:    https://github.com/deemp/query-driven-free-foil/issues
@@ -18,7 +18,7 @@ build-type:     Custom
 extra-source-files:
     README.md
     CHANGELOG.md
-    grammar/STLC/Syntax.cf
+    grammar/ModularSTLC/Syntax.cf
 
 source-repository head
   type: git
@@ -39,14 +39,14 @@ flag nix
 
 library
   exposed-modules:
-      Language.STLC.Common
-      Language.STLC.Syntax.Abs
-      Language.STLC.Syntax.Layout
-      Language.STLC.Syntax.Lex
-      Language.STLC.Syntax.Par
-      Language.STLC.Syntax.Print
+      Language.ModularSTLC.Common
+      Language.ModularSTLC.Syntax.Abs
+      Language.ModularSTLC.Syntax.Layout
+      Language.ModularSTLC.Syntax.Lex
+      Language.ModularSTLC.Syntax.Par
+      Language.ModularSTLC.Syntax.Print
   other-modules:
-      Paths_free_foil_stlc
+      Paths_scope_graphs_modular_stlc
   hs-source-dirs:
       src
   default-extensions:
@@ -67,10 +67,10 @@ library
     build-tool-depends:
         BNFC:bnfc
 
-executable free-foil-stlc
+executable scope-graphs-modular-stlc
   main-is: Main.hs
   other-modules:
-      Paths_free_foil_stlc
+      Paths_scope_graphs_modular_stlc
   hs-source-dirs:
       app
   default-extensions:
@@ -82,8 +82,8 @@ executable free-foil-stlc
     , bifunctors
     , containers
     , free-foil
-    , free-foil-stlc
     , kind-generics
+    , scope-graphs-modular-stlc
     , with-utf8
   default-language: Haskell2010
   if !flag(nix)

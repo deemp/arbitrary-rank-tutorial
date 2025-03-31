@@ -14,7 +14,7 @@
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns #-}
 {-# LANGUAGE PatternSynonyms #-}
 
-module Language.STLC.Syntax.Par
+module Language.ModularSTLC.Syntax.Par
   ( happyError
   , myLexer
   , pProgram
@@ -47,8 +47,8 @@ module Language.STLC.Syntax.Par
 
 import Prelude
 
-import qualified Language.STLC.Syntax.Abs
-import Language.STLC.Syntax.Lex
+import qualified Language.ModularSTLC.Syntax.Abs
+import Language.ModularSTLC.Syntax.Lex
 import qualified Data.Function as Happy_Prelude
 import qualified Data.Bool as Happy_Prelude
 import qualified Data.Function as Happy_Prelude
@@ -72,28 +72,28 @@ import Control.Monad (ap)
 data HappyAbsSyn 
         = HappyTerminal (Token)
         | HappyErrorToken Happy_Prelude.Int
-        | HappyAbsSyn30 ((Language.STLC.Syntax.Abs.BNFC'Position, Integer))
-        | HappyAbsSyn31 ((Language.STLC.Syntax.Abs.BNFC'Position, String))
-        | HappyAbsSyn32 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Var))
-        | HappyAbsSyn33 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.ModuleName))
-        | HappyAbsSyn34 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Program))
-        | HappyAbsSyn35 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.ImportItem))
-        | HappyAbsSyn36 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.ImportItemName))
-        | HappyAbsSyn37 ((Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.ImportItemName]))
-        | HappyAbsSyn38 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Location))
-        | HappyAbsSyn39 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Statement))
-        | HappyAbsSyn40 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.ExportItem))
-        | HappyAbsSyn41 ((Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.ExportItem]))
-        | HappyAbsSyn42 ((Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.Statement]))
-        | HappyAbsSyn43 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.SynthResult))
-        | HappyAbsSyn44 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp))
-        | HappyAbsSyn51 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Accessor))
-        | HappyAbsSyn52 ((Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.Accessor]))
-        | HappyAbsSyn53 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type))
-        | HappyAbsSyn56 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.CtxVar))
-        | HappyAbsSyn57 ((Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.CtxVar]))
-        | HappyAbsSyn58 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Ctx))
-        | HappyAbsSyn59 ((Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.ExpUnderCtx))
+        | HappyAbsSyn30 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Integer))
+        | HappyAbsSyn31 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, String))
+        | HappyAbsSyn32 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Var))
+        | HappyAbsSyn33 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.ModuleName))
+        | HappyAbsSyn34 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Program))
+        | HappyAbsSyn35 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.ImportItem))
+        | HappyAbsSyn36 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.ImportItemName))
+        | HappyAbsSyn37 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, [Language.ModularSTLC.Syntax.Abs.ImportItemName]))
+        | HappyAbsSyn38 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Location))
+        | HappyAbsSyn39 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Statement))
+        | HappyAbsSyn40 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.ExportItem))
+        | HappyAbsSyn41 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, [Language.ModularSTLC.Syntax.Abs.ExportItem]))
+        | HappyAbsSyn42 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, [Language.ModularSTLC.Syntax.Abs.Statement]))
+        | HappyAbsSyn43 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.SynthResult))
+        | HappyAbsSyn44 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Exp))
+        | HappyAbsSyn51 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Accessor))
+        | HappyAbsSyn52 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, [Language.ModularSTLC.Syntax.Abs.Accessor]))
+        | HappyAbsSyn53 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Type))
+        | HappyAbsSyn56 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.CtxVar))
+        | HappyAbsSyn57 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, [Language.ModularSTLC.Syntax.Abs.CtxVar]))
+        | HappyAbsSyn58 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.Ctx))
+        | HappyAbsSyn59 ((Language.ModularSTLC.Syntax.Abs.BNFC'Position, Language.ModularSTLC.Syntax.Abs.ExpUnderCtx))
 
 {-# NOINLINE happyTokenStrings #-}
 happyTokenStrings = ["'!'","'#'","'#typecheck'","'#typesynth'","'('","')'","'*'","'+'","','","'->'","'.'","':'","';'","'<='","'='","'=>'","'?'","'Int'","'\\\\'","'as'","'export'","'from'","'import'","'module'","'where'","'{'","'|-'","'}'","L_integ","L_quoted","L_Var","L_ModuleName","%eof"]
@@ -191,42 +191,42 @@ happy_n_starts = 26 :: Happy_Prelude.Int
 happyReduce_26 = happySpecReduce_1  0# happyReduction_26
 happyReduction_26 (HappyTerminal happy_var_1)
          =  HappyAbsSyn30
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (read (tokenText happy_var_1)) :: Integer)
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (read (tokenText happy_var_1)) :: Integer)
         )
 happyReduction_26 _  = notHappyAtAll 
 
 happyReduce_27 = happySpecReduce_1  1# happyReduction_27
 happyReduction_27 (HappyTerminal happy_var_1)
          =  HappyAbsSyn31
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), ((\(PT _ (TL s)) -> s) happy_var_1))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), ((\(PT _ (TL s)) -> s) happy_var_1))
         )
 happyReduction_27 _  = notHappyAtAll 
 
 happyReduce_28 = happySpecReduce_1  2# happyReduction_28
 happyReduction_28 (HappyTerminal happy_var_1)
          =  HappyAbsSyn32
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.Var (tokenText happy_var_1))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.Var (tokenText happy_var_1))
         )
 happyReduction_28 _  = notHappyAtAll 
 
 happyReduce_29 = happySpecReduce_1  3# happyReduction_29
 happyReduction_29 (HappyTerminal happy_var_1)
          =  HappyAbsSyn33
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ModuleName (tokenText happy_var_1))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.ModuleName (tokenText happy_var_1))
         )
 happyReduction_29 _  = notHappyAtAll 
 
 happyReduce_30 = happySpecReduce_1  4# happyReduction_30
 happyReduction_30 (HappyAbsSyn42  happy_var_1)
          =  HappyAbsSyn34
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.Program (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.Program (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_30 _  = notHappyAtAll 
 
 happyReduce_31 = happySpecReduce_1  5# happyReduction_31
 happyReduction_31 (HappyTerminal happy_var_1)
          =  HappyAbsSyn35
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ImportItemGlob (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.ImportItemGlob (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)))
         )
 happyReduction_31 _  = notHappyAtAll 
 
@@ -235,7 +235,7 @@ happyReduction_32 (HappyAbsSyn33  happy_var_3)
         _
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn35
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ImportItemGlobAs (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_3))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.ImportItemGlobAs (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_3))
         )
 happyReduction_32 _ _ _  = notHappyAtAll 
 
@@ -244,27 +244,27 @@ happyReduction_33 _
         (HappyAbsSyn37  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn35
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ImportItemNames (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.ImportItemNames (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
         )
 happyReduction_33 _ _ _  = notHappyAtAll 
 
 happyReduce_34 = happySpecReduce_1  6# happyReduction_34
 happyReduction_34 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn36
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ImportItemNameModule (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ImportItemNameModule (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_34 _  = notHappyAtAll 
 
 happyReduce_35 = happySpecReduce_1  6# happyReduction_35
 happyReduction_35 (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn36
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ImportItemNameVar (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ImportItemNameVar (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_35 _  = notHappyAtAll 
 
 happyReduce_36 = happySpecReduce_0  7# happyReduction_36
 happyReduction_36  =  HappyAbsSyn37
-                 ((Language.STLC.Syntax.Abs.BNFC'NoPosition, [])
+                 ((Language.ModularSTLC.Syntax.Abs.BNFC'NoPosition, [])
         )
 
 happyReduce_37 = happySpecReduce_1  7# happyReduction_37
@@ -286,14 +286,14 @@ happyReduction_38 _ _ _  = notHappyAtAll
 happyReduce_39 = happySpecReduce_1  8# happyReduction_39
 happyReduction_39 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn38
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.LocationLocal (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.LocationLocal (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_39 _  = notHappyAtAll 
 
 happyReduce_40 = happySpecReduce_1  8# happyReduction_40
 happyReduction_40 (HappyAbsSyn31  happy_var_1)
          =  HappyAbsSyn38
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.LocationPath (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.LocationPath (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_40 _  = notHappyAtAll 
 
@@ -306,7 +306,7 @@ happyReduction_41 (_ `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn39
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.StatementModule (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_5))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.StatementModule (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_5))
         ) `HappyStk` happyRest
 
 happyReduce_42 = happyReduce 4# 9# happyReduction_42
@@ -316,7 +316,7 @@ happyReduction_42 ((HappyAbsSyn38  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn39
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.StatementImportLocal (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.StatementImportLocal (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_43 = happySpecReduce_3  9# happyReduction_43
@@ -324,7 +324,7 @@ happyReduction_43 (HappyAbsSyn53  happy_var_3)
         _
         (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.StatementFunSig (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.StatementFunSig (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_43 _ _ _  = notHappyAtAll 
 
@@ -333,7 +333,7 @@ happyReduction_44 (HappyAbsSyn44  happy_var_3)
         _
         (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.StatementFun (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.StatementFun (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_44 _ _ _  = notHappyAtAll 
 
@@ -347,14 +347,14 @@ happyReduction_45 (_ `HappyStk`
         (HappyAbsSyn32  happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn39
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.StatementFunWhere (fst happy_var_1) (snd happy_var_1) (snd happy_var_3) (snd happy_var_6))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.StatementFunWhere (fst happy_var_1) (snd happy_var_1) (snd happy_var_3) (snd happy_var_6))
         ) `HappyStk` happyRest
 
 happyReduce_46 = happySpecReduce_2  9# happyReduction_46
 happyReduction_46 (HappyAbsSyn41  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn39
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.StatementExport (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.StatementExport (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
         )
 happyReduction_46 _ _  = notHappyAtAll 
 
@@ -365,7 +365,7 @@ happyReduction_47 ((HappyAbsSyn53  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn39
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.StatementCommandTypeCheck (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.StatementCommandTypeCheck (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_48 = happyReduce 4# 9# happyReduction_48
@@ -375,26 +375,26 @@ happyReduction_48 ((HappyAbsSyn43  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn39
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.StatementCommandTypeSynth (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.StatementCommandTypeSynth (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_49 = happySpecReduce_1  10# happyReduction_49
 happyReduction_49 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn40
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExportItemModuleName (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ExportItemModuleName (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_49 _  = notHappyAtAll 
 
 happyReduce_50 = happySpecReduce_1  10# happyReduction_50
 happyReduction_50 (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn40
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExportItemVar (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ExportItemVar (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_50 _  = notHappyAtAll 
 
 happyReduce_51 = happySpecReduce_0  11# happyReduction_51
 happyReduction_51  =  HappyAbsSyn41
-                 ((Language.STLC.Syntax.Abs.BNFC'NoPosition, [])
+                 ((Language.ModularSTLC.Syntax.Abs.BNFC'NoPosition, [])
         )
 
 happyReduce_52 = happySpecReduce_1  11# happyReduction_52
@@ -415,7 +415,7 @@ happyReduction_53 _ _ _  = notHappyAtAll
 
 happyReduce_54 = happySpecReduce_0  12# happyReduction_54
 happyReduction_54  =  HappyAbsSyn42
-                 ((Language.STLC.Syntax.Abs.BNFC'NoPosition, [])
+                 ((Language.ModularSTLC.Syntax.Abs.BNFC'NoPosition, [])
         )
 
 happyReduce_55 = happySpecReduce_3  12# happyReduction_55
@@ -431,14 +431,14 @@ happyReduce_56 = happySpecReduce_2  13# happyReduction_56
 happyReduction_56 (HappyAbsSyn53  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn43
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.SynthResultType (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.SynthResultType (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
         )
 happyReduction_56 _ _  = notHappyAtAll 
 
 happyReduce_57 = happySpecReduce_1  13# happyReduction_57
 happyReduction_57 (HappyTerminal happy_var_1)
          =  HappyAbsSyn43
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.SynthResultUnknown (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.SynthResultUnknown (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)))
         )
 happyReduction_57 _  = notHappyAtAll 
 
@@ -449,7 +449,7 @@ happyReduction_58 ((HappyAbsSyn44  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn44
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ExpApp (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.ExpApp (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_59 = happySpecReduce_1  14# happyReduction_59
@@ -466,7 +466,7 @@ happyReduction_60 ((HappyAbsSyn44  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn44
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ExpAbs (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.ExpAbs (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_61 = happySpecReduce_1  15# happyReduction_61
@@ -481,7 +481,7 @@ happyReduction_62 (HappyAbsSyn44  happy_var_3)
         _
         (HappyAbsSyn44  happy_var_1)
          =  HappyAbsSyn44
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpPlus (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ExpPlus (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_62 _ _ _  = notHappyAtAll 
 
@@ -495,7 +495,7 @@ happyReduction_63 _  = notHappyAtAll
 happyReduce_64 = happySpecReduce_1  17# happyReduction_64
 happyReduction_64 (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn44
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpVar (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ExpVar (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_64 _  = notHappyAtAll 
 
@@ -509,7 +509,7 @@ happyReduction_65 _  = notHappyAtAll
 happyReduce_66 = happySpecReduce_1  18# happyReduction_66
 happyReduction_66 (HappyAbsSyn30  happy_var_1)
          =  HappyAbsSyn44
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpNumber (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ExpNumber (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_66 _  = notHappyAtAll 
 
@@ -524,7 +524,7 @@ happyReduce_68 = happySpecReduce_2  19# happyReduction_68
 happyReduction_68 (HappyAbsSyn52  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn44
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ExpAccessor (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.ExpAccessor (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2))
         )
 happyReduction_68 _ _  = notHappyAtAll 
 
@@ -533,7 +533,7 @@ happyReduction_69 _
         (HappyAbsSyn44  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn44
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
         )
 happyReduction_69 _ _ _  = notHappyAtAll 
 
@@ -547,20 +547,20 @@ happyReduction_70 _  = notHappyAtAll
 happyReduce_71 = happySpecReduce_1  21# happyReduction_71
 happyReduction_71 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn51
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.AccessorModuleName (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.AccessorModuleName (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_71 _  = notHappyAtAll 
 
 happyReduce_72 = happySpecReduce_1  21# happyReduction_72
 happyReduction_72 (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn51
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.AccessorVar (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.AccessorVar (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_72 _  = notHappyAtAll 
 
 happyReduce_73 = happySpecReduce_0  22# happyReduction_73
 happyReduction_73  =  HappyAbsSyn52
-                 ((Language.STLC.Syntax.Abs.BNFC'NoPosition, [])
+                 ((Language.ModularSTLC.Syntax.Abs.BNFC'NoPosition, [])
         )
 
 happyReduce_74 = happySpecReduce_1  22# happyReduction_74
@@ -582,7 +582,7 @@ happyReduction_75 _ _ _  = notHappyAtAll
 happyReduce_76 = happySpecReduce_1  23# happyReduction_76
 happyReduction_76 (HappyTerminal happy_var_1)
          =  HappyAbsSyn53
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.TypeUnit (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.ModularSTLC.Syntax.Abs.TypeUnit (uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)))
         )
 happyReduction_76 _  = notHappyAtAll 
 
@@ -598,7 +598,7 @@ happyReduction_78 (HappyAbsSyn53  happy_var_3)
         _
         (HappyAbsSyn53  happy_var_1)
          =  HappyAbsSyn53
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.TypeFunc (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.TypeFunc (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_78 _ _ _  = notHappyAtAll 
 
@@ -607,7 +607,7 @@ happyReduction_79 _
         (HappyAbsSyn53  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn53
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
+                 ((uncurry Language.ModularSTLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
         )
 happyReduction_79 _ _ _  = notHappyAtAll 
 
@@ -623,13 +623,13 @@ happyReduction_81 (HappyAbsSyn53  happy_var_3)
         _
         (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn56
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.CtxVar (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.CtxVar (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_81 _ _ _  = notHappyAtAll 
 
 happyReduce_82 = happySpecReduce_0  27# happyReduction_82
 happyReduction_82  =  HappyAbsSyn57
-                 ((Language.STLC.Syntax.Abs.BNFC'NoPosition, [])
+                 ((Language.ModularSTLC.Syntax.Abs.BNFC'NoPosition, [])
         )
 
 happyReduce_83 = happySpecReduce_1  27# happyReduction_83
@@ -651,7 +651,7 @@ happyReduction_84 _ _ _  = notHappyAtAll
 happyReduce_85 = happySpecReduce_1  28# happyReduction_85
 happyReduction_85 (HappyAbsSyn57  happy_var_1)
          =  HappyAbsSyn58
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.Ctx (fst happy_var_1) (snd happy_var_1))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.Ctx (fst happy_var_1) (snd happy_var_1))
         )
 happyReduction_85 _  = notHappyAtAll 
 
@@ -660,7 +660,7 @@ happyReduction_86 (HappyAbsSyn44  happy_var_3)
         _
         (HappyAbsSyn58  happy_var_1)
          =  HappyAbsSyn59
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpUnderCtx (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((fst happy_var_1, Language.ModularSTLC.Syntax.Abs.ExpUnderCtx (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_86 _ _ _  = notHappyAtAll 
 
@@ -821,82 +821,82 @@ myLexer = tokens
 
 -- Entrypoints
 
-pProgram :: [Token] -> Err Language.STLC.Syntax.Abs.Program
+pProgram :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Program
 pProgram = fmap snd . pProgram_internal
 
-pImportItem :: [Token] -> Err Language.STLC.Syntax.Abs.ImportItem
+pImportItem :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.ImportItem
 pImportItem = fmap snd . pImportItem_internal
 
-pImportItemName :: [Token] -> Err Language.STLC.Syntax.Abs.ImportItemName
+pImportItemName :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.ImportItemName
 pImportItemName = fmap snd . pImportItemName_internal
 
-pListImportItemName :: [Token] -> Err [Language.STLC.Syntax.Abs.ImportItemName]
+pListImportItemName :: [Token] -> Err [Language.ModularSTLC.Syntax.Abs.ImportItemName]
 pListImportItemName = fmap snd . pListImportItemName_internal
 
-pLocation :: [Token] -> Err Language.STLC.Syntax.Abs.Location
+pLocation :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Location
 pLocation = fmap snd . pLocation_internal
 
-pStatement :: [Token] -> Err Language.STLC.Syntax.Abs.Statement
+pStatement :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Statement
 pStatement = fmap snd . pStatement_internal
 
-pExportItem :: [Token] -> Err Language.STLC.Syntax.Abs.ExportItem
+pExportItem :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.ExportItem
 pExportItem = fmap snd . pExportItem_internal
 
-pListExportItem :: [Token] -> Err [Language.STLC.Syntax.Abs.ExportItem]
+pListExportItem :: [Token] -> Err [Language.ModularSTLC.Syntax.Abs.ExportItem]
 pListExportItem = fmap snd . pListExportItem_internal
 
-pListStatement :: [Token] -> Err [Language.STLC.Syntax.Abs.Statement]
+pListStatement :: [Token] -> Err [Language.ModularSTLC.Syntax.Abs.Statement]
 pListStatement = fmap snd . pListStatement_internal
 
-pSynthResult :: [Token] -> Err Language.STLC.Syntax.Abs.SynthResult
+pSynthResult :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.SynthResult
 pSynthResult = fmap snd . pSynthResult_internal
 
-pExp1 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp1 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Exp
 pExp1 = fmap snd . pExp1_internal
 
-pExp2 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp2 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Exp
 pExp2 = fmap snd . pExp2_internal
 
-pExp3 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp3 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Exp
 pExp3 = fmap snd . pExp3_internal
 
-pExp4 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp4 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Exp
 pExp4 = fmap snd . pExp4_internal
 
-pExp5 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp5 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Exp
 pExp5 = fmap snd . pExp5_internal
 
-pExp6 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp6 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Exp
 pExp6 = fmap snd . pExp6_internal
 
-pExp :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Exp
 pExp = fmap snd . pExp_internal
 
-pAccessor :: [Token] -> Err Language.STLC.Syntax.Abs.Accessor
+pAccessor :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Accessor
 pAccessor = fmap snd . pAccessor_internal
 
-pListAccessor :: [Token] -> Err [Language.STLC.Syntax.Abs.Accessor]
+pListAccessor :: [Token] -> Err [Language.ModularSTLC.Syntax.Abs.Accessor]
 pListAccessor = fmap snd . pListAccessor_internal
 
-pType1 :: [Token] -> Err Language.STLC.Syntax.Abs.Type
+pType1 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Type
 pType1 = fmap snd . pType1_internal
 
-pType2 :: [Token] -> Err Language.STLC.Syntax.Abs.Type
+pType2 :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Type
 pType2 = fmap snd . pType2_internal
 
-pType :: [Token] -> Err Language.STLC.Syntax.Abs.Type
+pType :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Type
 pType = fmap snd . pType_internal
 
-pCtxVar :: [Token] -> Err Language.STLC.Syntax.Abs.CtxVar
+pCtxVar :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.CtxVar
 pCtxVar = fmap snd . pCtxVar_internal
 
-pListCtxVar :: [Token] -> Err [Language.STLC.Syntax.Abs.CtxVar]
+pListCtxVar :: [Token] -> Err [Language.ModularSTLC.Syntax.Abs.CtxVar]
 pListCtxVar = fmap snd . pListCtxVar_internal
 
-pCtx :: [Token] -> Err Language.STLC.Syntax.Abs.Ctx
+pCtx :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.Ctx
 pCtx = fmap snd . pCtx_internal
 
-pExpUnderCtx :: [Token] -> Err Language.STLC.Syntax.Abs.ExpUnderCtx
+pExpUnderCtx :: [Token] -> Err Language.ModularSTLC.Syntax.Abs.ExpUnderCtx
 pExpUnderCtx = fmap snd . pExpUnderCtx_internal
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 

@@ -1,5 +1,5 @@
-name: free-foil-stlc
-synopsis: "An implementation of simply typed lambda calculus using Free Foil"
+name: scope-graphs-modular-stlc
+synopsis: "An implementation of simply typed lambda calculus using scope graphs"
 version: 0.0.1
 github: "deemp/query-driven-free-foil"
 license: BSD3
@@ -10,7 +10,7 @@ copyright: "2024 Danila Danko, Nickolay Kudasov, Nikita Strygin"
 extra-source-files:
   - README.md
   - CHANGELOG.md
-  - grammar/STLC/Syntax.cf
+  - grammar/ModularSTLC/Syntax.cf
 
 verbatim:
   cabal-version: 1.24
@@ -58,10 +58,6 @@ custom-setup:
 dependencies:
   - array >= 0.5.5.0
   - base >= 4.7 && < 5
-  - bifunctors
-  - containers
-  - free-foil
-  - kind-generics
 
 default-extensions:
   - ImportQualifiedPost
@@ -82,12 +78,12 @@ library:
   when:
     - condition: false
       other-modules:
-        - Language.STLC.Syntax.Test
-        - Language.STLC.Syntax.ErrM
-        - Language.STLC.Syntax.Skel
+        - Language.ModularSTLC.Syntax.Test
+        - Language.ModularSTLC.Syntax.ErrM
+        - Language.ModularSTLC.Syntax.Skel
 
 executables:
-  free-foil-stlc:
+  scope-graphs-modular-stlc:
     main: Main.hs
     source-dirs: app
     ghc-options:
@@ -95,5 +91,5 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - free-foil-stlc
+      - scope-graphs-modular-stlc
       - with-utf8

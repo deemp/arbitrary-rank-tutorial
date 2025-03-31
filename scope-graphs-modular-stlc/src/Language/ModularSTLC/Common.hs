@@ -3,15 +3,15 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
-module Language.STLC.Common where
+module Language.ModularSTLC.Common where
 
 import Data.String (IsString (..))
-import Language.STLC.Syntax.Abs
-import Language.STLC.Syntax.Lex (Token)
-import Language.STLC.Syntax.Par
+import Language.ModularSTLC.Syntax.Abs
+import Language.ModularSTLC.Syntax.Lex (Token)
+import Language.ModularSTLC.Syntax.Par
 
 -- TODO import only in doctests
-import Language.STLC.Syntax.Print
+import Language.ModularSTLC.Syntax.Print
 
 -- $setup
 -- >>> :set -XOverloadedStrings
