@@ -177,10 +177,8 @@
 
             # What should haskell-flake add to flake outputs?
             autoWire = [
-              "packages"
-              "apps"
               "checks"
-            ]; # Wire all but the devShell
+            ];
           };
 
           haskellProjectsOutputs = config.haskellProjects.default.outputs;
@@ -253,30 +251,37 @@
             };
           };
 
+          mkIncremental' =
+            packagePrev: packageCur:
+            let
+              inherit (pkgs.haskell.lib.compose) overrideCabal;
+
+              result-incremental-outputs = overrideCabal (drv: {
+                doInstallIntermediates = true;
+                enableSeparateIntermediatesOutput = true;
+              }) packagePrev;
+
+              result = overrideCabal (drv: {
+                previousIntermediates = result-incremental-outputs.intermediates;
+              }) packageCur;
+            in
+            result;
+
+          mkIncremental =
+            packageName:
+            let
+              packagePrev =
+                (inputs.call-flake inputs.query-driven-free-foil.outPath).packages.${system}.${packageName};
+              packageCur = haskellProjectsOutputs.finalPackages.${packageName};
+            in
+            mkIncremental' packagePrev packageCur;
+
           # TODO generateOptparseApplicativeCompletions
           packages = mkShellApps {
-            # TODO update the query-driven-free-foil sometimes
-            default =
-              let
-                mkIncremental =
-                  packagePrev: packageCur:
-                  let
-                    inherit (pkgs.haskell.lib.compose) overrideCabal;
+            # TODO update the query-driven-free-foil flake input sometimes
+            free-foil-stlc = mkIncremental "free-foil-stlc";
 
-                    result-incremental-outputs = overrideCabal (drv: {
-                      doInstallIntermediates = true;
-                      enableSeparateIntermediatesOutput = true;
-                    }) packagePrev;
-
-                    result = overrideCabal (drv: {
-                      previousIntermediates = result-incremental-outputs.intermediates;
-                    }) packageCur;
-                  in
-                  result;
-
-                packagePrev = (inputs.call-flake inputs.query-driven-free-foil.outPath).packages.${system}.default;
-              in
-              mkIncremental packagePrev self'.packages.free-foil-stlc;
+            scope-graphs-modular-stlc = mkIncremental "scope-graphs-modular-stlc";
 
             inherit
               (import "${inputs.cache-nix-action}/saveFromGC.nix" {
@@ -286,7 +291,8 @@
                   inputs.treefmt-nix
                 ];
                 derivations = [
-                  self'.packages.default
+                  self'.packages.free-foil-stlc
+                  self'.packages.scope-graphs-modular-stlc
                   self'.devShells.ci-build
                 ];
               })
