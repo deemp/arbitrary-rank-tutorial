@@ -183,9 +183,10 @@
             ]; # Wire all but the devShell
           };
 
+          haskellProjectsOutputs = config.haskellProjects.default.outputs;
+
           devTools =
             let
-              output = config.haskellProjects.default.outputs;
               wrapTool =
                 pkgsName: pname: flags:
                 let
@@ -206,18 +207,18 @@
             {
               hpack = pkgs.haskellPackages.hpack_0_37_0;
 
-              inherit (output.finalPackages) alex happy;
+              inherit (haskellProjectsOutputs.finalPackages) alex happy;
 
-              bnfc = output.finalPackages.BNFC;
+              bnfc = haskellProjectsOutputs.finalPackages.BNFC;
 
-              cabal = wrapTool "cabal-install" "cabal" "-v0 -fnix";
+              cabal = wrapTool "cabal-install" "cabal" "-fnix";
 
               stack = wrapTool "stack" "stack" "--no-nix --system-ghc --no-install-ghc";
 
               ghc = builtins.head (
                 builtins.filter (
                   x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
-                ) output.devShell.nativeBuildInputs
+                ) haskellProjectsOutputs.devShell.nativeBuildInputs
               );
 
               inherit (haskellPackages) haskell-language-server;
