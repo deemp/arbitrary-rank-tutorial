@@ -1,0 +1,64 @@
+token NameLowerCase lower (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
+token NameUpperCase upper (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
+
+layout toplevel ;
+
+comment "--" ;
+
+Program. Program ::= [Statement] ;
+
+Var. Var ::= NameLowerCase ;
+
+StatementFunSig.        Statement ::= Var ":" Type ;
+StatementFun.           Statement ::= Var "=" Exp ;
+StatementFunWhere.      Statement ::= Var "=" Exp "where" "{" [Statement] "}" ;
+
+
+-- TODO Remove from the program before processing
+-- and throw a syntax error on them
+-- or, move to another file
+-- Though it's much easier to leave these commands as is
+StatementCommandTypeCheck. Statement ::= "#typecheck" ExpUnderCtx "<=" Type ;
+StatementCommandTypeSynth. Statement ::= "#typesynth" ExpUnderCtx "=>" SynthResult ;
+
+separator Statement ";";
+
+SynthResultType.    SynthResult ::= Type ;
+SynthResultUnknown. SynthResult ::= "?" ;
+
+
+ExpVar.        Exp1 ::= Var ;
+ExpNumber.     Exp2 ::= Integer ;
+ExpPlus.       Exp3 ::= Exp10 "+" Exp10 ;
+ExpAbs.        Exp4 ::= "\\" Var "->" Exp ;
+ExpApp.        Exp5 ::= Exp11 Exp10 ;
+ExpIfThenElse. Exp6 ::= "if" "(" Exp ")" "then" "{" Exp "}" "else" "{" Exp "}" ;
+
+_. Exp ::= Exp1 ;
+_. Exp ::= Exp2 ;
+_. Exp ::= Exp3 ;
+_. Exp ::= Exp4 ;
+_. Exp ::= Exp5 ;
+_. Exp ::= Exp6 ;
+
+_. Exp10 ::= Exp1 ;
+_. Exp10 ::= Exp2 ;
+_. Exp10 ::= "(" Exp ")" ;
+
+_. Exp11 ::= Exp1 ;
+_. Exp11 ::= Exp5 ;
+_. Exp11 ::= "(" Exp ")" ;
+
+
+TypeName. Type1 ::= NameUpperCase ;
+TypeForall. Type2 ::= "forall" Var "." Type ;
+TypeFunc. Type3 ::= Type "->" Type ;
+
+coercions Type 3 ;
+
+CtxVar. CtxVar ::= Var ":" Type ;
+separator CtxVar "," ;
+
+Ctx. Ctx ::= [CtxVar];
+
+ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;
