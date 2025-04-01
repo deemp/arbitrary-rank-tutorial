@@ -176,9 +176,7 @@
             };
 
             # What should haskell-flake add to flake outputs?
-            autoWire = [
-              "checks"
-            ];
+            autoWire = [ "checks" ];
           };
 
           haskellProjectsOutputs = config.haskellProjects.default.outputs;
@@ -271,7 +269,13 @@
             packageName:
             let
               packagePrev =
-                (inputs.call-flake inputs.query-driven-free-foil.outPath).packages.${system}.${packageName};
+                # we should use packages produced by haskell-flake
+                # and not the incremental package
+                # to not construct a chain of packages
+                # where incremental packages depend on incremental packages
+                # from previous flake revisions
+                (inputs.call-flake inputs.query-driven-free-foil.outPath)
+                .packages.${system}."${packageName}-increment-base";
               packageCur = haskellProjectsOutputs.finalPackages.${packageName};
             in
             mkIncremental' packagePrev packageCur;
@@ -280,8 +284,11 @@
           packages = mkShellApps {
             # TODO update the query-driven-free-foil flake input sometimes
             free-foil-stlc = mkIncremental "free-foil-stlc";
+            free-foil-stlc-increment-base = haskellProjectsOutputs.finalPackages.free-foil-stlc;
 
             scope-graphs-modular-stlc = mkIncremental "scope-graphs-modular-stlc";
+            scope-graphs-modular-stlc-increment-base =
+              haskellProjectsOutputs.finalPackages.scope-graphs-modular-stlc;
 
             inherit
               (import "${inputs.cache-nix-action}/saveFromGC.nix" {
