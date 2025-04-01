@@ -166,11 +166,11 @@
     "query-driven-free-foil": {
       "flake": false,
       "locked": {
-        "lastModified": 1743527817,
-        "narHash": "sha256-LPhachDfcqbUBheyLkcbvtfDQ0j3bVlNTfO4lmTLHSo=",
+        "lastModified": 1743530101,
+        "narHash": "sha256-PfY/BJvzcA+JSIFc0NmNvpD7YUQS0Qq/pM6X9v20m2c=",
         "owner": "deemp",
         "repo": "query-driven-free-foil",
-        "rev": "c017713cb45b2ea815066826628329d00fb499aa",
+        "rev": "da4115e1034fbe2574f6cbe725b89624c8bf9caf",
         "type": "github"
       },
       "original": {
