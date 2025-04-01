@@ -57,14 +57,15 @@ jobs:
 
       - name: Build and run with Nix
         run: |
-          nix build --no-link
-          nix run
+          nix run .#scope-graphs-modular-stlc
+          nix run .#free-foil-stlc
 
       - name: Build and run with Cabal
         if: always()
         run: |
           nix develop .#ci-build -c bash -c '
             cabal build all
+            cabal run scope-graphs-modular-stlc
             cabal run free-foil-stlc
           '
 
@@ -72,7 +73,7 @@ jobs:
         if: always()
         run: |
           nix develop .#ci-build -c bash -c '
-            stack build
+            stack run scope-graphs-modular-stlc
             stack run free-foil-stlc
           '
 
