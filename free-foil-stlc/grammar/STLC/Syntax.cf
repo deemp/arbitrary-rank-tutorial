@@ -1,38 +1,22 @@
 token NameLowerCase lower (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
 token NameUpperCase upper (char - [" \r\n\t,.|':;!?][}{)(⟧⟦"])* ;
 
-layout toplevel ;
+-- layout toplevel ;
 
 comment "--" ;
 
-Program. Program ::= [Statement] ;
+Program. Program ::= Exp ;
+
 
 Var. Var ::= NameLowerCase ;
 
-StatementFunSig.        Statement ::= Var ":" Type ;
-StatementFun.           Statement ::= Var "=" Exp ;
-StatementFunWhere.      Statement ::= Var "=" Exp "where" "{" [Statement] "}" ;
-
-
--- TODO Remove from the program before processing
--- and throw a syntax error on them
--- or, move to another file
--- Though it's much easier to leave these commands as is
-StatementCommandTypeCheck. Statement ::= "#typecheck" ExpUnderCtx "<=" Type ;
-StatementCommandTypeSynth. Statement ::= "#typesynth" ExpUnderCtx "=>" SynthResult ;
-
-separator Statement ";";
-
-SynthResultType.    SynthResult ::= Type ;
-SynthResultUnknown. SynthResult ::= "?" ;
-
-
 ExpVar.        Exp1 ::= Var ;
-ExpNumber.     Exp2 ::= Integer ;
-ExpPlus.       Exp3 ::= Exp10 "+" Exp10 ;
-ExpAbs.        Exp4 ::= "\\" Var "->" Exp ;
+ExpInt.        Exp2 ::= Integer ;
+ExpAbs.        Exp3 ::= "\\" Var "." Exp ;
+ExpAbsAnno.    Exp4 ::= "\\" Var "::" Type "." Exp ;
 ExpApp.        Exp5 ::= Exp11 Exp10 ;
-ExpIfThenElse. Exp6 ::= "if" "(" Exp ")" "then" "{" Exp "}" "else" "{" Exp "}" ;
+ExpLet.        Exp6 ::= "let" Var "=" Exp "in" Exp ;
+ExpAnno.       Exp7 ::= Exp "::" Type ;
 
 _. Exp ::= Exp1 ;
 _. Exp ::= Exp2 ;
@@ -40,6 +24,8 @@ _. Exp ::= Exp3 ;
 _. Exp ::= Exp4 ;
 _. Exp ::= Exp5 ;
 _. Exp ::= Exp6 ;
+_. Exp ::= Exp7 ;
+_. Exp ::= "(" Exp ")" ;
 
 _. Exp10 ::= Exp1 ;
 _. Exp10 ::= Exp2 ;
@@ -50,15 +36,34 @@ _. Exp11 ::= Exp5 ;
 _. Exp11 ::= "(" Exp ")" ;
 
 
-TypeName. Type1 ::= NameUpperCase ;
-TypeForall. Type2 ::= "forall" Var "." Type ;
-TypeFunc. Type3 ::= Type "->" Type ;
+-- rho
+TypeConcrete. Type1 ::= NameUpperCase ;
+TypeVariable. Type2 ::= NameLowerCase ;
+TypeFunc.     Type3 ::= Type4 "->" Type3 ;
+_. Type3 ::= Type1 ;
+_. Type3 ::= Type2 ;
+_. Type3 ::= "(" Type3 ")" ;
 
-coercions Type 3 ;
+
+-- sigma
+TypeForall.   Type4 ::= "forall" [NameLowerCase] "." Type3 ;
+
+-- TODO sigma in parens
+
+-- https://stackoverflow.com/a/66437525
+separator NameLowerCase " " ;
+
+_. Type4 ::= Type3 ;
+
+-- type
+_. Type ::= Type1 ;
+_. Type ::= Type2 ;
+_. Type ::= Type3 ;
+_. Type ::= Type4 ;
 
 CtxVar. CtxVar ::= Var ":" Type ;
 separator CtxVar "," ;
 
-Ctx. Ctx ::= [CtxVar];
+Ctx. Ctx ::= [CtxVar] ;
 
 ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;

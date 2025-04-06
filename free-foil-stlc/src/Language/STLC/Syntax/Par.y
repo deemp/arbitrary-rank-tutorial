@@ -10,21 +10,21 @@ module Language.STLC.Syntax.Par
   , myLexer
   , pProgram
   , pVar
-  , pStatement
-  , pListStatement
-  , pSynthResult
   , pExp1
   , pExp2
   , pExp3
   , pExp4
   , pExp5
   , pExp6
+  , pExp7
   , pExp
   , pExp10
   , pExp11
   , pType1
   , pType2
   , pType3
+  , pType4
+  , pListNameLowerCase
   , pType
   , pCtxVar
   , pListCtxVar
@@ -36,26 +36,27 @@ import Prelude
 
 import qualified Language.STLC.Syntax.Abs
 import Language.STLC.Syntax.Lex
+import qualified Data.Text
 
 }
 
 %name pProgram_internal Program
 %name pVar_internal Var
-%name pStatement_internal Statement
-%name pListStatement_internal ListStatement
-%name pSynthResult_internal SynthResult
 %name pExp1_internal Exp1
 %name pExp2_internal Exp2
 %name pExp3_internal Exp3
 %name pExp4_internal Exp4
 %name pExp5_internal Exp5
 %name pExp6_internal Exp6
+%name pExp7_internal Exp7
 %name pExp_internal Exp
 %name pExp10_internal Exp10
 %name pExp11_internal Exp11
 %name pType1_internal Type1
 %name pType2_internal Type2
 %name pType3_internal Type3
+%name pType4_internal Type4
+%name pListNameLowerCase_internal ListNameLowerCase
 %name pType_internal Type
 %name pCtxVar_internal CtxVar
 %name pListCtxVar_internal ListCtxVar
@@ -65,29 +66,19 @@ import Language.STLC.Syntax.Lex
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 %token
-  '#typecheck'    { PT _ (TS _ 1)            }
-  '#typesynth'    { PT _ (TS _ 2)            }
-  '('             { PT _ (TS _ 3)            }
-  ')'             { PT _ (TS _ 4)            }
-  '+'             { PT _ (TS _ 5)            }
-  ','             { PT _ (TS _ 6)            }
-  '->'            { PT _ (TS _ 7)            }
-  '.'             { PT _ (TS _ 8)            }
-  ':'             { PT _ (TS _ 9)            }
-  ';'             { PT _ (TS _ 10)           }
-  '<='            { PT _ (TS _ 11)           }
-  '='             { PT _ (TS _ 12)           }
-  '=>'            { PT _ (TS _ 13)           }
-  '?'             { PT _ (TS _ 14)           }
-  '\\'            { PT _ (TS _ 15)           }
-  'else'          { PT _ (TS _ 16)           }
-  'forall'        { PT _ (TS _ 17)           }
-  'if'            { PT _ (TS _ 18)           }
-  'then'          { PT _ (TS _ 19)           }
-  'where'         { PT _ (TS _ 20)           }
-  '{'             { PT _ (TS _ 21)           }
-  '|-'            { PT _ (TS _ 22)           }
-  '}'             { PT _ (TS _ 23)           }
+  '('             { PT _ (TS _ 1)            }
+  ')'             { PT _ (TS _ 2)            }
+  ','             { PT _ (TS _ 3)            }
+  '->'            { PT _ (TS _ 4)            }
+  '.'             { PT _ (TS _ 5)            }
+  ':'             { PT _ (TS _ 6)            }
+  '::'            { PT _ (TS _ 7)            }
+  '='             { PT _ (TS _ 8)            }
+  '\\'            { PT _ (TS _ 9)            }
+  'forall'        { PT _ (TS _ 10)           }
+  'in'            { PT _ (TS _ 11)           }
+  'let'           { PT _ (TS _ 12)           }
+  '|-'            { PT _ (TS _ 13)           }
   L_integ         { PT _ (TI _)              }
   L_NameLowerCase { PT _ (T_NameLowerCase _) }
   L_NameUpperCase { PT _ (T_NameUpperCase _) }
@@ -95,7 +86,7 @@ import Language.STLC.Syntax.Lex
 %%
 
 Integer :: { (Language.STLC.Syntax.Abs.BNFC'Position, Integer) }
-Integer  : L_integ  { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (read (tokenText $1)) :: Integer) }
+Integer  : L_integ  { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (read (Data.Text.unpack (tokenText $1))) :: Integer) }
 
 NameLowerCase :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.NameLowerCase) }
 NameLowerCase  : L_NameLowerCase { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.NameLowerCase (tokenText $1)) }
@@ -105,30 +96,11 @@ NameUpperCase  : L_NameUpperCase { (uncurry Language.STLC.Syntax.Abs.BNFC'Positi
 
 Program :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Program) }
 Program
-  : ListStatement { (fst $1, Language.STLC.Syntax.Abs.Program (fst $1) (snd $1)) }
+  : Exp { (fst $1, Language.STLC.Syntax.Abs.Program (fst $1) (snd $1)) }
 
 Var :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Var) }
 Var
   : NameLowerCase { (fst $1, Language.STLC.Syntax.Abs.Var (fst $1) (snd $1)) }
-
-Statement :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Statement) }
-Statement
-  : Var ':' Type { (fst $1, Language.STLC.Syntax.Abs.StatementFunSig (fst $1) (snd $1) (snd $3)) }
-  | Var '=' Exp { (fst $1, Language.STLC.Syntax.Abs.StatementFun (fst $1) (snd $1) (snd $3)) }
-  | Var '=' Exp 'where' '{' ListStatement '}' { (fst $1, Language.STLC.Syntax.Abs.StatementFunWhere (fst $1) (snd $1) (snd $3) (snd $6)) }
-  | '#typecheck' ExpUnderCtx '<=' Type { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.StatementCommandTypeCheck (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
-  | '#typesynth' ExpUnderCtx '=>' SynthResult { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.StatementCommandTypeSynth (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
-
-ListStatement :: { (Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.Statement]) }
-ListStatement
-  : {- empty -} { (Language.STLC.Syntax.Abs.BNFC'NoPosition, []) }
-  | Statement { (fst $1, (:[]) (snd $1)) }
-  | Statement ';' ListStatement { (fst $1, (:) (snd $1) (snd $3)) }
-
-SynthResult :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.SynthResult) }
-SynthResult
-  : Type { (fst $1, Language.STLC.Syntax.Abs.SynthResultType (fst $1) (snd $1)) }
-  | '?' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.SynthResultUnknown (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1))) }
 
 Exp1 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp1
@@ -136,15 +108,15 @@ Exp1
 
 Exp2 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp2
-  : Integer { (fst $1, Language.STLC.Syntax.Abs.ExpNumber (fst $1) (snd $1)) }
+  : Integer { (fst $1, Language.STLC.Syntax.Abs.ExpInt (fst $1) (snd $1)) }
 
 Exp3 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp3
-  : Exp10 '+' Exp10 { (fst $1, Language.STLC.Syntax.Abs.ExpPlus (fst $1) (snd $1) (snd $3)) }
+  : '\\' Var '.' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpAbs (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
 
 Exp4 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp4
-  : '\\' Var '->' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpAbs (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
+  : '\\' Var '::' Type '.' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpAbsAnno (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4) (snd $6)) }
 
 Exp5 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp5
@@ -152,7 +124,11 @@ Exp5
 
 Exp6 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp6
-  : 'if' '(' Exp ')' 'then' '{' Exp '}' 'else' '{' Exp '}' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpIfThenElse (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $7) (snd $11)) }
+  : 'let' Var '=' Exp 'in' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpLet (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4) (snd $6)) }
+
+Exp7 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
+Exp7
+  : Exp '::' Type { (fst $1, Language.STLC.Syntax.Abs.ExpAnno (fst $1) (snd $1) (snd $3)) }
 
 Exp :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp
@@ -162,6 +138,8 @@ Exp
   | Exp4 { (fst $1, (snd $1)) }
   | Exp5 { (fst $1, (snd $1)) }
   | Exp6 { (fst $1, (snd $1)) }
+  | Exp7 { (fst $1, (snd $1)) }
+  | '(' Exp ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
 
 Exp10 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp10
@@ -177,21 +155,35 @@ Exp11
 
 Type1 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type1
-  : NameUpperCase { (fst $1, Language.STLC.Syntax.Abs.TypeName (fst $1) (snd $1)) }
-  | Type2 { (fst $1, (snd $1)) }
+  : NameUpperCase { (fst $1, Language.STLC.Syntax.Abs.TypeConcrete (fst $1) (snd $1)) }
 
 Type2 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type2
-  : 'forall' Var '.' Type { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.TypeForall (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
-  | Type3 { (fst $1, (snd $1)) }
+  : NameLowerCase { (fst $1, Language.STLC.Syntax.Abs.TypeVariable (fst $1) (snd $1)) }
 
 Type3 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type3
-  : Type '->' Type { (fst $1, Language.STLC.Syntax.Abs.TypeFunc (fst $1) (snd $1) (snd $3)) }
-  | '(' Type ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
+  : Type4 '->' Type3 { (fst $1, Language.STLC.Syntax.Abs.TypeFunc (fst $1) (snd $1) (snd $3)) }
+  | Type1 { (fst $1, (snd $1)) }
+  | Type2 { (fst $1, (snd $1)) }
+  | '(' Type3 ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
+
+Type4 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
+Type4
+  : 'forall' ListNameLowerCase '.' Type3 { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.TypeForall (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
+  | Type3 { (fst $1, (snd $1)) }
+
+ListNameLowerCase :: { (Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.NameLowerCase]) }
+ListNameLowerCase
+  : {- empty -} { (Language.STLC.Syntax.Abs.BNFC'NoPosition, []) }
+  | NameLowerCase ListNameLowerCase { (fst $1, (:) (snd $1) (snd $2)) }
 
 Type :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
-Type : Type1 { (fst $1, (snd $1)) }
+Type
+  : Type1 { (fst $1, (snd $1)) }
+  | Type2 { (fst $1, (snd $1)) }
+  | Type3 { (fst $1, (snd $1)) }
+  | Type4 { (fst $1, (snd $1)) }
 
 CtxVar :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.CtxVar) }
 CtxVar
@@ -223,7 +215,7 @@ happyError ts = Left $
     [Err _] -> " due to lexer error"
     t:_     -> " before `" ++ (prToken t) ++ "'"
 
-myLexer :: String -> [Token]
+myLexer :: Data.Text.Text -> [Token]
 myLexer = tokens
 
 -- Entrypoints
@@ -233,15 +225,6 @@ pProgram = fmap snd . pProgram_internal
 
 pVar :: [Token] -> Err Language.STLC.Syntax.Abs.Var
 pVar = fmap snd . pVar_internal
-
-pStatement :: [Token] -> Err Language.STLC.Syntax.Abs.Statement
-pStatement = fmap snd . pStatement_internal
-
-pListStatement :: [Token] -> Err [Language.STLC.Syntax.Abs.Statement]
-pListStatement = fmap snd . pListStatement_internal
-
-pSynthResult :: [Token] -> Err Language.STLC.Syntax.Abs.SynthResult
-pSynthResult = fmap snd . pSynthResult_internal
 
 pExp1 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
 pExp1 = fmap snd . pExp1_internal
@@ -261,6 +244,9 @@ pExp5 = fmap snd . pExp5_internal
 pExp6 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
 pExp6 = fmap snd . pExp6_internal
 
+pExp7 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
+pExp7 = fmap snd . pExp7_internal
+
 pExp :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
 pExp = fmap snd . pExp_internal
 
@@ -278,6 +264,12 @@ pType2 = fmap snd . pType2_internal
 
 pType3 :: [Token] -> Err Language.STLC.Syntax.Abs.Type
 pType3 = fmap snd . pType3_internal
+
+pType4 :: [Token] -> Err Language.STLC.Syntax.Abs.Type
+pType4 = fmap snd . pType4_internal
+
+pListNameLowerCase :: [Token] -> Err [Language.STLC.Syntax.Abs.NameLowerCase]
+pListNameLowerCase = fmap snd . pListNameLowerCase_internal
 
 pType :: [Token] -> Err Language.STLC.Syntax.Abs.Type
 pType = fmap snd . pType_internal

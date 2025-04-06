@@ -30,14 +30,11 @@ NameUpperCase literals are recognized by the regular expression
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in Syntax are the following:
-  | ``else`` | ``forall`` | ``if`` | ``then``
-  | ``where`` |  |  |
+  | ``forall`` | ``in`` | ``let`` |
 
 The symbols used in Syntax are the following:
-  | : | = | { | }
-  | #typecheck | <= | #typesynth | =>
-  | ; | ? | + | \
-  | -> | ( | ) | .
+  | \ | . | :: | =
+  | ( | ) | -> | :
   | , | |- |  |
 
 ===Comments===
@@ -49,30 +46,23 @@ The symbols -> (production),  **|**  (union)
 and **eps** (empty rule) belong to the BNF notation.
 All other symbols are terminals.
 
-  | //Program// | -> | //[Statement]//
+  | //Program// | -> | //Exp//
   | //Var// | -> | //NameLowerCase//
-  | //Statement// | -> | //Var// ``:`` //Type//
-  |  |  **|**  | //Var// ``=`` //Exp//
-  |  |  **|**  | //Var// ``=`` //Exp// ``where`` ``{`` //[Statement]// ``}``
-  |  |  **|**  | ``#typecheck`` //ExpUnderCtx// ``<=`` //Type//
-  |  |  **|**  | ``#typesynth`` //ExpUnderCtx// ``=>`` //SynthResult//
-  | //[Statement]// | -> | **eps**
-  |  |  **|**  | //Statement//
-  |  |  **|**  | //Statement// ``;`` //[Statement]//
-  | //SynthResult// | -> | //Type//
-  |  |  **|**  | ``?``
   | //Exp1// | -> | //Var//
   | //Exp2// | -> | //Integer//
-  | //Exp3// | -> | //Exp10// ``+`` //Exp10//
-  | //Exp4// | -> | ``\`` //Var// ``->`` //Exp//
+  | //Exp3// | -> | ``\`` //Var// ``.`` //Exp//
+  | //Exp4// | -> | ``\`` //Var// ``::`` //Type// ``.`` //Exp//
   | //Exp5// | -> | //Exp11// //Exp10//
-  | //Exp6// | -> | ``if`` ``(`` //Exp// ``)`` ``then`` ``{`` //Exp// ``}`` ``else`` ``{`` //Exp// ``}``
+  | //Exp6// | -> | ``let`` //Var// ``=`` //Exp// ``in`` //Exp//
+  | //Exp7// | -> | //Exp// ``::`` //Type//
   | //Exp// | -> | //Exp1//
   |  |  **|**  | //Exp2//
   |  |  **|**  | //Exp3//
   |  |  **|**  | //Exp4//
   |  |  **|**  | //Exp5//
   |  |  **|**  | //Exp6//
+  |  |  **|**  | //Exp7//
+  |  |  **|**  | ``(`` //Exp// ``)``
   | //Exp10// | -> | //Exp1//
   |  |  **|**  | //Exp2//
   |  |  **|**  | ``(`` //Exp// ``)``
@@ -80,12 +70,19 @@ All other symbols are terminals.
   |  |  **|**  | //Exp5//
   |  |  **|**  | ``(`` //Exp// ``)``
   | //Type1// | -> | //NameUpperCase//
+  | //Type2// | -> | //NameLowerCase//
+  | //Type3// | -> | //Type4// ``->`` //Type3//
+  |  |  **|**  | //Type1//
   |  |  **|**  | //Type2//
-  | //Type2// | -> | ``forall`` //Var// ``.`` //Type//
+  |  |  **|**  | ``(`` //Type3// ``)``
+  | //Type4// | -> | ``forall`` //[NameLowerCase]// ``.`` //Type3//
   |  |  **|**  | //Type3//
-  | //Type3// | -> | //Type// ``->`` //Type//
-  |  |  **|**  | ``(`` //Type// ``)``
+  | //[NameLowerCase]// | -> | **eps**
+  |  |  **|**  | //NameLowerCase// //[NameLowerCase]//
   | //Type// | -> | //Type1//
+  |  |  **|**  | //Type2//
+  |  |  **|**  | //Type3//
+  |  |  **|**  | //Type4//
   | //CtxVar// | -> | //Var// ``:`` //Type//
   | //[CtxVar]// | -> | **eps**
   |  |  **|**  | //CtxVar//

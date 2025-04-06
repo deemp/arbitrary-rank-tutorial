@@ -12,7 +12,7 @@
 
 module Language.STLC.Syntax.Abs where
 
-import Prelude (Integer, String)
+import Prelude (Integer)
 import qualified Prelude as C
   ( Eq, Ord, Show, Read
   , Functor, Foldable, Traversable
@@ -20,46 +20,35 @@ import qualified Prelude as C
   )
 import qualified Data.String
 
+import qualified Data.Text
 import qualified Data.Data    as C (Data, Typeable)
 import qualified GHC.Generics as C (Generic)
 
 type Program = Program' BNFC'Position
-data Program' a = Program a [Statement' a]
+data Program' a = Program a (Exp' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 type Var = Var' BNFC'Position
 data Var' a = Var a NameLowerCase
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-type Statement = Statement' BNFC'Position
-data Statement' a
-    = StatementFunSig a (Var' a) (Type' a)
-    | StatementFun a (Var' a) (Exp' a)
-    | StatementFunWhere a (Var' a) (Exp' a) [Statement' a]
-    | StatementCommandTypeCheck a (ExpUnderCtx' a) (Type' a)
-    | StatementCommandTypeSynth a (ExpUnderCtx' a) (SynthResult' a)
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
-
-type SynthResult = SynthResult' BNFC'Position
-data SynthResult' a
-    = SynthResultType a (Type' a) | SynthResultUnknown a
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
-
 type Exp = Exp' BNFC'Position
 data Exp' a
     = ExpVar a (Var' a)
-    | ExpNumber a Integer
-    | ExpPlus a (Exp' a) (Exp' a)
+    | ExpInt a Integer
     | ExpAbs a (Var' a) (Exp' a)
+    | ExpAbsAnno a (Var' a) (Type' a) (Exp' a)
     | ExpApp a (Exp' a) (Exp' a)
-    | ExpIfThenElse a (Exp' a) (Exp' a) (Exp' a)
+    | ExpLet a (Var' a) (Exp' a) (Exp' a)
+    | ExpAnno a (Exp' a) (Type' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 type Type = Type' BNFC'Position
 data Type' a
-    = TypeName a NameUpperCase
-    | TypeForall a (Var' a) (Type' a)
+    = TypeConcrete a NameUpperCase
+    | TypeVariable a NameLowerCase
     | TypeFunc a (Type' a) (Type' a)
+    | TypeForall a [NameLowerCase] (Type' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 type CtxVar = CtxVar' BNFC'Position
@@ -74,10 +63,10 @@ type ExpUnderCtx = ExpUnderCtx' BNFC'Position
 data ExpUnderCtx' a = ExpUnderCtx a (Ctx' a) (Exp' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-newtype NameLowerCase = NameLowerCase String
+newtype NameLowerCase = NameLowerCase Data.Text.Text
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic, Data.String.IsString)
 
-newtype NameUpperCase = NameUpperCase String
+newtype NameUpperCase = NameUpperCase Data.Text.Text
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic, Data.String.IsString)
 
 -- | Start position (line, column) of something.
@@ -103,33 +92,22 @@ instance HasPosition Var where
   hasPosition = \case
     Var p _ -> p
 
-instance HasPosition Statement where
-  hasPosition = \case
-    StatementFunSig p _ _ -> p
-    StatementFun p _ _ -> p
-    StatementFunWhere p _ _ _ -> p
-    StatementCommandTypeCheck p _ _ -> p
-    StatementCommandTypeSynth p _ _ -> p
-
-instance HasPosition SynthResult where
-  hasPosition = \case
-    SynthResultType p _ -> p
-    SynthResultUnknown p -> p
-
 instance HasPosition Exp where
   hasPosition = \case
     ExpVar p _ -> p
-    ExpNumber p _ -> p
-    ExpPlus p _ _ -> p
+    ExpInt p _ -> p
     ExpAbs p _ _ -> p
+    ExpAbsAnno p _ _ _ -> p
     ExpApp p _ _ -> p
-    ExpIfThenElse p _ _ _ -> p
+    ExpLet p _ _ _ -> p
+    ExpAnno p _ _ -> p
 
 instance HasPosition Type where
   hasPosition = \case
-    TypeName p _ -> p
-    TypeForall p _ _ -> p
+    TypeConcrete p _ -> p
+    TypeVariable p _ -> p
     TypeFunc p _ _ -> p
+    TypeForall p _ _ -> p
 
 instance HasPosition CtxVar where
   hasPosition = \case

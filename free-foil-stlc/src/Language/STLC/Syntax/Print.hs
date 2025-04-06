@@ -21,6 +21,7 @@ import Prelude
   )
 import Data.Char ( Char, isSpace )
 import qualified Language.STLC.Syntax.Abs
+import qualified Data.Text
 
 -- | The top-level printing method.
 
@@ -138,49 +139,37 @@ instance Print Double where
   prt _ x = doc (shows x)
 
 instance Print Language.STLC.Syntax.Abs.NameLowerCase where
-  prt _ (Language.STLC.Syntax.Abs.NameLowerCase i) = doc $ showString i
+  prt _ (Language.STLC.Syntax.Abs.NameLowerCase i) = doc $ showString (Data.Text.unpack i)
 instance Print Language.STLC.Syntax.Abs.NameUpperCase where
-  prt _ (Language.STLC.Syntax.Abs.NameUpperCase i) = doc $ showString i
+  prt _ (Language.STLC.Syntax.Abs.NameUpperCase i) = doc $ showString (Data.Text.unpack i)
 instance Print (Language.STLC.Syntax.Abs.Program' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.Program _ statements -> prPrec i 0 (concatD [prt 0 statements])
+    Language.STLC.Syntax.Abs.Program _ exp -> prPrec i 0 (concatD [prt 0 exp])
 
 instance Print (Language.STLC.Syntax.Abs.Var' a) where
   prt i = \case
     Language.STLC.Syntax.Abs.Var _ namelowercase -> prPrec i 0 (concatD [prt 0 namelowercase])
 
-instance Print (Language.STLC.Syntax.Abs.Statement' a) where
-  prt i = \case
-    Language.STLC.Syntax.Abs.StatementFunSig _ var type_ -> prPrec i 0 (concatD [prt 0 var, doc (showString ":"), prt 0 type_])
-    Language.STLC.Syntax.Abs.StatementFun _ var exp -> prPrec i 0 (concatD [prt 0 var, doc (showString "="), prt 0 exp])
-    Language.STLC.Syntax.Abs.StatementFunWhere _ var exp statements -> prPrec i 0 (concatD [prt 0 var, doc (showString "="), prt 0 exp, doc (showString "where"), doc (showString "{"), prt 0 statements, doc (showString "}")])
-    Language.STLC.Syntax.Abs.StatementCommandTypeCheck _ expunderctx type_ -> prPrec i 0 (concatD [doc (showString "#typecheck"), prt 0 expunderctx, doc (showString "<="), prt 0 type_])
-    Language.STLC.Syntax.Abs.StatementCommandTypeSynth _ expunderctx synthresult -> prPrec i 0 (concatD [doc (showString "#typesynth"), prt 0 expunderctx, doc (showString "=>"), prt 0 synthresult])
-
-instance Print [Language.STLC.Syntax.Abs.Statement' a] where
-  prt _ [] = concatD []
-  prt _ [x] = concatD [prt 0 x]
-  prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
-
-instance Print (Language.STLC.Syntax.Abs.SynthResult' a) where
-  prt i = \case
-    Language.STLC.Syntax.Abs.SynthResultType _ type_ -> prPrec i 0 (concatD [prt 0 type_])
-    Language.STLC.Syntax.Abs.SynthResultUnknown _ -> prPrec i 0 (concatD [doc (showString "?")])
-
 instance Print (Language.STLC.Syntax.Abs.Exp' a) where
   prt i = \case
     Language.STLC.Syntax.Abs.ExpVar _ var -> prPrec i 1 (concatD [prt 0 var])
-    Language.STLC.Syntax.Abs.ExpNumber _ n -> prPrec i 2 (concatD [prt 0 n])
-    Language.STLC.Syntax.Abs.ExpPlus _ exp1 exp2 -> prPrec i 3 (concatD [prt 10 exp1, doc (showString "+"), prt 10 exp2])
-    Language.STLC.Syntax.Abs.ExpAbs _ var exp -> prPrec i 4 (concatD [doc (showString "\\"), prt 0 var, doc (showString "->"), prt 0 exp])
+    Language.STLC.Syntax.Abs.ExpInt _ n -> prPrec i 2 (concatD [prt 0 n])
+    Language.STLC.Syntax.Abs.ExpAbs _ var exp -> prPrec i 3 (concatD [doc (showString "\\"), prt 0 var, doc (showString "."), prt 0 exp])
+    Language.STLC.Syntax.Abs.ExpAbsAnno _ var type_ exp -> prPrec i 4 (concatD [doc (showString "\\"), prt 0 var, doc (showString "::"), prt 0 type_, doc (showString "."), prt 0 exp])
     Language.STLC.Syntax.Abs.ExpApp _ exp1 exp2 -> prPrec i 5 (concatD [prt 11 exp1, prt 10 exp2])
-    Language.STLC.Syntax.Abs.ExpIfThenElse _ exp1 exp2 exp3 -> prPrec i 6 (concatD [doc (showString "if"), doc (showString "("), prt 0 exp1, doc (showString ")"), doc (showString "then"), doc (showString "{"), prt 0 exp2, doc (showString "}"), doc (showString "else"), doc (showString "{"), prt 0 exp3, doc (showString "}")])
+    Language.STLC.Syntax.Abs.ExpLet _ var exp1 exp2 -> prPrec i 6 (concatD [doc (showString "let"), prt 0 var, doc (showString "="), prt 0 exp1, doc (showString "in"), prt 0 exp2])
+    Language.STLC.Syntax.Abs.ExpAnno _ exp type_ -> prPrec i 7 (concatD [prt 0 exp, doc (showString "::"), prt 0 type_])
 
 instance Print (Language.STLC.Syntax.Abs.Type' a) where
   prt i = \case
-    Language.STLC.Syntax.Abs.TypeName _ nameuppercase -> prPrec i 1 (concatD [prt 0 nameuppercase])
-    Language.STLC.Syntax.Abs.TypeForall _ var type_ -> prPrec i 2 (concatD [doc (showString "forall"), prt 0 var, doc (showString "."), prt 0 type_])
-    Language.STLC.Syntax.Abs.TypeFunc _ type_1 type_2 -> prPrec i 3 (concatD [prt 0 type_1, doc (showString "->"), prt 0 type_2])
+    Language.STLC.Syntax.Abs.TypeConcrete _ nameuppercase -> prPrec i 1 (concatD [prt 0 nameuppercase])
+    Language.STLC.Syntax.Abs.TypeVariable _ namelowercase -> prPrec i 2 (concatD [prt 0 namelowercase])
+    Language.STLC.Syntax.Abs.TypeFunc _ type_1 type_2 -> prPrec i 3 (concatD [prt 4 type_1, doc (showString "->"), prt 3 type_2])
+    Language.STLC.Syntax.Abs.TypeForall _ namelowercases type_ -> prPrec i 4 (concatD [doc (showString "forall"), prt 0 namelowercases, doc (showString "."), prt 3 type_])
+
+instance Print [Language.STLC.Syntax.Abs.NameLowerCase] where
+  prt _ [] = concatD []
+  prt _ (x:xs) = concatD [prt 0 x, doc (showString " "), prt 0 xs]
 
 instance Print (Language.STLC.Syntax.Abs.CtxVar' a) where
   prt i = \case
