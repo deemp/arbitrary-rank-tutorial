@@ -11,6 +11,8 @@ import Language.STLC.Syntax.Lex (Token)
 import Language.STLC.Syntax.Par
 
 -- TODO import only in doctests
+
+import Data.Text (Text, pack, unpack)
 import Language.STLC.Syntax.Print
 
 -- $setup
@@ -18,24 +20,24 @@ import Language.STLC.Syntax.Print
 -- >>> :set -XTypeApplications
 -- >>> newtype Pretty = Pretty String; instance Show Pretty where show (Pretty s) = s
 
-instance IsString Exp where fromString = unsafeParseWith pExp
-instance IsString Type where fromString = unsafeParseWith pType
-instance IsString Ctx where fromString = unsafeParseWith pCtx
-instance IsString ExpUnderCtx where fromString = unsafeParseWith pExpUnderCtx
-instance IsString Program where fromString = unsafeParseWith pProgram
-instance IsString Statement where fromString = unsafeParseWith pStatement
+instance IsString Exp where fromString = unsafeParseWith pExp . pack
+instance IsString Type where fromString = unsafeParseWith pType . pack
+instance IsString Ctx where fromString = unsafeParseWith pCtx . pack
+instance IsString ExpUnderCtx where fromString = unsafeParseWith pExpUnderCtx . pack
+instance IsString Program where fromString = unsafeParseWith pProgram . pack
+-- instance IsString Statement where fromString = unsafeParseWith pStatement . pack
 
-parseWith :: ([Token] -> Either String a) -> String -> Either String a
+parseWith :: ([Token] -> Either String a) -> Text -> Either String a
 parseWith parser input = parser tokens
  where
   tokens = myLexer input
 
 -- | Parse from a 'String'.
 -- May throw an 'error` if input has syntactical or lexical errors.
-unsafeParseWith :: ([Token] -> Either String a) -> String -> a
+unsafeParseWith :: ([Token] -> Either String a) -> Text -> a
 unsafeParseWith parser input =
   case parseWith parser input of
-    Left parseError -> error (parseError <> "\non input\n" <> input <> "\n")
+    Left parseError -> error (parseError <> "\non input\n" <> unpack input <> "\n")
     Right res -> res
 
 -- >>> "Int -> Int" :: Type
