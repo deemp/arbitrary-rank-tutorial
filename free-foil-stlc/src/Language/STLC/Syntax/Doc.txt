@@ -34,8 +34,7 @@ The reserved words used in Syntax are the following:
 
 The symbols used in Syntax are the following:
   | \ | . | :: | =
-  | ( | ) | -> | :
-  | , | |- |  |
+  | ( | ) | -> |
 
 ===Comments===
 Single-line comments begin with --.There are no multiple-line comments in the grammar.
@@ -75,20 +74,15 @@ All other symbols are terminals.
   |  |  **|**  | //Type1//
   |  |  **|**  | //Type2//
   |  |  **|**  | ``(`` //Type3// ``)``
-  | //Type4// | -> | ``forall`` //[NameLowerCase]// ``.`` //Type3//
+  | //TypeVariable// | -> | //NameLowerCase//
+  | //Type4// | -> | ``forall`` //[TypeVariable]// ``.`` //Type3//
   |  |  **|**  | //Type3//
-  | //[NameLowerCase]// | -> | **eps**
-  |  |  **|**  | //NameLowerCase// //[NameLowerCase]//
+  | //[TypeVariable]// | -> | **eps**
+  |  |  **|**  | //TypeVariable// //[TypeVariable]//
   | //Type// | -> | //Type1//
   |  |  **|**  | //Type2//
   |  |  **|**  | //Type3//
   |  |  **|**  | //Type4//
-  | //CtxVar// | -> | //Var// ``:`` //Type//
-  | //[CtxVar]// | -> | **eps**
-  |  |  **|**  | //CtxVar//
-  |  |  **|**  | //CtxVar// ``,`` //[CtxVar]//
-  | //Ctx// | -> | //[CtxVar]//
-  | //ExpUnderCtx// | -> | //Ctx// ``|-`` //Exp//
 
 
 

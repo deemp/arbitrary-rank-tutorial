@@ -46,12 +46,14 @@ _. Type3 ::= "(" Type3 ")" ;
 
 
 -- sigma
-TypeForall.   Type4 ::= "forall" [NameLowerCase] "." Type3 ;
-
 -- TODO sigma in parens
 
+TypeVariableName. TypeVariable ::= NameLowerCase;
+
+TypeForall.       Type4 ::= "forall" [TypeVariable] "." Type3 ;
+
 -- https://stackoverflow.com/a/66437525
-separator NameLowerCase " " ;
+separator TypeVariable " " ;
 
 _. Type4 ::= Type3 ;
 
@@ -60,10 +62,3 @@ _. Type ::= Type1 ;
 _. Type ::= Type2 ;
 _. Type ::= Type3 ;
 _. Type ::= Type4 ;
-
-CtxVar. CtxVar ::= Var ":" Type ;
-separator CtxVar "," ;
-
-Ctx. Ctx ::= [CtxVar] ;
-
-ExpUnderCtx. ExpUnderCtx ::= Ctx "|-" Exp ;

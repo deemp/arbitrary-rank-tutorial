@@ -48,19 +48,11 @@ data Type' a
     = TypeConcrete a NameUpperCase
     | TypeVariable a NameLowerCase
     | TypeFunc a (Type' a) (Type' a)
-    | TypeForall a [NameLowerCase] (Type' a)
+    | TypeForall a [TypeVariable' a] (Type' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
-type CtxVar = CtxVar' BNFC'Position
-data CtxVar' a = CtxVar a (Var' a) (Type' a)
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
-
-type Ctx = Ctx' BNFC'Position
-data Ctx' a = Ctx a [CtxVar' a]
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
-
-type ExpUnderCtx = ExpUnderCtx' BNFC'Position
-data ExpUnderCtx' a = ExpUnderCtx a (Ctx' a) (Exp' a)
+type TypeVariable = TypeVariable' BNFC'Position
+data TypeVariable' a = TypeVariableName a NameLowerCase
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 newtype NameLowerCase = NameLowerCase Data.Text.Text
@@ -109,15 +101,7 @@ instance HasPosition Type where
     TypeFunc p _ _ -> p
     TypeForall p _ _ -> p
 
-instance HasPosition CtxVar where
+instance HasPosition TypeVariable where
   hasPosition = \case
-    CtxVar p _ _ -> p
-
-instance HasPosition Ctx where
-  hasPosition = \case
-    Ctx p _ -> p
-
-instance HasPosition ExpUnderCtx where
-  hasPosition = \case
-    ExpUnderCtx p _ _ -> p
+    TypeVariableName p _ -> p
 

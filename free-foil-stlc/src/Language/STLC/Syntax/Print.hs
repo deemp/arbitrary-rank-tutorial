@@ -165,25 +165,12 @@ instance Print (Language.STLC.Syntax.Abs.Type' a) where
     Language.STLC.Syntax.Abs.TypeConcrete _ nameuppercase -> prPrec i 1 (concatD [prt 0 nameuppercase])
     Language.STLC.Syntax.Abs.TypeVariable _ namelowercase -> prPrec i 2 (concatD [prt 0 namelowercase])
     Language.STLC.Syntax.Abs.TypeFunc _ type_1 type_2 -> prPrec i 3 (concatD [prt 4 type_1, doc (showString "->"), prt 3 type_2])
-    Language.STLC.Syntax.Abs.TypeForall _ namelowercases type_ -> prPrec i 4 (concatD [doc (showString "forall"), prt 0 namelowercases, doc (showString "."), prt 3 type_])
+    Language.STLC.Syntax.Abs.TypeForall _ typevariables type_ -> prPrec i 4 (concatD [doc (showString "forall"), prt 0 typevariables, doc (showString "."), prt 3 type_])
 
-instance Print [Language.STLC.Syntax.Abs.NameLowerCase] where
+instance Print (Language.STLC.Syntax.Abs.TypeVariable' a) where
+  prt i = \case
+    Language.STLC.Syntax.Abs.TypeVariableName _ namelowercase -> prPrec i 0 (concatD [prt 0 namelowercase])
+
+instance Print [Language.STLC.Syntax.Abs.TypeVariable' a] where
   prt _ [] = concatD []
   prt _ (x:xs) = concatD [prt 0 x, doc (showString " "), prt 0 xs]
-
-instance Print (Language.STLC.Syntax.Abs.CtxVar' a) where
-  prt i = \case
-    Language.STLC.Syntax.Abs.CtxVar _ var type_ -> prPrec i 0 (concatD [prt 0 var, doc (showString ":"), prt 0 type_])
-
-instance Print [Language.STLC.Syntax.Abs.CtxVar' a] where
-  prt _ [] = concatD []
-  prt _ [x] = concatD [prt 0 x]
-  prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
-
-instance Print (Language.STLC.Syntax.Abs.Ctx' a) where
-  prt i = \case
-    Language.STLC.Syntax.Abs.Ctx _ ctxvars -> prPrec i 0 (concatD [prt 0 ctxvars])
-
-instance Print (Language.STLC.Syntax.Abs.ExpUnderCtx' a) where
-  prt i = \case
-    Language.STLC.Syntax.Abs.ExpUnderCtx _ ctx exp -> prPrec i 0 (concatD [prt 0 ctx, doc (showString "|-"), prt 0 exp])

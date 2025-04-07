@@ -22,8 +22,6 @@ import Language.STLC.Syntax.Print
 
 instance IsString Exp where fromString = unsafeParseWith pExp . pack
 instance IsString Type where fromString = unsafeParseWith pType . pack
-instance IsString Ctx where fromString = unsafeParseWith pCtx . pack
-instance IsString ExpUnderCtx where fromString = unsafeParseWith pExpUnderCtx . pack
 instance IsString Program where fromString = unsafeParseWith pProgram . pack
 -- instance IsString Statement where fromString = unsafeParseWith pStatement . pack
 
