@@ -85,24 +85,24 @@
               # If need to remove dependency bounds
               # https://github.com/balsoft/lambda-launcher/blob/c4621b41989ff63b7241cf2a65335b4880f532e0/flake.nix#L17-L23
               overrides =
-                self: super:
+                final: prev:
                 let
                   # Simply use Hackage instead of overriding all-cabal-hashes (~2GB unpacked)
                   # https://github.com/NixOS/nixpkgs/blob/21d55dd87e040944379bfe0574d9e24caf3dec20/pkgs/development/haskell-modules/make-package-set.nix#L28
                   packageFromHackage =
                     pkg: ver: sha256:
-                    super.callHackageDirect { inherit pkg ver sha256; } { };
+                    prev.callHackageDirect { inherit pkg ver sha256; } { };
                 in
                 {
                   # direct dependencies
 
-                  free-foil = super.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
-                  with-utf8 = super.with-utf8_1_1_0_0;
+                  free-foil = prev.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
+                  with-utf8 = prev.with-utf8_1_1_0_0;
 
                   # build tools
 
                   alex = packageFromHackage "alex" "3.5.2.0" "sha256-hTkBDe30UkUVx1MTa4BjpYK5nyYlULCylZEniW6sSnA=";
-                  BNFC = super.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
+                  BNFC = prev.callCabal2nix "BNFC" "${inputs.bnfc}/source" { };
                   happy = packageFromHackage "happy" "2.1.5" "sha256-rM6CpEFZRen8ogFIOGjKEmUzYPT7dor/SQVVL8RzLwE=";
 
                   # indirect dependencies
