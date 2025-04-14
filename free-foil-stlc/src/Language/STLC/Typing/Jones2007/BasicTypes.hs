@@ -6,16 +6,19 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Language.STLC.Typing.Jones2007.BasicTypes where
 
@@ -28,12 +31,16 @@ import Data.IORef
 import Data.List (nub)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Void (Void)
 import Data.Word (Word64)
+import GHC.Base (absurd)
+import Language.STLC.Syntax.Abs qualified as Abs
 import Prettyprinter hiding (dot)
 import Prelude hiding ((<>))
 
 -- infixr 4 --> -- The arrow Type ann constructor
-infixl 4 `App` -- Application
+-- infixl 4 `App` -- Application
 
 -----------------------------------
 --      Ubiquitous types        --
@@ -48,44 +55,109 @@ infixl 4 `App` -- Application
 -- instance Ord (Name ann) where
 --   Name _ x <= Name _ y = x <= y
 
--- TODO use a more advanced AST
--- https://github.com/ghc/ghc/blob/27029e60b17aa320d52a5bf31eef96506335b55f/compiler/GHC/Types/SrcLoc.hs#L758
+-----------------------------------
+--      Architecture             --
+-----------------------------------
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core.hs#L138
 
 -----------------------------------
 --      Expressions             --
 -----------------------------------
--- Examples below
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L332
-data Term x
+data SynTerm x
   = -- | x
-    Var (XVar x)
+    -- TODO replace with a family
+    SynTerm'Var (XSynTerm'Var' x) (XVar x)
   | -- | 3
-    Lit (XLit x)
+    SynTerm'Lit (XSynTerm'Lit' x) (XSynTerm'Lit x)
   | -- | f x
-    App (XAppFun x) (XAppArg x)
+    SynTerm'App (XSynTerm'App' x) (XSynTerm'App'Fun x) (XSynTerm'App'Arg x)
   | -- | \ x -> x
-    Lam (XLamVar x) (XLamBody x)
+    SynTerm'Lam (XSynTerm'Lam' x) (XSynTerm'Lam'Var x) (XSynTerm'Lam'Body x)
   | -- | \ (x :: a) -> x
-    ALam (XALamVar x) (XALamSigma x) (XALamTerm x)
+    SynTerm'ALam (XSynTerm'ALam' x) (XSynTerm'ALam'Var x) (XSynTerm'ALam'Type x) (XSynTerm'ALam'Body x)
   | -- | let x = f y in x+1
-    Let (XLetName x) (XLetAssignedTerm x) (XInTerm x)
+    SynTerm'Let (XSynTerm'Let' x) (XSynTerm'Let'Name x) (XSynTerm'Let'AssignedTerm x) (XSynTerm'Let'InTerm x)
   | -- | (f x) :: Int
-    Ann (XAnnTerm x) (XAnnSigma x)
+    SynTerm'Ann (XSynTerm'Ann' x) (XSynTerm'Ann'Term x) (XSynTerm'Ann'Type x)
+
+-- TODO uncomment
+-- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
+data SynType x
+  = -- | Forall
+    --
+    -- @forall a. b@
+    SynType'ForAll (XSynType'ForAll' x) (XSynType'ForAll'Vars x) (XSynType'ForAll'Body x)
+  | -- | Type variable
+    --
+    -- @x@
+    SynType'Var (XSynType'Var' x) (XSynType'Var x)
+  | -- | Function
+    --
+    -- @a -> b@
+    SynType'Fun (XSynType'Fun' x) (XSynType'Fun'Arg x) (XSynType'Fun'Res x)
+  | -- | Parentheses
+    --
+    -- @(a -> b)@
+    SynType'Paren (XSynType'Paren' x) (XSynType'Paren x)
+  | 
+    -- | Concrete type
+    -- 
+    -- @String@
+  SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
+
+-- TODO add case to support Trees That Grow
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L537
+
+---------------- Terms ---------------------
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L412
-type family XLit x
-type family XAppFun x
-type family XAppArg x
-type family XLamVar x
-type family XLamBody x
-type family XALamVar x
-type family XALamSigma x
-type family XALamTerm x
-type family XLetName x
-type family XLetAssignedTerm x
-type family XInTerm x
-type family XAnnTerm x
-type family XAnnSigma x
+-- type family XVar x
+type family XSynTerm'Var' x
+
+type family XSynTerm'Lit' x
+type family XSynTerm'Lit x
+
+type family XSynTerm'App' x
+type family XSynTerm'App'Fun x
+type family XSynTerm'App'Arg x
+
+type family XSynTerm'Lam' x
+type family XSynTerm'Lam'Var x
+type family XSynTerm'Lam'Body x
+
+type family XSynTerm'ALam' x
+type family XSynTerm'ALam'Var x
+type family XSynTerm'ALam'Type x
+type family XSynTerm'ALam'Body x
+
+type family XSynTerm'Let' x
+type family XSynTerm'Let'Name x
+type family XSynTerm'Let'AssignedTerm x
+type family XSynTerm'Let'InTerm x
+
+type family XSynTerm'Ann' x
+type family XSynTerm'Ann'Term x
+type family XSynTerm'Ann'Type x
+
+---------------- Types (syntactic) ---------------------
+
+type family XSynType'Var' x
+type family XSynType'Var x
+
+type family XSynType'ForAll' x
+type family XSynType'ForAll'Vars x
+type family XSynType'ForAll'Body x
+
+type family XSynType'Fun' x
+type family XSynType'Fun'Arg x
+type family XSynType'Fun'Res x
+
+type family XSynType'Paren' x
+type family XSynType'Paren x
+
+type family XSynType'Concrete' x
+type family XSynType'Concrete x
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L169
 data Pass = Parsed | Renamed | Typechecked
@@ -107,6 +179,31 @@ type CompTc = CompPass 'Typechecked -- Output of typechecker
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L120
 type family XRec p a = r | r -> a
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L101
+type instance XRec (CompPass p) a = XAnno a
+
+-- | Maps the "normal" id type for a given GHC pass
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
+type family IdCompP pass where
+  IdCompP 'Renamed = Name
+  IdCompP 'Typechecked = Id
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L210
+type LIdCompP p = XAnno (IdCompP p)
+
+-- | We attach SrcSpans to lots of things, so let's have a datatype for it.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L759
+data Annotated l e = Annotated l e
+  deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L122
+type family Anno a = b
+
+-- (XAnno tree) wraps `tree` in a Compiler-specific,
+-- but pass-independent, source location
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L105
+type XAnno a = Annotated (Anno a) a
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L167
 type family IdP p
@@ -135,26 +232,9 @@ type FastString = Text
 -- and not yet resolved"
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L360
 data OccName = OccName
-  { occurenceNameSpace :: !NameSpace
-  , occurenceNameFS :: !FastString
+  { occNameSpace :: !NameSpace
+  , occNameFS :: !FastString
   }
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Reader.hs#L166
-data RdrName
-  = -- | Unqualified  name
-    --
-    -- Used for ordinary, unqualified occurrences, e.g. @x@, @y@ or @Foo@.
-    -- Create such a 'RdrName' with 'mkRdrUnqual'
-    Unqual OccName
-  | -- | Qualified name
-    --
-    -- A qualified name written by the user in
-    -- /source/ code.  The module isn't necessarily
-    -- the module where the thing is defined;
-    -- just the one from which it is imported.
-    -- Examples are @Bar.x@, @Bar.y@ or @Bar.Foo@.
-    -- Create such a 'RdrName' with 'mkRdrQual'
-    Qual ModuleName OccName
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
 data UnhelpfulSpanReason = UnhelpfulNoLocationInfo deriving (Eq, Show)
@@ -177,8 +257,8 @@ data RealSrcSpan
 -- or a human-readable description of a location.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L392
 data SrcSpan
-  = RealSrcSpan !RealSrcSpan
-  | UnhelpfulSpan !UnhelpfulSpanReason
+  = -- TODO Replace with RealSrcSpan
+    RealSrcSpan !Abs.BNFC'Position
 
 -- | The key type representing kinds in the compiler.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
@@ -219,25 +299,27 @@ data Type
       Type
   | -- | Type literals are similar to type constructors.
     LitTy TyLit
+  | FunTy Type Type
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 type TcType = Type
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
+type Unique = Int
 
 -- A TyVarDetails is inside a TyVar
 -- See Note [TyVars and TcTyVars during type checking]
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
   = SkolemTv -- A skolem
+  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L266
+  -- Possibly will need SkolemInfoAnon
       Unique
   | MetaTv (IORef TcType)
 
 -- | Identifier
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L150
 type Id = Var
-
--- | Unique identifier.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
-newtype Unique = MkUnique Word64
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
 data Name = Name
@@ -266,7 +348,7 @@ data Var
     TcTyVar
       { varName :: !Name
       , varType :: Kind
-      , tcTyVarDetails :: TcTyVarDetails
+      , varDetails :: TcTyVarDetails
       }
   | -- | Variable identifier
     -- Always local and vanilla.
@@ -278,28 +360,133 @@ data Var
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
 newtype ModuleName = ModuleName Text deriving (Show, Eq)
 
--- | Maps the "normal" id type for a given GHC pass
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
-type family IdCompP pass where
-  IdCompP 'Parsed = RdrName
-  IdCompP 'Renamed = Name
-  IdCompP 'Typechecked = Id
+-- The Name already has SrcSpan, so this annotation might be redundant.
+-- This annotation is used in GHC. See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L647
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
+type instance Anno Name = SrcSpan
+type instance Anno TyLit = SrcSpan
 
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L210
-type LIdCompP p = XRecComp (IdCompP p)
+-- TODO specify instances for each phase
 
--- | We attach SrcSpans to lots of things, so let's have a datatype for it.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L759
-data GenLocated l e = L l e
-  deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
+type instance XSynTerm'Var' x = SrcSpan
 
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L122
-type family Anno a = b
+type instance XSynTerm'Lit' x = SrcSpan
+type instance XSynTerm'Lit x = XAnno TyLit
 
--- (XRecComp tree) wraps `tree` in a Compiler-specific,
--- but pass-independent, source location
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L105
-type XRecComp a = GenLocated (Anno a) a
+type instance XSynTerm'App' x = SrcSpan
+type instance XSynTerm'App'Fun x = SynTerm x
+type instance XSynTerm'App'Arg x = SynTerm x
+
+type instance XSynTerm'Lam' x = SrcSpan
+type instance XSynTerm'Lam'Var x = XAnno Name
+type instance XSynTerm'Lam'Body x = SynTerm x
+
+type instance XSynTerm'ALam' x = SrcSpan
+type instance XSynTerm'ALam'Var x = XAnno Name
+type instance XSynTerm'ALam'Type x = SynType x
+type instance XSynTerm'ALam'Body x = SynTerm x
+
+type instance XSynTerm'Let' x = SrcSpan
+type instance XSynTerm'Let'Name x = XAnno Name
+type instance XSynTerm'Let'AssignedTerm x = SynTerm x
+type instance XSynTerm'Let'InTerm x = SynTerm x
+
+type instance XSynTerm'Ann' x = SrcSpan
+type instance XSynTerm'Ann'Term x = SynTerm x
+type instance XSynTerm'Ann'Type x = SynType x
+
+type instance XSynType'Concrete' x = SrcSpan
+type instance XSynType'Concrete x = Name
+
+newUnique :: (?uniqueSupply :: IORef Int) => IO Int
+newUnique = do
+  r <- readIORef ?uniqueSupply
+  writeIORef ?uniqueSupply (r + 1)
+  pure r
+
+-- TODO add index because the parse type isn't enough to differentiate
+
+class ConvertAbsToBT a where
+  type To a
+  convertAbsToBT :: (?uniqueSupply :: IORef Int) => a -> IO (To a)
+
+instance ConvertAbsToBT Abs.Exp where
+  type To Abs.Exp = SynTerm CompRn
+  convertAbsToBT :: (?uniqueSupply :: IORef Int) => Abs.Exp -> IO (To Abs.Exp)
+  convertAbsToBT = \case
+    Abs.ExpVar pos var -> SynTerm'Var (RealSrcSpan pos) <$> convertAbsToBT var
+    Abs.ExpInt pos val -> pure $ SynTerm'Lit (RealSrcSpan pos) (Annotated (RealSrcSpan pos) (NumTyLit val))
+    Abs.ExpApp pos term1 term2 -> SynTerm'App (RealSrcSpan pos) <$> (convertAbsToBT term1) <*> (convertAbsToBT term2)
+    Abs.ExpAbs pos name term -> SynTerm'Lam (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT term)
+    Abs.ExpAbsAnno pos name ty t -> SynTerm'ALam (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT ty) <*> (convertAbsToBT t)
+    Abs.ExpLet pos name term1 term2 -> SynTerm'Let (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT term1) <*> (convertAbsToBT term2)
+    Abs.ExpAnno pos term ty -> SynTerm'Ann (RealSrcSpan pos) <$> (convertAbsToBT term) <*> (convertAbsToBT ty)
+
+-- TODO create unique only for new binders
+-- TODO what to do with free variables? Report error?
+
+instance ConvertAbsToBT Abs.Var where
+  type To Abs.Var = XVar CompRn
+  convertAbsToBT :: (?uniqueSupply :: IORef Int) => Abs.Var -> IO (To Abs.Var)
+  convertAbsToBT (Abs.Var pos (Abs.NameLowerCase name)) = do
+    nameUnique <- newUnique
+    pure $
+      Annotated
+        (RealSrcSpan pos)
+        ( Name
+            { nameOcc =
+                OccName
+                  { occNameSpace = VarName
+                  , occNameFS = name
+                  }
+            , nameUnique
+            , nameLoc = RealSrcSpan pos
+            }
+        )
+
+instance ConvertAbsToBT Abs.Type where
+  type To Abs.Type = SynType CompRn
+  convertAbsToBT = \case
+    Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
+      nameUnique <- newUnique
+      pure $
+        SynType'Concrete
+          (RealSrcSpan pos)
+          Name
+            { nameOcc =
+                OccName
+                  { occNameSpace = TvName
+                  , occNameFS = name
+                  }
+            , nameUnique
+            , nameLoc = RealSrcSpan pos
+            }
+            
+    -- TODO other cases
+    
+    -- Abs.TypeVariable pos (Abs.NameLowerCase name) -> pure $
+    --   -- SynType'Var _ TyVar (Just ann) <$> (mkMaybeAnn ty)
+    -- Abs.TypeForall ann tys ty -> ForAll (Just ann) <$> (forM tys mkMaybeAnn) <*> (mkMaybeAnn ty)
+    -- Abs.TypeFunc ann ty1 ty2 -> Fun (Just ann) <$> (mkMaybeAnn ty1) <*> (mkMaybeAnn ty2)
+
+-- instance MkTerm BT.MetaTv where
+--   mkMaybeAnn (BT.Meta ann u r) = do
+--     r1 <- liftIO $ readIORef r
+--     r2 <-
+--       case r1 of
+--         Nothing -> pure Nothing
+--         Just r3 -> pure <$> mkMaybeAnn r3
+--     r3 <- newIORef r2
+--     pure $ BT.Meta (Just ann) u r3
+
+-- instance MkTerm BT.TyVar where
+--   mkMaybeAnn = \case
+--     BT.BoundTv ann t -> pure $ BT.BoundTv (Just ann) t
+--     BT.SkolemTv ann t u -> pure $ BT.SkolemTv (Just ann) t u
+
+-- term1 =
+
+-- term1 =
 
 -- type Term' ann = Term (IORef (Maybe (Type ann)))
 
