@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable #-}
@@ -12,6 +13,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -20,7 +22,7 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.STLC.Typing.Jones2007.BasicTypes where
+module Language.STLC.Typing.Jones2007.BasicTypes () where
 
 -- This module defines the basic types used by the Type ann checker
 -- Everything defined in here is exported
@@ -30,6 +32,8 @@ import Data.Data (Data (..), Typeable)
 import Data.Data qualified as Data
 import Data.IORef
 import Data.List (nub)
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -419,40 +423,76 @@ type instance XSynType'Paren x = SynType x
 type instance XSynType'Concrete' x = ()
 type instance XSynType'Concrete x = Name
 
--- SynType'ForAll
-
-newUnique :: (?uniqueSupply :: IORef Int) => IO Int
+newUnique :: (ConvertAbsToBTEnv) => IO Int
 newUnique = do
   r <- readIORef ?uniqueSupply
   writeIORef ?uniqueSupply (r + 1)
   pure r
 
+getEnvVarId :: (ConvertAbsToBTEnv) => FastString -> Maybe Int
+getEnvVarId k = Map.lookup k ?scope
+
+getUnique :: (ConvertAbsToBTEnv) => FastString -> IO Int
+getUnique name = maybe newUnique pure (getEnvVarId name)
+
+withNameInScope :: (ConvertAbsToBTEnv) => Name -> IO a -> IO a
+withNameInScope name act =
+  let ?scope = Map.insert name.nameOcc.occNameFS name.nameUnique ?scope
+   in act
+
+withNamesInScope :: (ConvertAbsToBTEnv) => [Name] -> IO a -> IO a
+withNamesInScope names act =
+  -- Map.union prefers the first argument
+  -- and we need to add new names to the scope
+  -- to implement shadowing
+  let ?scope = Map.union (Map.fromList ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)) ?scope
+   in act
+
 -- TODO add index because the parse type isn't enough to differentiate
+-- TODO add built-in types to the scope
+
+-- Should we have a separate scope for terms and types?
+type ConvertAbsToBTEnv = (?uniqueSupply :: IORef Int, ?scope :: Map FastString Int)
 
 class ConvertAbsToBT a where
   type To a
-  convertAbsToBT :: (?uniqueSupply :: IORef Int) => a -> IO (To a)
+  convertAbsToBT :: (ConvertAbsToBTEnv) => a -> (To a)
 
 instance ConvertAbsToBT Abs.Exp where
-  type To Abs.Exp = SynTerm CompRn
-  convertAbsToBT :: (?uniqueSupply :: IORef Int) => Abs.Exp -> IO (To Abs.Exp)
+  type To Abs.Exp = IO (SynTerm CompRn)
+  convertAbsToBT :: (ConvertAbsToBTEnv) => Abs.Exp -> To Abs.Exp
   convertAbsToBT = \case
-    Abs.ExpVar _pos var -> SynTerm'Var () <$> convertAbsToBT var
-    Abs.ExpInt pos val -> pure $ SynTerm'Lit () (Annotated (RealSrcSpan pos) (SynLit'Num val))
-    Abs.ExpApp pos term1 term2 -> SynTerm'App (RealSrcSpan pos) <$> (convertAbsToBT term1) <*> (convertAbsToBT term2)
-    Abs.ExpAbs pos name term -> SynTerm'Lam (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT term)
-    Abs.ExpAbsAnno pos name ty t -> SynTerm'ALam (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT ty) <*> (convertAbsToBT t)
-    Abs.ExpLet pos name term1 term2 -> SynTerm'Let (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT term1) <*> (convertAbsToBT term2)
-    Abs.ExpAnno pos term ty -> SynTerm'Ann (RealSrcSpan pos) <$> (convertAbsToBT term) <*> (convertAbsToBT ty)
+    Abs.ExpVar _pos var ->
+      SynTerm'Var () <$> convertAbsToBT var False
+    Abs.ExpInt pos val ->
+      pure $ SynTerm'Lit () (Annotated (RealSrcSpan pos) (SynLit'Num val))
+    Abs.ExpApp pos term1 term2 ->
+      SynTerm'App (RealSrcSpan pos) <$> (convertAbsToBT term1) <*> (convertAbsToBT term2)
+    Abs.ExpAbs pos var term -> do
+      var' <- convertAbsToBT var True
+      term' <- withNameInScope var' (convertAbsToBT term)
+      pure $ SynTerm'Lam (RealSrcSpan pos) var' term'
+    Abs.ExpAbsAnno pos var ty term -> do
+      var' <- convertAbsToBT var True
+      ty' <- convertAbsToBT ty
+      term' <- withNameInScope var' (convertAbsToBT term)
+      pure $ SynTerm'ALam (RealSrcSpan pos) var' ty' term'
+    Abs.ExpLet pos var term1 term2 -> do
+      var' <- convertAbsToBT var True
+      -- TODO should the let-expression be recursive and the var be brought into scope of the assigned term?
+      term1' <- convertAbsToBT term1
+      term2' <- withNameInScope var' (convertAbsToBT term2)
+      pure $ SynTerm'Let (RealSrcSpan pos) var' term1' term2'
+    Abs.ExpAnno pos term ty ->
+      SynTerm'Ann (RealSrcSpan pos) <$> (convertAbsToBT term) <*> (convertAbsToBT ty)
 
 -- TODO create unique only for new binders
 -- TODO what to do with free variables? Report error?
 
 instance ConvertAbsToBT Abs.Var where
-  type To Abs.Var = Name
-  convertAbsToBT :: (?uniqueSupply :: IORef Int) => Abs.Var -> IO (To Abs.Var)
-  convertAbsToBT (Abs.Var pos (Abs.NameLowerCase name)) = do
-    nameUnique <- newUnique
+  type To Abs.Var = Bool -> IO Name
+  convertAbsToBT (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
+    nameUnique <- if needUnique then newUnique else getUnique name
     pure $
       Name
         { nameOcc =
@@ -465,9 +505,9 @@ instance ConvertAbsToBT Abs.Var where
         }
 
 instance ConvertAbsToBT Abs.TypeVariable where
-  type To Abs.TypeVariable = Name
-  convertAbsToBT (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
-    nameUnique <- newUnique
+  type To Abs.TypeVariable = Bool -> IO Name
+  convertAbsToBT (Abs.TypeVariableName pos (Abs.NameLowerCase name)) needUnique = do
+    nameUnique <- if needUnique then newUnique else getUnique name
     pure $
       Name
         { nameOcc =
@@ -480,11 +520,11 @@ instance ConvertAbsToBT Abs.TypeVariable where
         }
 
 instance ConvertAbsToBT Abs.Type where
-  type To Abs.Type = SynType CompRn
+  type To Abs.Type = IO (SynType CompRn)
   convertAbsToBT = \case
     -- TODO not a variable
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
-      nameUnique <- newUnique
+      nameUnique <- getUnique name
       pure $
         SynType'Concrete
           ()
@@ -499,7 +539,7 @@ instance ConvertAbsToBT Abs.Type where
               }
           )
     Abs.TypeVariable pos (Abs.NameLowerCase name) -> do
-      nameUnique <- newUnique
+      nameUnique <- getUnique name
       pure $
         SynType'Var
           ()
@@ -513,7 +553,10 @@ instance ConvertAbsToBT Abs.Type where
               , nameLoc = RealSrcSpan pos
               }
           )
-    Abs.TypeForall pos tys ty -> SynType'ForAll (RealSrcSpan pos) <$> (forM tys convertAbsToBT) <*> (convertAbsToBT ty)
+    Abs.TypeForall pos tys ty -> do
+      tys' <- forM tys (\x -> convertAbsToBT x True)
+      ty' <- withNamesInScope tys' (convertAbsToBT ty)
+      pure $ SynType'ForAll (RealSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
     Abs.TypeParen pos ty -> SynType'Paren (RealSrcSpan pos) <$> convertAbsToBT ty
 
