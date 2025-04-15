@@ -13,7 +13,7 @@ Var. Var ::= NameLowerCase ;
 ExpVar.        Exp1 ::= Var ;
 ExpInt.        Exp2 ::= Integer ;
 ExpAbs.        Exp3 ::= "\\" Var "." Exp ;
-ExpAbsAnno.    Exp4 ::= "\\" Var "::" Type "." Exp ;
+ExpAbsAnno.    Exp4 ::= "\\" "(" Var "::" Type ")" "." Exp ;
 ExpApp.        Exp5 ::= Exp11 Exp10 ;
 ExpLet.        Exp6 ::= "let" Var "=" Exp "in" Exp ;
 ExpAnno.       Exp7 ::= Exp "::" Type ;

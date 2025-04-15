@@ -109,7 +109,7 @@ Exp3
 
 Exp4 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp4
-  : '\\' Var '::' Type '.' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpAbsAnno (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4) (snd $6)) }
+  : '\\' '(' Var '::' Type ')' '.' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpAbsAnno (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $8)) }
 
 Exp5 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp5

@@ -33,8 +33,8 @@ The reserved words used in Syntax are the following:
   | ``forall`` | ``in`` | ``let`` |
 
 The symbols used in Syntax are the following:
-  | \ | . | :: | =
-  | ( | ) | -> |
+  | \ | . | ( | ::
+  | ) | = | -> |
 
 ===Comments===
 Single-line comments begin with --.There are no multiple-line comments in the grammar.
@@ -50,7 +50,7 @@ All other symbols are terminals.
   | //Exp1// | -> | //Var//
   | //Exp2// | -> | //Integer//
   | //Exp3// | -> | ``\`` //Var// ``.`` //Exp//
-  | //Exp4// | -> | ``\`` //Var// ``::`` //Type// ``.`` //Exp//
+  | //Exp4// | -> | ``\`` ``(`` //Var// ``::`` //Type// ``)`` ``.`` //Exp//
   | //Exp5// | -> | //Exp11// //Exp10//
   | //Exp6// | -> | ``let`` //Var// ``=`` //Exp// ``in`` //Exp//
   | //Exp7// | -> | //Exp// ``::`` //Type//
