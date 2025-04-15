@@ -25,6 +25,7 @@ module Language.STLC.Typing.Jones2007.BasicTypes where
 -- This module defines the basic types used by the Type ann checker
 -- Everything defined in here is exported
 
+import Control.Monad (forM)
 import Data.Data (Data (..), Typeable)
 import Data.Data qualified as Data
 import Data.IORef
@@ -67,7 +68,7 @@ import Prelude hiding ((<>))
 data SynTerm x
   = -- | x
     -- TODO replace with a family
-    SynTerm'Var (XSynTerm'Var' x) (XVar x)
+    SynTerm'Var (XSynTerm'Var' x) (XSynTerm'Var x)
   | -- | 3
     SynTerm'Lit (XSynTerm'Lit' x) (XSynTerm'Lit x)
   | -- | f x
@@ -84,14 +85,14 @@ data SynTerm x
 -- TODO uncomment
 -- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
 data SynType x
-  = -- | Forall
-    --
-    -- @forall a. b@
-    SynType'ForAll (XSynType'ForAll' x) (XSynType'ForAll'Vars x) (XSynType'ForAll'Body x)
-  | -- | Type variable
+  = -- | Type variable
     --
     -- @x@
     SynType'Var (XSynType'Var' x) (XSynType'Var x)
+  | -- | Forall
+    --
+    -- @forall a. b@
+    SynType'ForAll (XSynType'ForAll' x) (XSynType'ForAll'Vars x) (XSynType'ForAll'Body x)
   | -- | Function
     --
     -- @a -> b@
@@ -100,11 +101,17 @@ data SynType x
     --
     -- @(a -> b)@
     SynType'Paren (XSynType'Paren' x) (XSynType'Paren x)
-  | 
-    -- | Concrete type
-    -- 
+  | -- | Concrete type
+    --
     -- @String@
-  SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
+    SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
+
+-- NOTE:  Other parts of the code assume that type literals do not contain
+-- types or type variables.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L200
+data SynLit
+  = SynLit'Num Integer
+  | SynLit'Str FastString
 
 -- TODO add case to support Trees That Grow
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L537
@@ -112,8 +119,8 @@ data SynType x
 ---------------- Terms ---------------------
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L412
--- type family XVar x
 type family XSynTerm'Var' x
+type family XSynTerm'Var x
 
 type family XSynTerm'Lit' x
 type family XSynTerm'Lit x
@@ -139,6 +146,14 @@ type family XSynTerm'Let'InTerm x
 type family XSynTerm'Ann' x
 type family XSynTerm'Ann'Term x
 type family XSynTerm'Ann'Type x
+
+---------------- Literals ---------------------
+
+type family XSynLit'Num' x
+type family XSynLit'Num x
+
+type family XSynLit'Str' x
+type family XSynLit'Str x
 
 ---------------- Types (syntactic) ---------------------
 
@@ -208,6 +223,8 @@ type XAnno a = Annotated (Anno a) a
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L167
 type family IdP p
 
+-- TODO use for XSynTerm'Var
+
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L169
 type XVar p = XRec p (IdP p)
 
@@ -216,10 +233,10 @@ type instance IdP (CompPass p) = IdCompP p
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
 data NameSpace
-  = -- | Variable name space (including "real" data constructors).
-    VarName
-  | -- | Type variable namespace.
-    TvName
+  = -- | Terms namespace.
+    NameSpace'Term
+  | -- | Types namespace.
+    NameSpace'Type
   deriving (Eq)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/FastString.hs#L211
@@ -267,39 +284,19 @@ type Kind = Type
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L107
 type KindOrType = Type
 
--- NOTE:  Other parts of the code assume that type literals do not contain
--- types or type variables.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L200
-data TyLit
-  = NumTyLit Integer
-  | StrTyLit FastString
-  | CharTyLit Char
-  deriving (Eq, Data.Data)
-
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L163
 type TyVar = Var
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L124
 data Type
   = -- | Vanilla type variable
-    TyVarTy Var
-  | -- | Type application to something other than a 'TyCon'. Parameters:
-    --
-    --  1) Function: must /not/ be a 'TyConApp' or 'CastTy',
-    --     must be another 'AppTy', or 'TyVarTy'
-    --     See Note [Respecting definitional equality] \(EQ1) about the
-    --     no 'CastTy' requirement
-    --
-    --  2) Argument type
-    AppTy
-      Type
-      Type
-  | ForAllTy
+    Type'Var Var
+  | Type'ForAll
       [TyVar]
       Type
   | -- | Type literals are similar to type constructors.
-    LitTy TyLit
-  | FunTy Type Type
+    Type'Concrete FastString
+  | Type'Fun Type Type
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 type TcType = Type
@@ -364,30 +361,34 @@ newtype ModuleName = ModuleName Text deriving (Show, Eq)
 -- This annotation is used in GHC. See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L647
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
 type instance Anno Name = SrcSpan
-type instance Anno TyLit = SrcSpan
+type instance Anno SynLit = SrcSpan
+type instance Anno Var = SrcSpan
 
 -- TODO specify instances for each phase
 
-type instance XSynTerm'Var' x = SrcSpan
+---------------- Terms ---------------------
 
-type instance XSynTerm'Lit' x = SrcSpan
-type instance XSynTerm'Lit x = XAnno TyLit
+type instance XSynTerm'Var' x = ()
+type instance XSynTerm'Var x = Name
+
+type instance XSynTerm'Lit' x = ()
+type instance XSynTerm'Lit x = XAnno SynLit
 
 type instance XSynTerm'App' x = SrcSpan
 type instance XSynTerm'App'Fun x = SynTerm x
 type instance XSynTerm'App'Arg x = SynTerm x
 
 type instance XSynTerm'Lam' x = SrcSpan
-type instance XSynTerm'Lam'Var x = XAnno Name
+type instance XSynTerm'Lam'Var x = Name
 type instance XSynTerm'Lam'Body x = SynTerm x
 
 type instance XSynTerm'ALam' x = SrcSpan
-type instance XSynTerm'ALam'Var x = XAnno Name
+type instance XSynTerm'ALam'Var x = Name
 type instance XSynTerm'ALam'Type x = SynType x
 type instance XSynTerm'ALam'Body x = SynTerm x
 
 type instance XSynTerm'Let' x = SrcSpan
-type instance XSynTerm'Let'Name x = XAnno Name
+type instance XSynTerm'Let'Name x = Name
 type instance XSynTerm'Let'AssignedTerm x = SynTerm x
 type instance XSynTerm'Let'InTerm x = SynTerm x
 
@@ -395,8 +396,30 @@ type instance XSynTerm'Ann' x = SrcSpan
 type instance XSynTerm'Ann'Term x = SynTerm x
 type instance XSynTerm'Ann'Type x = SynType x
 
-type instance XSynType'Concrete' x = SrcSpan
+---------------- Literals ---------------------
+
+type instance XSynLit'Num' x = SrcSpan
+
+---------------- Types (syntactic) ---------------------
+
+type instance XSynType'Var' x = ()
+type instance XSynType'Var x = Name
+
+type instance XSynType'ForAll' x = SrcSpan
+type instance XSynType'ForAll'Vars x = [Name]
+type instance XSynType'ForAll'Body x = SynType x
+
+type instance XSynType'Fun' x = SrcSpan
+type instance XSynType'Fun'Arg x = SynType x
+type instance XSynType'Fun'Res x = SynType x
+
+type instance XSynType'Paren' x = SrcSpan
+type instance XSynType'Paren x = SynType x
+
+type instance XSynType'Concrete' x = ()
 type instance XSynType'Concrete x = Name
+
+-- SynType'ForAll
 
 newUnique :: (?uniqueSupply :: IORef Int) => IO Int
 newUnique = do
@@ -414,8 +437,8 @@ instance ConvertAbsToBT Abs.Exp where
   type To Abs.Exp = SynTerm CompRn
   convertAbsToBT :: (?uniqueSupply :: IORef Int) => Abs.Exp -> IO (To Abs.Exp)
   convertAbsToBT = \case
-    Abs.ExpVar pos var -> SynTerm'Var (RealSrcSpan pos) <$> convertAbsToBT var
-    Abs.ExpInt pos val -> pure $ SynTerm'Lit (RealSrcSpan pos) (Annotated (RealSrcSpan pos) (NumTyLit val))
+    Abs.ExpVar _pos var -> SynTerm'Var () <$> convertAbsToBT var
+    Abs.ExpInt pos val -> pure $ SynTerm'Lit () (Annotated (RealSrcSpan pos) (SynLit'Num val))
     Abs.ExpApp pos term1 term2 -> SynTerm'App (RealSrcSpan pos) <$> (convertAbsToBT term1) <*> (convertAbsToBT term2)
     Abs.ExpAbs pos name term -> SynTerm'Lam (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT term)
     Abs.ExpAbsAnno pos name ty t -> SynTerm'ALam (RealSrcSpan pos) <$> (convertAbsToBT name) <*> (convertAbsToBT ty) <*> (convertAbsToBT t)
@@ -426,67 +449,72 @@ instance ConvertAbsToBT Abs.Exp where
 -- TODO what to do with free variables? Report error?
 
 instance ConvertAbsToBT Abs.Var where
-  type To Abs.Var = XVar CompRn
+  type To Abs.Var = Name
   convertAbsToBT :: (?uniqueSupply :: IORef Int) => Abs.Var -> IO (To Abs.Var)
   convertAbsToBT (Abs.Var pos (Abs.NameLowerCase name)) = do
     nameUnique <- newUnique
     pure $
-      Annotated
-        (RealSrcSpan pos)
-        ( Name
-            { nameOcc =
-                OccName
-                  { occNameSpace = VarName
-                  , occNameFS = name
-                  }
-            , nameUnique
-            , nameLoc = RealSrcSpan pos
-            }
-        )
+      Name
+        { nameOcc =
+            OccName
+              { occNameSpace = NameSpace'Term
+              , occNameFS = name
+              }
+        , nameUnique
+        , nameLoc = RealSrcSpan pos
+        }
+
+instance ConvertAbsToBT Abs.TypeVariable where
+  type To Abs.TypeVariable = Name
+  convertAbsToBT (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
+    nameUnique <- newUnique
+    pure $
+      Name
+        { nameOcc =
+            OccName
+              { occNameSpace = NameSpace'Type
+              , occNameFS = name
+              }
+        , nameUnique
+        , nameLoc = RealSrcSpan pos
+        }
 
 instance ConvertAbsToBT Abs.Type where
   type To Abs.Type = SynType CompRn
   convertAbsToBT = \case
+    -- TODO not a variable
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
       nameUnique <- newUnique
       pure $
         SynType'Concrete
-          (RealSrcSpan pos)
-          Name
-            { nameOcc =
-                OccName
-                  { occNameSpace = TvName
-                  , occNameFS = name
-                  }
-            , nameUnique
-            , nameLoc = RealSrcSpan pos
-            }
-            
-    -- TODO other cases
-    
-    -- Abs.TypeVariable pos (Abs.NameLowerCase name) -> pure $
-    --   -- SynType'Var _ TyVar (Just ann) <$> (mkMaybeAnn ty)
-    -- Abs.TypeForall ann tys ty -> ForAll (Just ann) <$> (forM tys mkMaybeAnn) <*> (mkMaybeAnn ty)
-    -- Abs.TypeFunc ann ty1 ty2 -> Fun (Just ann) <$> (mkMaybeAnn ty1) <*> (mkMaybeAnn ty2)
-
--- instance MkTerm BT.MetaTv where
---   mkMaybeAnn (BT.Meta ann u r) = do
---     r1 <- liftIO $ readIORef r
---     r2 <-
---       case r1 of
---         Nothing -> pure Nothing
---         Just r3 -> pure <$> mkMaybeAnn r3
---     r3 <- newIORef r2
---     pure $ BT.Meta (Just ann) u r3
-
--- instance MkTerm BT.TyVar where
---   mkMaybeAnn = \case
---     BT.BoundTv ann t -> pure $ BT.BoundTv (Just ann) t
---     BT.SkolemTv ann t u -> pure $ BT.SkolemTv (Just ann) t u
-
--- term1 =
-
--- term1 =
+          ()
+          ( Name
+              { nameOcc =
+                  OccName
+                    { occNameSpace = NameSpace'Type
+                    , occNameFS = name
+                    }
+              , nameUnique
+              , nameLoc = RealSrcSpan pos
+              }
+          )
+    Abs.TypeVariable pos (Abs.NameLowerCase name) -> do
+      nameUnique <- newUnique
+      pure $
+        SynType'Var
+          ()
+          ( Name
+              { nameOcc =
+                  OccName
+                    { occNameSpace = NameSpace'Type
+                    , occNameFS = name
+                    }
+              , nameUnique
+              , nameLoc = RealSrcSpan pos
+              }
+          )
+    Abs.TypeForall pos tys ty -> SynType'ForAll (RealSrcSpan pos) <$> (forM tys convertAbsToBT) <*> (convertAbsToBT ty)
+    Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
 
 -- type Term' ann = Term (IORef (Maybe (Type ann)))
 
