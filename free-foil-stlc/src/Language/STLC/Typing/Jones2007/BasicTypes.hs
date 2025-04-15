@@ -505,9 +505,9 @@ instance ConvertAbsToBT Abs.Var where
         }
 
 instance ConvertAbsToBT Abs.TypeVariable where
-  type To Abs.TypeVariable = Bool -> IO Name
-  convertAbsToBT (Abs.TypeVariableName pos (Abs.NameLowerCase name)) needUnique = do
-    nameUnique <- if needUnique then newUnique else getUnique name
+  type To Abs.TypeVariable = IO Name
+  convertAbsToBT (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
+    nameUnique <- newUnique
     pure $
       Name
         { nameOcc =
@@ -554,7 +554,7 @@ instance ConvertAbsToBT Abs.Type where
               }
           )
     Abs.TypeForall pos tys ty -> do
-      tys' <- forM tys (\x -> convertAbsToBT x True)
+      tys' <- forM tys (\x -> convertAbsToBT x)
       ty' <- withNamesInScope tys' (convertAbsToBT ty)
       pure $ SynType'ForAll (RealSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
