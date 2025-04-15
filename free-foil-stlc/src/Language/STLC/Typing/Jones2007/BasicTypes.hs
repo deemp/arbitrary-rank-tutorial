@@ -445,12 +445,12 @@ getEnvVarId k = Map.lookup k ?scope
 getUnique :: (ConvertAbsToBTEnv) => NameFs -> IO Int
 getUnique name = maybe newUnique pure (getEnvVarId name)
 
-withNameInScope :: (ConvertAbsToBTEnv) => Name -> IO a -> IO a
+withNameInScope :: (ConvertAbsToBTEnv) => Name -> ((ConvertAbsToBTEnv) => IO a) -> IO a
 withNameInScope name act =
   let ?scope = Map.insert name.nameOcc.occNameFS name.nameUnique ?scope
    in act
 
-withNamesInScope :: (ConvertAbsToBTEnv) => [Name] -> IO a -> IO a
+withNamesInScope :: (ConvertAbsToBTEnv) => [Name] -> ((ConvertAbsToBTEnv) => IO a) -> IO a
 withNamesInScope names act =
   -- Map.union prefers the first argument
   -- and we need to add new names to the scope
