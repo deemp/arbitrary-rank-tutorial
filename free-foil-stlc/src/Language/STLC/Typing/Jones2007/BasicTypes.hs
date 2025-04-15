@@ -240,7 +240,9 @@ data NameSpace
   = -- | Terms namespace.
     NameSpace'Term
   | -- | Types namespace.
-    NameSpace'Type
+    NameSpace'Type'Var
+  | -- | Built-in types namespace.
+    NameSpace'Type'Concrete
   deriving (Eq)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/FastString.hs#L211
@@ -512,7 +514,7 @@ instance ConvertAbsToBT Abs.TypeVariable where
       Name
         { nameOcc =
             OccName
-              { occNameSpace = NameSpace'Type
+              { occNameSpace = NameSpace'Type'Var
               , occNameFS = name
               }
         , nameUnique
@@ -531,7 +533,7 @@ instance ConvertAbsToBT Abs.Type where
           ( Name
               { nameOcc =
                   OccName
-                    { occNameSpace = NameSpace'Type
+                    { occNameSpace = NameSpace'Type'Concrete
                     , occNameFS = name
                     }
               , nameUnique
@@ -546,7 +548,7 @@ instance ConvertAbsToBT Abs.Type where
           ( Name
               { nameOcc =
                   OccName
-                    { occNameSpace = NameSpace'Type
+                    { occNameSpace = NameSpace'Type'Var
                     , occNameFS = name
                     }
               , nameUnique
