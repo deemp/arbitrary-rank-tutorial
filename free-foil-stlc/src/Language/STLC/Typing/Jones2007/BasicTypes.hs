@@ -5,6 +5,8 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImplicitParams #-}
@@ -14,15 +16,17 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.STLC.Typing.Jones2007.BasicTypes () where
+module Language.STLC.Typing.Jones2007.BasicTypes where
 
 -- This module defines the basic types used by the Type ann checker
 -- Everything defined in here is exported
@@ -40,8 +44,9 @@ import Data.Text qualified as T
 import Data.Void (Void)
 import Data.Word (Word64)
 import GHC.Base (absurd)
+import Language.STLC.Common
 import Language.STLC.Syntax.Abs qualified as Abs
-import Prettyprinter hiding (dot)
+import Prettyprinter
 import Prelude hiding ((<>))
 
 -- infixr 4 --> -- The arrow Type ann constructor
@@ -110,12 +115,10 @@ data SynType x
     -- @String@
     SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
 
--- NOTE:  Other parts of the code assume that type literals do not contain
--- types or type variables.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L200
-data SynLit
-  = SynLit'Num Integer
-  | SynLit'Str FastString
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Lit.hs#L48
+data SynLit x
+  = SynLit'Num (XSynLit'Num' x) Integer
+  | SynLit'Str (XSynLit'Str' x) FastString
 
 -- TODO add case to support Trees That Grow
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L537
@@ -243,7 +246,7 @@ data NameSpace
     NameSpace'Type'Var
   | -- | Built-in types namespace.
     NameSpace'Type'Concrete
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/FastString.hs#L211
 type FastString = Text
@@ -258,6 +261,7 @@ data OccName = OccName
   { occNameSpace :: !NameSpace
   , occNameFS :: !FastString
   }
+  deriving (Show)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
 data UnhelpfulSpanReason = UnhelpfulNoLocationInfo deriving (Eq, Show)
@@ -282,6 +286,7 @@ data RealSrcSpan
 data SrcSpan
   = -- TODO Replace with RealSrcSpan
     RealSrcSpan !Abs.BNFC'Position
+  deriving (Show)
 
 -- | The key type representing kinds in the compiler.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
@@ -330,6 +335,7 @@ data Name = Name
   , nameUnique :: {-# UNPACK #-} !Unique
   , nameLoc :: !SrcSpan
   }
+  deriving (Show)
 
 -- | Variable
 --
@@ -367,7 +373,7 @@ newtype ModuleName = ModuleName Text deriving (Show, Eq)
 -- This annotation is used in GHC. See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L647
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
 type instance Anno Name = SrcSpan
-type instance Anno SynLit = SrcSpan
+type instance Anno (SynLit x) = SrcSpan
 type instance Anno Var = SrcSpan
 
 -- TODO specify instances for each phase
@@ -378,7 +384,7 @@ type instance XSynTerm'Var' x = ()
 type instance XSynTerm'Var x = Name
 
 type instance XSynTerm'Lit' x = ()
-type instance XSynTerm'Lit x = XAnno SynLit
+type instance XSynTerm'Lit x = XAnno (SynLit x)
 
 type instance XSynTerm'App' x = SrcSpan
 type instance XSynTerm'App'Fun x = SynTerm x
@@ -404,7 +410,7 @@ type instance XSynTerm'Ann'Type x = SynType x
 
 ---------------- Literals ---------------------
 
-type instance XSynLit'Num' x = SrcSpan
+type instance XSynLit'Num' x = ()
 
 ---------------- Types (syntactic) ---------------------
 
@@ -425,16 +431,18 @@ type instance XSynType'Paren x = SynType x
 type instance XSynType'Concrete' x = ()
 type instance XSynType'Concrete x = Name
 
+type NameFs = FastString
+
 newUnique :: (ConvertAbsToBTEnv) => IO Int
 newUnique = do
   r <- readIORef ?uniqueSupply
   writeIORef ?uniqueSupply (r + 1)
   pure r
 
-getEnvVarId :: (ConvertAbsToBTEnv) => FastString -> Maybe Int
+getEnvVarId :: (ConvertAbsToBTEnv) => NameFs -> Maybe Int
 getEnvVarId k = Map.lookup k ?scope
 
-getUnique :: (ConvertAbsToBTEnv) => FastString -> IO Int
+getUnique :: (ConvertAbsToBTEnv) => NameFs -> IO Int
 getUnique name = maybe newUnique pure (getEnvVarId name)
 
 withNameInScope :: (ConvertAbsToBTEnv) => Name -> IO a -> IO a
@@ -454,7 +462,7 @@ withNamesInScope names act =
 -- TODO add built-in types to the scope
 
 -- Should we have a separate scope for terms and types?
-type ConvertAbsToBTEnv = (?uniqueSupply :: IORef Int, ?scope :: Map FastString Int)
+type ConvertAbsToBTEnv = (?uniqueSupply :: IORef Int, ?scope :: Map NameFs Int)
 
 class ConvertAbsToBT a where
   type To a
@@ -464,12 +472,15 @@ instance ConvertAbsToBT Abs.Exp where
   type To Abs.Exp = IO (SynTerm CompRn)
   convertAbsToBT :: (ConvertAbsToBTEnv) => Abs.Exp -> To Abs.Exp
   convertAbsToBT = \case
-    Abs.ExpVar _pos var ->
-      SynTerm'Var () <$> convertAbsToBT var False
+    Abs.ExpVar _pos var -> do
+      SynTerm'Var ()
+        <$> convertAbsToBT var False
     Abs.ExpInt pos val ->
-      pure $ SynTerm'Lit () (Annotated (RealSrcSpan pos) (SynLit'Num val))
+      pure $ SynTerm'Lit () (Annotated (RealSrcSpan pos) (SynLit'Num () val))
     Abs.ExpApp pos term1 term2 ->
-      SynTerm'App (RealSrcSpan pos) <$> (convertAbsToBT term1) <*> (convertAbsToBT term2)
+      SynTerm'App (RealSrcSpan pos)
+        <$> (convertAbsToBT term1)
+        <*> (convertAbsToBT term2)
     Abs.ExpAbs pos var term -> do
       var' <- convertAbsToBT var True
       term' <- withNameInScope var' (convertAbsToBT term)
@@ -481,12 +492,15 @@ instance ConvertAbsToBT Abs.Exp where
       pure $ SynTerm'ALam (RealSrcSpan pos) var' ty' term'
     Abs.ExpLet pos var term1 term2 -> do
       var' <- convertAbsToBT var True
-      -- TODO should the let-expression be recursive and the var be brought into scope of the assigned term?
+      -- TODO should the let-expression be recursive
+      -- and the var be brought into scope of the assigned term?
       term1' <- convertAbsToBT term1
       term2' <- withNameInScope var' (convertAbsToBT term2)
       pure $ SynTerm'Let (RealSrcSpan pos) var' term1' term2'
     Abs.ExpAnno pos term ty ->
-      SynTerm'Ann (RealSrcSpan pos) <$> (convertAbsToBT term) <*> (convertAbsToBT ty)
+      SynTerm'Ann (RealSrcSpan pos)
+        <$> (convertAbsToBT term)
+        <*> (convertAbsToBT ty)
 
 -- TODO create unique only for new binders
 -- TODO what to do with free variables? Report error?
@@ -561,6 +575,50 @@ instance ConvertAbsToBT Abs.Type where
       pure $ SynType'ForAll (RealSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
     Abs.TypeParen pos ty -> SynType'Paren (RealSrcSpan pos) <$> convertAbsToBT ty
+
+instance Pretty (SynLit x) where
+  pretty = \case
+    SynLit'Num _ val -> pretty val
+    SynLit'Str _ val -> pretty val
+
+instance Pretty (SynTerm CompRn) where
+  pretty = \case
+    SynTerm'Var _ var -> pretty var
+    SynTerm'Lit _ (Annotated _pos val) -> pretty val
+    SynTerm'App _ term1 term2 -> parens (pretty term1) <+> pretty term2
+    SynTerm'Lam _ var term -> "\\" <> pretty var <> "." <+> pretty term
+    SynTerm'ALam _ var ty term -> "\\" <> pretty var <+> "::" <+> pretty ty <> "." <+> pretty term
+    SynTerm'Let _ name term1 term2 -> "let" <+> pretty name <+> "=" <+> pretty term1 <+> "in" <+> pretty term2
+    SynTerm'Ann _ term ty -> parens (pretty term <+> "::" <+> pretty ty)
+
+instance Pretty Name where
+  pretty name =
+    case name.nameOcc.occNameSpace of
+      NameSpace'Type'Concrete -> pretty name.nameOcc.occNameFS
+      _ -> pretty name.nameOcc.occNameFS <> "_" <> pretty name.nameUnique
+
+instance Pretty (SynType CompRn) where
+  pretty = \case
+    SynType'Var _ var -> pretty var
+    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
+    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
+    SynType'Paren _ ty -> parens (pretty ty)
+    SynType'Concrete _ ty -> pretty ty
+
+ex1 :: Abs.Exp
+ex1 = "\\ (x :: forall b. Int). (\\ z. z) x"
+
+ex2 :: IO (Doc ann)
+ex2 = do
+  let builtInTypes = ["Int"]
+  uniqueSupply <- newIORef (length builtInTypes)
+  let
+    ?scope = Map.fromList (zip builtInTypes [0 ..])
+    ?uniqueSupply = uniqueSupply
+  pretty <$> convertAbsToBT ex1
+
+-- >>> ex2
+-- \x_1 :: forall b_2. Int. (\z_3. z_3) x_1
 
 -- type Term' ann = Term (IORef (Maybe (Type ann)))
 
