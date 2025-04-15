@@ -515,6 +515,7 @@ instance ConvertAbsToBT Abs.Type where
           )
     Abs.TypeForall pos tys ty -> SynType'ForAll (RealSrcSpan pos) <$> (forM tys convertAbsToBT) <*> (convertAbsToBT ty)
     Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
+    Abs.TypeParen pos ty -> SynType'Paren (RealSrcSpan pos) <$> convertAbsToBT ty
 
 -- type Term' ann = Term (IORef (Maybe (Type ann)))
 

@@ -26,6 +26,7 @@ module Language.STLC.Syntax.Par
   , pTypeVariable
   , pType4
   , pListTypeVariable
+  , pType5
   , pType
   ) where
 
@@ -55,6 +56,7 @@ import qualified Data.Text
 %name pTypeVariable_internal TypeVariable
 %name pType4_internal Type4
 %name pListTypeVariable_internal ListTypeVariable
+%name pType5_internal Type5
 %name pType_internal Type
 -- no lexer declaration
 %monad { Err } { (>>=) } { return }
@@ -157,7 +159,7 @@ Type3
   : Type4 '->' Type3 { (fst $1, Language.STLC.Syntax.Abs.TypeFunc (fst $1) (snd $1) (snd $3)) }
   | Type1 { (fst $1, (snd $1)) }
   | Type2 { (fst $1, (snd $1)) }
-  | '(' Type3 ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
+  | Type5 { (fst $1, (snd $1)) }
 
 TypeVariable :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.TypeVariable) }
 TypeVariable
@@ -173,12 +175,17 @@ ListTypeVariable
   : {- empty -} { (Language.STLC.Syntax.Abs.BNFC'NoPosition, []) }
   | TypeVariable ListTypeVariable { (fst $1, (:) (snd $1) (snd $2)) }
 
+Type5 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
+Type5
+  : '(' Type3 ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.TypeParen (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+
 Type :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type
   : Type1 { (fst $1, (snd $1)) }
   | Type2 { (fst $1, (snd $1)) }
   | Type3 { (fst $1, (snd $1)) }
   | Type4 { (fst $1, (snd $1)) }
+  | Type5 { (fst $1, (snd $1)) }
 
 {
 
@@ -250,6 +257,9 @@ pType4 = fmap snd . pType4_internal
 
 pListTypeVariable :: [Token] -> Err [Language.STLC.Syntax.Abs.TypeVariable]
 pListTypeVariable = fmap snd . pListTypeVariable_internal
+
+pType5 :: [Token] -> Err Language.STLC.Syntax.Abs.Type
+pType5 = fmap snd . pType5_internal
 
 pType :: [Token] -> Err Language.STLC.Syntax.Abs.Type
 pType = fmap snd . pType_internal

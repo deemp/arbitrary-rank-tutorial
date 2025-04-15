@@ -49,6 +49,7 @@ data Type' a
     | TypeVariable a NameLowerCase
     | TypeFunc a (Type' a) (Type' a)
     | TypeForall a [TypeVariable' a] (Type' a)
+    | TypeParen a (Type' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
 type TypeVariable = TypeVariable' BNFC'Position
@@ -100,6 +101,7 @@ instance HasPosition Type where
     TypeVariable p _ -> p
     TypeFunc p _ _ -> p
     TypeForall p _ _ -> p
+    TypeParen p _ -> p
 
 instance HasPosition TypeVariable where
   hasPosition = \case

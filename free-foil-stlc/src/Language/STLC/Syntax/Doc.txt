@@ -73,16 +73,18 @@ All other symbols are terminals.
   | //Type3// | -> | //Type4// ``->`` //Type3//
   |  |  **|**  | //Type1//
   |  |  **|**  | //Type2//
-  |  |  **|**  | ``(`` //Type3// ``)``
+  |  |  **|**  | //Type5//
   | //TypeVariable// | -> | //NameLowerCase//
   | //Type4// | -> | ``forall`` //[TypeVariable]// ``.`` //Type3//
   |  |  **|**  | //Type3//
   | //[TypeVariable]// | -> | **eps**
   |  |  **|**  | //TypeVariable// //[TypeVariable]//
+  | //Type5// | -> | ``(`` //Type3// ``)``
   | //Type// | -> | //Type1//
   |  |  **|**  | //Type2//
   |  |  **|**  | //Type3//
   |  |  **|**  | //Type4//
+  |  |  **|**  | //Type5//
 
 
 

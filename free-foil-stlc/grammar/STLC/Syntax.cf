@@ -40,10 +40,10 @@ _. Exp11 ::= "(" Exp ")" ;
 TypeConcrete. Type1 ::= NameUpperCase ;
 TypeVariable. Type2 ::= NameLowerCase ;
 TypeFunc.     Type3 ::= Type4 "->" Type3 ;
+
 _. Type3 ::= Type1 ;
 _. Type3 ::= Type2 ;
-_. Type3 ::= "(" Type3 ")" ;
-
+_. Type3 ::= Type5 ;
 
 -- sigma
 -- TODO sigma in parens
@@ -57,8 +57,11 @@ separator TypeVariable " " ;
 
 _. Type4 ::= Type3 ;
 
+TypeParen. Type5 ::= "(" Type3 ")";
+
 -- type
 _. Type ::= Type1 ;
 _. Type ::= Type2 ;
 _. Type ::= Type3 ;
 _. Type ::= Type4 ;
+_. Type ::= Type5 ;

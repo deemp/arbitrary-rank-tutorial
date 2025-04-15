@@ -166,6 +166,7 @@ instance Print (Language.STLC.Syntax.Abs.Type' a) where
     Language.STLC.Syntax.Abs.TypeVariable _ namelowercase -> prPrec i 2 (concatD [prt 0 namelowercase])
     Language.STLC.Syntax.Abs.TypeFunc _ type_1 type_2 -> prPrec i 3 (concatD [prt 4 type_1, doc (showString "->"), prt 3 type_2])
     Language.STLC.Syntax.Abs.TypeForall _ typevariables type_ -> prPrec i 4 (concatD [doc (showString "forall"), prt 0 typevariables, doc (showString "."), prt 3 type_])
+    Language.STLC.Syntax.Abs.TypeParen _ type_ -> prPrec i 5 (concatD [doc (showString "("), prt 3 type_, doc (showString ")")])
 
 instance Print (Language.STLC.Syntax.Abs.TypeVariable' a) where
   prt i = \case
