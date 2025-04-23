@@ -2,5 +2,51 @@
   "haskell.manageHLS": "PATH",
   "haskell.formattingProvider": "fourmolu",
   "latex-workshop.formatting.latex": "latexindent",
-  "nix.formatterPath": "nixfmt"
+  "nix.formatterPath": "nixfmt",
+  "latex-workshop.latex.recipes": [
+    // {
+    //     "name": "pdflatex -> biber -> pdflatex * 2",
+    //     "tools": [
+    //         "pdflatex",
+    //         "biber",
+    //         "pdflatex",
+    //         "pdflatex"
+    //     ]
+    // },
+    {
+      "name": "xelatex -> biber -> xelatex * 2",
+      "tools": ["xelatex", "biber", "xelatex", "xelatex"]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "args": ["%DOCFILE%"],
+      "command": "biber",
+      "name": "biber"
+    },
+    // {
+    //     "args": [
+    //         "-shell-escape",
+    //         "-synctex=1",
+    //         "-interaction=nonstopmode",
+    //         "-file-line-error",
+    //         "%DOC%"
+    //     ],
+    //     "command": "pdflatex",
+    //     "env": {},
+    //     "name": "pdflatex"
+    // },
+    {
+      "args": [
+        "-shell-escape",
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ],
+      "command": "xelatex",
+      "env": {},
+      "name": "xelatex"
+    }
+  ]
 }
