@@ -1,45 +1,62 @@
 \chapter{Literature Review}
 \label{chap:LiteratureReview}
 
-\section{Chapter overview}
+Our initial goal was to build a language server and an interpreter for a typed lambda calculus using the Free Foil \cite{kudasov-free-2024} representation for its abstract syntax tree (AST).
+In this representation, the AST has two types of nodes: one for scoped variables and another for all other expressions, potentially under a binder.
+Such expressions can be \texttt{if}-expressions and function applications.
+The Free Foil representation can handle capture-avoiding substitution while a user only needs to specify how to handle non-variable expressions.
+We planned to use the Free Foil implementation provided by the \texttt{free-foil} Haskell library \cite{kudasov-free-foil}.
 
-This chapter presents the literature review process and surveys previous works on \dots.
-\Cref{sec:researchQuestions} lists the literature review questions.
-Next, \Cref{sec:searchProcess} summarizes the initial literature search process and its results.
-\Cref{sec:relevance} presents a set of relevance criteria.
-Finally, \Cref{sec:selectedLiterature} overviews the answers to the literature review questions from \Cref{sec:researchQuestions}.
+Later, we hypothesized on extending our language and discovered several limitations of the Free Foil library.
 
-\section{Literature review questions}
-\label{sec:researchQuestions}
+\subsection{Free Foil limitations}
+\label{chap:LiteratureReview:sec:FreeFoilLimitations}
 
-The literature review aims at answering the following questions:
+First, the library provides convenience functions for generating the scope-safe AST data type from data types produced by the BNFC parser generator, but these functions have limitations.
 
-\setlist{nolistsep}
-\begin{enumerate}[noitemsep]
-    \item \dots
-    \item \dots
-    \item \dots
-\end{enumerate}
+One problem is that these functions only support terms, variable identifiers, scoped terms, patterns \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil-TH-Convert.html}{Control.Monad.Free.Foil.TH.Convert}.
 
-\section{Search engines and queries}
-\label{sec:searchProcess}
+Another problem is that in some cases, due to limitations of the BNFC, it is necessary to introduce dummy nodes. For example, a floating number should be parsed as a string of characters, and then a new node should be created with a floating number instead of the string. Currently, some modifications to convenience functions are necessary to to support specifying which data type constructors to omit during generation.
 
-\section{Relevance criteria} \label {sec:relevance}
+Both of these problems can be avoided by manually writing the AST data types, but then the whole point of convenience functions is lost.
 
-Each relevant work should be or do as follows:
+Second, currently, the library requires that mutually recursive types in the AST be combined into a single data type.
+This limitation may be inconvenient when developing languages where nodes for expressions and expression types are more convenient to represent via different Haskell data types, e.g., languages without dependent types. The library author states that the library may support mutually recursive types.
 
-\begin{enumerate}[noitemsep, label=\arabic*) ]
-    \item Be published 1999 or later;
-    \item Be written in English;
-    \item Desirably, show Haskell implementation source code or contain a link to such code;
-    \item Desirably, \dots
-    \item Desirably, \dots;
-\end{enumerate}
+Third, we realized that the Free Foil approach would not work very conveniently in presence of modules.
+In a language with modules, relating variable usage and declaration sites may require performing multi-phased typechecking \cite{poulsen-monadic-2023}.
+So, after parsing, language implementors would need to construct an AST without binders, then type check it, and then construct an AST with resolved binders.
+However, a Free Foil AST without binders does not provide any considerable benefits over other AST representations.
 
-\section{Selected literature overview} \label{sec:selectedLiterature}
+These limitations led us to considering other AST representations.
 
-\dots
+\subsection{Alternative AST representations}
 
-\section{Conclusion}
+First of all, we did not want to reuse the data type produced by the BNFC parser generator because it contained unnecessary data constructors as mentioned in \Cref{chap:LiteratureReview:sec:FreeFoilLimitations}.
 
-\dots
+Since we wanted to implement a language server, we needed to annotate some nodes in the AST with additional information.
+That information could be corresponding syntax construct positions after parsing and types after type checking.
+
+We decided to look at the AST data types used in the GHC because it was a working compiler at hand.
+
+Studying the compiler source code led us to learning about the Trees that Grow approach that lets one extend particular constructors with additional fields and extend a type with additional constructors.
+
+Unlike Free Foil, this approach did not prohibit mutually recursive types.
+
+Our next step was to choose a type system for our language.
+
+\subsection{Type system}
+
+Initially, we studied \cite{dunfield-bidirectional-2020} to learn about bidirectional type systems.
+
+The work was not easy to follow and it was not obvious how to extend the described systems to support features like type classes and type families that are available in the GHC.
+
+We checked the \cite{dunfield-complete-2020} to learn about a specific bidirectional type system for higher-rank polymorphism.
+
+That work was not approachable either, but referenced a more understandable earlier work about a type system with similar properties \cite{jones-practical-2007} authored by the creator of the GHC.
+
+\cite{jones-practical-2007} provided an implementation of the algorithm.
+
+That fact was convenient because it allowed us to better understand an algorithm similar to the one used in GHC.
+
+Our next step was to revive the code and use a new AST representation.
