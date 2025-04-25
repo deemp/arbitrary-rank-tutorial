@@ -1,24 +1,86 @@
+% IMPORTANT
+% Labels MUST contain no underscores "_". 
+% Replace all non-alphanumeric characters with dashes "-".
 
-@article{thiemann-embedded-2005,
-  title        = {An embedded domain-specific language for type-safe server-side web scripting},
-  volume       = {5},
-  issn         = {1533-5399, 1557-6051},
-  url          = {https://dl.acm.org/doi/10.1145/1052934.1052935},
-  doi          = {10.1145/1052934.1052935},
-  abstract     = {{WASH}/{CGI} is an embedded domain-specific language for server-side Web scripting. Due to its reliance on the strongly typed, purely functional programming language Haskell as a host language, it is highly flexible and---at the same time---it provides extensive guarantees due to its pervasive use of type information.{WASH}/{CGI} can be structured into a number of sublanguages addressing different aspects of the application. The
-                  document sublanguage
-                  provides tools for the generation of parameterized {XHTML} documents and forms. Its typing guarantees that almost all generated documents are valid {XHTML} documents. The
-                  session sublanguage
-                  provides a session abstraction with a transparent notion of session state and allows the composition of documents and Web forms to entire interactive scripts. Both are integrated with the
-                  widget sublanguage
-                  which describes the communication (parameter passing) between client and server. It imposes a simple type discipline on the parameters that guarantees that forms posted by the client are always understood by the server. That is, the server never asks for data not submitted by the client and the data submitted by the client has the type requested by the server. In addition, parameters are received in their typed internal representation, not as strings. Finally, the
-                  persistence sublanguage
-                  deals with managing shared state on the server side as well as individual state on the client side. It presents shared state as an abstract data type, where the script can control whether it wants to observe mutations due to concurrently executing scripts. It guarantees that states from different interaction threads cannot be confused.},
-  pages        = {1--46},
-  number       = {1},
-  journaltitle = {{ACM} Trans. Internet Technol.},
-  author       = {Thiemann, Peter},
-  urldate      = {2022-10-22},
-  date         = {2005-02},
-  langid       = {english}
+@misc{kudasov-free-2024,
+  title      = {Free Foil: Generating Efficient and Scope-Safe Abstract Syntax},
+  url        = {http://arxiv.org/abs/2405.16384},
+  doi        = {10.48550/arXiv.2405.16384},
+  shorttitle = {Free Foil},
+  abstract   = {Handling bound identifiers correctly and efficiently is critical in implementations of compilers, proof assistants, and theorem provers. When choosing a representation for abstract syntax with binders, implementors face a trade-off between type safety with intrinsic scoping, efficiency, and generality. The "foil" by Maclaurin, Radul, and Paszke combines an efficient implementation of the Barendregt convention with intrinsic scoping through advanced type system features in Haskell, such as rank-2 polymorphism and generalized algebraic data types. Free scoped monads of Kudasov, on the other hand, combine intrinsic scoping with de Bruijn indices as nested data types with Sweirstra's data types {\textbackslash}`a la carte approach to allow generic implementation of algorithms such as higher-order unification. In this paper, we suggest two approaches of making the foil more affordable. First, we marry free scoped monads with the foil, allowing to generate efficient, type-safe, and generic abstract syntax representation with binders for any language given its second-order signature. Second, we provide Template Haskell functions that allow generating the scope-safe representation from a na{\textbackslash}"ive one. The latter approach enables us to use existing tools like {BNF} Converter to very quickly prototype complete implementation of languages, including parsing, pretty-printing, and efficient intrinsically scoped abstract syntax. We demonstrate both approaches using \${\textbackslash}lambda{\textbackslash}Pi\$ with pairs and patterns as our example object language. Finally, we provide benchmarks comparing our implementation against the foil, free scoped monads with nested de Bruijn indices, and some traditional implementations.},
+  number     = {{arXiv}:2405.16384},
+  publisher  = {{arXiv}},
+  author     = {Kudasov, Nikolai and Shakirova, Renata and Shalagin, Egor and Tyulebaeva, Karina},
+  urldate    = {2024-11-11},
+  date       = {2024-05-26},
+  eprinttype = {arxiv},
+  eprint     = {2405.16384},
+  keywords   = {Computer Science - Programming Languages}
+}
+
+
+@article{poulsen-monadic-2023,
+  title    = {A Monadic Framework for Name Resolution in Multi-phased Type Checkers},
+  abstract = {An important aspect of type checking is name resolution—i.e., determining the types of names by resolving them to a matching declaration. For most languages, we can give typing rules that deﬁne name resolution in a way that abstracts from what order diﬀerent units of code should be checked in. However, implementations of type checkers in practice typically use multiple phases to ensure that declarations of resolvable names are available before names are resolved. This gives rise to a gap between typing rules that abstract from order of type checking and multi-phased type checkers that rely on explicit ordering.},
+  author   = {Poulsen, Casper Bach and Zwaan, Aron and Hübner, Paul},
+  date     = {2023},
+  langid   = {english}
+}
+
+
+@online{kudasov-free-foil,
+  title      = {free-foil},
+  url        = {https://hackage.haskell.org/package/free-foil},
+  abstract   = {Efficient Type-Safe Capture-Avoiding Substitution for Free (Scoped Monads)},
+  titleaddon = {Hackage},
+  urldate    = {2025-04-25},
+}
+
+
+@misc{dunfield-bidirectional-2020,
+	title = {Bidirectional Typing},
+	url = {http://arxiv.org/abs/1908.05839},
+	doi = {10.48550/arXiv.1908.05839},
+	number = {{arXiv}:1908.05839},
+	publisher = {{arXiv}},
+	author = {Dunfield, Jana and Krishnaswami, Neel},
+	urldate = {2024-11-12},
+	date = {2020-11-14},
+	eprinttype = {arxiv},
+	eprint = {1908.05839},
+	keywords = {Computer Science - Programming Languages, Computer Science - Logic in Computer Science},
+}
+
+
+@misc{dunfield-complete-2020,
+	title = {Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism},
+	url = {http://arxiv.org/abs/1306.6032},
+	doi = {10.48550/arXiv.1306.6032},
+	abstract = {Bidirectional typechecking, in which terms either synthesize a type or are checked against a known type, has become popular for its scalability (unlike Damas-Milner type inference, bidirectional typing remains decidable even for very expressive type systems), its error reporting, and its relative ease of implementation. Following design principles from proof theory, bidirectional typing can be applied to many type constructs. The principles underlying a bidirectional approach to polymorphism, however, are less obvious. We give a declarative, bidirectional account of higher-rank polymorphism, grounded in proof theory; this calculus enjoys many properties such as eta-reduction and predictability of annotations. We give an algorithm for implementing the declarative system; our algorithm is remarkably simple and well-behaved, despite being both sound and complete.},
+	number = {{arXiv}:1306.6032},
+	publisher = {{arXiv}},
+	author = {Dunfield, Jana and Krishnaswami, Neelakantan R.},
+	urldate = {2025-04-02},
+	date = {2020-08-22},
+	eprinttype = {arxiv},
+	eprint = {1306.6032 [cs]},
+	keywords = {Computer Science - Programming Languages},
+}
+
+
+@article{jones-practical-2007,
+	title = {Practical type inference for arbitrary-rank types},
+	volume = {17},
+	rights = {https://www.cambridge.org/core/terms},
+	issn = {0956-7968, 1469-7653},
+	url = {https://www.cambridge.org/core/product/identifier/S0956796806006034/type/journal_article},
+	doi = {10.1017/S0956796806006034},
+	abstract = {Haskell’s popularity has driven the need for ever more expressive type system features, most of which threaten the decidability and practicality of Damas-Milner type inference. One such feature is the ability to write functions with higher-rank types—that is, functions that take polymorphic functions as their arguments.},
+	pages = {1--82},
+	number = {1},
+	journaltitle = {J. Funct. Prog.},
+	author = {Jones, Simon Peyton and Vytiniotis, Dimitrios and Weirich, Stephanie and Shields, Mark},
+	urldate = {2025-04-03},
+	date = {2007-01},
+	langid = {english},
 }
