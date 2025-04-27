@@ -1,51 +1,89 @@
 \chapter{Literature Review}
 \label{chap:LiteratureReview}
 
-Our initial goal was to build a language server and an interpreter for a typed lambda calculus using the Free Foil \cite{kudasov-free-2024} representation for its abstract syntax tree (AST).
-In this representation, the AST has two types of nodes: one for scoped variables and another for all other expressions, potentially under a binder.
-Such expressions can be \texttt{if}-expressions and function applications.
-The Free Foil representation can handle capture-avoiding substitution while a user only needs to specify how to handle non-variable expressions.
-We planned to use the Free Foil implementation provided by the \texttt{free-foil} Haskell library \cite{kudasov-free-foil}.
+We studied several abstract syntax tree representations (\cref{sec:AstRepresentations}) and type inference algorithms (\cref{sec:TypeInferenceAlgorithm}) to understand which ones could be used for our language.
 
-Later, we hypothesized on extending our language and discovered several limitations of the Free Foil library.
+% TODO move to the Design chapter?
+% We decided to use the Trees that grow \cite{najd-trees-2016} approach for the AST representation, the bidirectional type inference algorithm described in \cite{jones-practical-2007}, the Free Foil representation of the data type \texttt{Type} used in the type inference algorithm, and the Free Foil representation for the core language AST.
 
-\subsection{Free Foil limitations}
-\label{chap:LiteratureReview:sec:FreeFoilLimitations}
+\section{Technical constraints}
+\label{chap:LiteratureReview:sec:AstRepresentations:TechnicalConstraints}
 
-First, the library provides convenience functions for generating the scope-safe AST data type from data types produced by the BNFC parser generator, but these functions have limitations.
+\begin{itemize}
+    \item We thought about extending our language to support modules, integer and floating-point numbers, and record types in future.
+    \item We wanted to be able to freely use mutually recursive data types for different categories of AST nodes. For example, such categories could be modules and statements. A module could contain a number of statements and a statement could introduce a module.
+    \item For the language server, we needed to annotate some of the AST nodes with additional information such as locations of the source code that corresponded to these nodes and types of expressions represented by these node subtrees.
+    \item We used the BNFC parser generator that generated an AST data type parameterised by an annotation type variable.
+          % TODO not only start position - see https://github.com/BNFC/bnfc/pull/463
+          After parsing, the annotation of almost each AST node contained the position of a source code span parsed to produce that node.
+\end{itemize}
 
-One problem is that these functions only support terms, variable identifiers, scoped terms, patterns \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil-TH-Convert.html}{Control.Monad.Free.Foil.TH.Convert}.
+\section{AST representations}
+\label{sec:AstRepresentations}
 
-Another problem is that in some cases, due to limitations of the BNFC, it is necessary to introduce dummy nodes. For example, a floating number should be parsed as a string of characters, and then a new node should be created with a floating number instead of the string. Currently, some modifications to convenience functions are necessary to to support specifying which data type constructors to omit during generation.
+For the AST representation, we could use the data types produced by the parser generator BNFC (\cref{chap:LiteratureReview:sec:AstRepresentations:BnfcAst}), \texttt{hypertypes} (\cref{chap:LiteratureReview:sec:AstRepresentations:Hypertypes}) and alternative representations described in that project, \texttt{compdata} (\cref{chap:LiteratureReview:sec:AstRepresentations:Compdata}), the Free Foil (\cref{chap:LiteratureReview:sec:AstRepresentations:FreeFoil}), or the Trees that grow approach (\cref{chap:LiteratureReview:sec:AstRepresentations:TreesThatGrow}).
 
-Both of these problems can be avoided by manually writing the AST data types, but then the whole point of convenience functions is lost.
+\subsection{BNFC AST}
+\label{chap:LiteratureReview:sec:AstRepresentations:BnfcAst}
 
-Second, currently, the library requires that mutually recursive types in the AST be combined into a single data type.
-This limitation may be inconvenient when developing languages where nodes for expressions and expression types are more convenient to represent via different Haskell data types, e.g., languages without dependent types. The library author states that the library may support mutually recursive types.
+The BNFC-generated parsers did not support parsing signed integer numbers out of the box.
+Our workaround was to define a \texttt{token}, then use that \texttt{token} to parse code and construct a node containing a string in the correct format, then post-process the parsed AST to replace nodes containing such raw values with \texttt{internal} (not parsable) nodes containing numbers.
 
-Third, we realized that the Free Foil approach would not work very conveniently in presence of modules.
-In a language with modules, relating variable usage and declaration sites may require performing multi-phased typechecking \cite{poulsen-monadic-2023}.
-So, after parsing, language implementors would need to construct an AST without binders, then type check it, and then construct an AST with resolved binders.
-However, a Free Foil AST without binders does not provide any considerable benefits over other AST representations.
+\begin{minted}{haskell}
+token IntegerSigned  ('-'? digit+) ;
+LitIntegerRaw.       Object ::= IntegerSigned ;
+internal LitInteger. Object ::= IntegerSigned ;
+\end{minted}
 
-These limitations led us to considering other AST representations.
+It was inconvenient though that both variants of nodes were in the AST and we would have to pattern-match on the \texttt{LitIntegerRaw} even if that variant of node was completely unnecessary after the post-processing.
 
-\subsection{Alternative AST representations}
+\subsection{\texttt{hypertypes}}
+\label{chap:LiteratureReview:sec:AstRepresentations:Hypertypes}
 
-First of all, we did not want to reuse the data type produced by the BNFC parser generator because it contained unnecessary data constructors as mentioned in \Cref{chap:LiteratureReview:sec:FreeFoilLimitations}.
+The \texttt{hypertypes} package \cite{hypertypes-hackage} let users construct expressions from individual components like in the Data types à la carte \cite{swierstra-data-2008} approach. These components could be mutually recursive types like in \texttt{multirec} \cite{multirec-hackage} and could be processed via type classes. The package description explained the limitations of some previous approaches.
 
-Since we wanted to implement a language server, we needed to annotate some nodes in the AST with additional information.
-That information could be corresponding syntax construct positions after parsing and types after type checking.
+The package provided primitives for annotating nodes (\href{https://hackage.haskell.org/package/hypertypes-0.2.2/docs/Hyper-Combinator-Ann.html}{\texttt{Hyper.Ann}}) and for constructing typed lambda calculus expressions (\href{https://hackage.haskell.org/package/hypertypes-0.2.2/docs/Hyper-Syntax.html}{\texttt{Hyper.Syntax}}). The \href{https://github.com/lamdu/hypertypes/blob/06cf48ef9c85c54cbe722a448754cb89931b23e7/src/Hyper/Diff.hs}{\texttt{Hyper.Diff}} module showed how to annotate trees.
 
-We decided to look at the AST data types used in the GHC because it was a working compiler at hand.
+\subsection{\texttt{compdata}}
+\label{chap:LiteratureReview:sec:AstRepresentations:Compdata}
 
-Studying the compiler source code led us to learning about the Trees that Grow approach that lets one extend particular constructors with additional fields and extend a type with additional constructors.
+Likewise, the \texttt{compdata} package \cite{compdata-hackage} supported mutually recursive data types, including GADTS (\texttt{Data.Comp.Multi}).
+Provided examples showed (\href{https://github.com/pa-ba/compdata/blob/e916a9ae847b37d7932669f9365de987d09fd9e0/src/Data/Comp/Multi.hs#L322
+}{example1}, \href{https://github.com/pa-ba/compdata/blob/e916a9ae847b37d7932669f9365de987d09fd9e0/examples/Examples/Multi/Desugar.hs}{example2}, \href{https://gist.github.com/liarokapisv/bb857a23ecd9df945690f73e0acfbe80}{example3} related to this \href{https://github.com/pa-ba/compdata/issues/35}{issue}) how to use annotated ASTs.
 
-Unlike Free Foil, this approach did not prohibit mutually recursive types.
+\section{Free Foil}
+\label{chap:LiteratureReview:sec:AstRepresentations:FreeFoil}
 
-Our next step was to choose a type system for our language.
+The Free Foil \cite{kudasov-free-2024} approach implemented in the \cite{free-foil-hackage} package allowed for constructing an AST where nodes were indexed with a fantom type variable denoting the scope. Each node represented either a variable or any other language construct, potentially scoped under a (single) binder that extended the scope. The approach enabled type-safe capture-avoiding substitution of variables for expressions. Additionally, it allowed to define generic recursive AST processing functions that could be used for any AST where nodes were constructed from a user-supplied type (\texttt{sig}) that had necessary type class instances such as \texttt{Bifunctor}.
 
-\subsection{Type system}
+The example in \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil-Example.html}{Control.Monad.Free.Foil.Example} showed a definition of an AST for an untyped lambda calculus. The pattern synonym \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/src/Control.Monad.Free.Foil.Example.html#LamE}{\texttt{LamE}} was used to construct expressions under a binder.
+
+The Free Foil approach had two limitations that could be inconvenient given our Technical constraints (\cref{chap:LiteratureReview:sec:AstRepresentations:TechnicalConstraints}).
+
+First, the last library version required that mutually recursive types in the AST be combined into a single data type. The library author stated that the library could theoretically support mutually recursive types if another representation were used.
+
+% TODO link to the definition of lexical scoping
+Second, it could increase the AST size if our language had modules, or, more generally, supported non-lexical scoping.
+In a language with modules, relating the variable declaration and usage sites may require performing multi-phased type checking, e.g., using the scope graphs approach \cite{poulsen-monadic-2023}.
+If we wanted to use binders to track the declaration sites, after parsing, we would need to construct an AST with nodes for modules and without binders, then type check that AST, and then construct an AST with resolved binders.
+In the subtree of each node that denoted a module import, we would need to create nodes that would introduce binders for visible variables from that module.
+At the same time, we would still need to track for each binder the module that the variable came from.
+
+\subsection{Trees That Grow}
+\label{chap:LiteratureReview:sec:AstRepresentations:TreesThatGrow}
+
+The GHC used a variant of the Trees That Grow \cite{najd-trees-2016} approach (\href{https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/hs-syn}{HsSyn}, \href{https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/trees-that-grow-guidance}{Trees that grow guidance}).
+
+This approach suggests to parameterise a data type with a type variable and use open type families applied to that type variable instead of concrete types for constructor fields. This way, it is possible to specify a different set type family instances and corresponding field types for each instantiation of the parameter. For example, in GHC, the AST is parameterised by the compilation phase (parsed, renamed, typechecked), and the type families are used to disable certain constructors and choose which nodes should have annotations of particular types.
+
+The data type should also have an additional constructor with a field specified in the similar manner using a type family. Then, it will be possible to "add constructors" to the data type by resolving the type of that field to another data type and providing pattern synonyms that would make constructors of another type wrapped in the constructor of the additional field look as if they belong to the initial data type. A similar approach could be used with constructors of the initial data type to "add" fields to these constructors if they provided an additional field represented as an application of a type family.
+
+Unlike Free Foil, this approach supported mutually recursive types and was similar to using an ordinary data type parameterised by a type variable except one had to define quite a lot of type family instances for constructor fields.
+
+\subsection{Type inference algorithm}
+\label{sec:TypeInferenceAlgorithm}
+
+% ordered context - latest, we know he's working on impredicative polymorphism.
 
 Initially, we studied \cite{dunfield-bidirectional-2020} to learn about bidirectional type systems.
 
