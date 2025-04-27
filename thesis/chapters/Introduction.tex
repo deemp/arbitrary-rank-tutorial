@@ -9,25 +9,24 @@ Although we had been programming in Haskell for several years before we started 
 % TODO add links to the resources?
 Luckily, the compiler had open source code, its implementation was based on scientific publications, the project wiki and online presentations about the compiler were insightful, and there were online communities where the compiler developers and other knowledgeable people were ready to answer our questions.
 
-To improve our understanding of the compiler internals, we decided to implement a small extensible typed functional language using approaches similar to those employed in GHC.
-These approaches included using a fancy abstract syntax tree (AST) representation, support for higher-rank types, a bidirectional type inference algorithm, deferred type constraint solving, translation to a core language based on System F, and interpretation of that language.
+To improve our understanding of the compiler internals and make an excuse for  writing some more Haskell, we decided to implement a small extensible typed functional language using approaches similar to those employed in GHC.
 
-Additionally, we wanted to simplify certain parts of the implementation by using the Free Foil \cite{kudasov-free-2024} representation. That representation would enable type-safe capture-avoiding substitution, which could be useful for type constraint solving and interpretation of the core language.
+These approaches included using a fancy abstract syntax tree (AST) representation, support for higher-rank types, a bidirectional type inference algorithm, collecting and then solving type constraints, translation to a core language based on System F, and interpretation of that language.
+
+Additionally, we decided to study available options for the AST representation and the the type inference engine to educate ourselves and possibly use in our project. For example, we learned about the Free Foil approach \cite{kudasov-free-2024} that enabled type-safe capture-avoiding substitution and could be used to represent types or the core language.
 
 % TODO convert to references
 As we wanted to iterate on the language syntax quickly, we decided to use the BNFC parser generator \cite{bnfc-parser-generator} instead of the combination of Happy and Alex used in the GHC \cite{ghc-2025}.
 
-At the end, we expected to obtain a parser, a type inference engine, an interpreter, a language server, and a VS Code extension for our language. We could not find on GitHub any well-documented implementation of a very simple language featuring higher-rank polymorphism and having the mentioned components.
+At the end, we expected to obtain a parser, a type inference engine, an interpreter, a language server, and a VS Code extension for our language.
 
-While the parser, interpreter and the language server parts were mostly clear, we decided to study available options for the AST representation and the type inference engine based on publications on these topics to make more educated design decisions. We admit we were biased towards the choices made in the GHC since our global goal was to better understand the principles underlying GHC.
-
-As first-time programming language implementers, we wished we had a comprehensive review of available options that would help us choose the suitable ones. In this work, we attempted to partially close this gap by documenting the options we considered, our decisions, and the final implementation.
+We could not find on GitHub any well-documented implementation of a very simple language featuring higher-rank polymorphism, having the mentioned components and resembling the GHC. In our work, we attempted to partially close this gap by documenting the considered options and explaining our final implementation. The implementation \cite{deemp-higher-rank-free-foil} is available on GitHub under the MIT license.
 
 \newpage
 
 \section{Overview}
 
-The \cref{chap:LiteratureReview} reviews several AST representations and type inference algorithms and presents our decisions on these components of our implementation.
+The \cref{chap:LiteratureReview} reviews several AST representations and type inference algorithms including the ones that we chose for our implementation.
 Then, \cref{chap:DesignImplementation} explains the theoretical basis and details of the implementation of our language.
 Next, \cref{chap:EvaluationDiscussion} summarizes the obtained results and describes the development experience.
 Following that, \cref{chap:Conclusion} mentions possible directions for future work.
