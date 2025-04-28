@@ -1,10 +1,7 @@
 \chapter{Literature Review}
 \label{chap:LiteratureReview}
 
-We studied several abstract syntax tree representations (\cref{sec:AstRepresentations}) and type inference algorithms (\cref{sec:TypeInferenceAlgorithm}) to understand which ones could be used for our language.
-
-% TODO move to the Design chapter?
-% We decided to use the Trees that grow \cite{najd-trees-2016} approach for the AST representation, the bidirectional type inference algorithm described in \cite{jones-practical-2007}, the Free Foil representation of the data type \texttt{Type} used in the type inference algorithm, and the Free Foil representation for the core language AST.
+We studied several abstract syntax tree representations (\cref{sec:AstRepresentations}) and type inference algorithms (\cref{sec:TypeInferenceAlgorithm}) to understand which ones could be used in different parts of our implementation.
 
 \section{Technical constraints}
 \label{chap:LiteratureReview:sec:AstRepresentations:TechnicalConstraints}
@@ -40,9 +37,9 @@ It was inconvenient though that both variants of nodes were in the AST and we wo
 \subsection{\texttt{hypertypes}}
 \label{chap:LiteratureReview:sec:AstRepresentations:Hypertypes}
 
-The \texttt{hypertypes} package \cite{hypertypes-hackage} let users construct expressions from individual components like in the Data types à la carte \cite{swierstra-data-2008} approach. These components could be mutually recursive types like in \texttt{multirec} \cite{multirec-hackage} and could be processed via type classes. The package description explained the limitations of some previous approaches.
+The \texttt{hypertypes} package \cite{hypertypes-hackage} let users construct expressions from individual components like in the Data types à la carte \cite{swierstra-data-2008} approach. These components could be mutually recursive types like in \texttt{multirec} \cite{multirec-hackage} and could be processed via type classes. The package description explained the limitations of several previous approaches.
 
-The package provided primitives for annotating nodes (\href{https://hackage.haskell.org/package/hypertypes-0.2.2/docs/Hyper-Combinator-Ann.html}{\texttt{Hyper.Ann}}) and for constructing typed lambda calculus expressions (\href{https://hackage.haskell.org/package/hypertypes-0.2.2/docs/Hyper-Syntax.html}{\texttt{Hyper.Syntax}}). The \href{https://github.com/lamdu/hypertypes/blob/06cf48ef9c85c54cbe722a448754cb89931b23e7/src/Hyper/Diff.hs}{\texttt{Hyper.Diff}} module showed how to annotate trees.
+The package provided primitives for annotating nodes (\href{https://hackage.haskell.org/package/hypertypes-0.2.2/docs/Hyper-Combinator-Ann.html}{\texttt{Hyper.Ann}}), for constructing typed lambda calculus expressions (\href{https://hackage.haskell.org/package/hypertypes-0.2.2/docs/Hyper-Syntax.html}{\texttt{Hyper.Syntax}}), and for unification (\href{https://hackage.haskell.org/package/hypertypes-0.2.2/docs/Hyper-Unify.html}{Hyper.Unify}). The \href{https://github.com/lamdu/hypertypes/blob/06cf48ef9c85c54cbe722a448754cb89931b23e7/src/Hyper/Diff.hs}{\texttt{Hyper.Diff}} module showed how to annotate trees and the \href{https://github.com/lamdu/hypertypes/tree/06cf48ef9c85c54cbe722a448754cb89931b23e7/test/TypeLang.hs}{\texttt{TypeLang}} module provided an implementation of type inference for a language with row-types using the primitives provided by the package.
 
 \subsection{\texttt{compdata}}
 \label{chap:LiteratureReview:sec:AstRepresentations:Compdata}
@@ -51,10 +48,14 @@ Likewise, the \texttt{compdata} package \cite{compdata-hackage} supported mutual
 Provided examples showed (\href{https://github.com/pa-ba/compdata/blob/e916a9ae847b37d7932669f9365de987d09fd9e0/src/Data/Comp/Multi.hs#L322
 }{example1}, \href{https://github.com/pa-ba/compdata/blob/e916a9ae847b37d7932669f9365de987d09fd9e0/examples/Examples/Multi/Desugar.hs}{example2}, \href{https://gist.github.com/liarokapisv/bb857a23ecd9df945690f73e0acfbe80}{example3} related to this \href{https://github.com/pa-ba/compdata/issues/35}{issue}) how to use annotated ASTs.
 
+\section{Stitch}
+
+\citeauthor{eisenberg-stitch-2020} explored an implementation of a simply typed $\lambda$-calculus with a non-typechecked AST with type-level de Bruijn indices that enforced the construction of only well-scoped terms during parsing and a type-checked AST indexed with type-level contexts and node types. The implementation uses lots of Haskell extensions and can be a good playground for studying them in action.
+
 \section{Free Foil}
 \label{chap:LiteratureReview:sec:AstRepresentations:FreeFoil}
 
-The Free Foil \cite{kudasov-free-2024} approach implemented in the \cite{free-foil-hackage} package allowed for constructing an AST where nodes were indexed with a fantom type variable denoting the scope. Each node represented either a variable or any other language construct, potentially scoped under a (single) binder that extended the scope. The approach enabled type-safe capture-avoiding substitution of variables for expressions. Additionally, it allowed to define generic recursive AST processing functions that could be used for any AST where nodes were constructed from a user-supplied type (\texttt{sig}) that had necessary type class instances such as \texttt{Bifunctor}.
+The Free Foil \cite{kudasov-free-2024} approach by \citeauthor{kudasov-free-2024} implemented in the \cite{free-foil-hackage} package allowed for constructing an AST where nodes were indexed with a phantom type variable denoting the scope. Each node represented either a variable or any other language construct, potentially scoped under a (single) binder that extended the scope. The approach enabled type-safe capture-avoiding substitution of variables for expressions. Additionally, it allowed to define generic recursive AST processing functions that could be used for any AST where nodes were constructed from a user-supplied type (\texttt{sig}) that had necessary type class instances such as \texttt{Bifunctor}.
 
 The example in \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil-Example.html}{Control.Monad.Free.Foil.Example} showed a definition of an AST for an untyped lambda calculus. The pattern synonym \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/src/Control.Monad.Free.Foil.Example.html#LamE}{\texttt{LamE}} was used to construct expressions under a binder.
 
@@ -80,21 +81,43 @@ The data type should also have an additional constructor with a field specified 
 
 Unlike Free Foil, this approach supported mutually recursive types and was similar to using an ordinary data type parameterised by a type variable except one had to define quite a lot of type family instances for constructor fields.
 
-\subsection{Type inference algorithm}
+\section{Type inference algorithm}
 \label{sec:TypeInferenceAlgorithm}
 
-% ordered context - latest, we know he's working on impredicative polymorphism.
+\subsection{GHC}
 
-Initially, we studied \cite{dunfield-bidirectional-2020} to learn about bidirectional type systems.
+% TODO more precise number
+The current GHC type inference engine has tens of thousands lines of code.
+It has been incrementally developed over years to add new extensions to the Haskell type system.
+Some of these extensions had accompanying scientific publications.
+% TODO proof that it's based on the paper
+One of such extensions was \href{https://gitlab.haskell.org/haskell/prime/-/wikis/RankNTypes}{\texttt{RankNTypes}} that enabled arbitrary-rank predicative polymorphism.
+The extension was based on \cite{jones-practical-2007} that described a bidirectional type inference algorithm for a type system with arbitrary-rank types. The Technical Appendix \cite{practical-type-inference-proofs} provided the proofs of theorems mentioned in the paper, including the proofs of completeness and soundness, but not of the attached Haskell implementation.
 
-The work was not easy to follow and it was not obvious how to extend the described systems to support features like type classes and type families that are available in the GHC.
+\subsection{New algorithms}
 
-We checked the \cite{dunfield-complete-2020} to learn about a specific bidirectional type system for higher-rank polymorphism.
+\cite{jones-practical-2007} was published around 20 years ago, and since then, multiple new type inference algorithms outside of the work on the GHC had been published.
+Moreover, some of them were implemented in Haskell \cite{github-goldenberg-artem-goldenbergbidirectionalsystem-2025} \cite{github-choi-kwanghoonbidi-2025} \cite{github-chen-cu1ch3ntype-inference-zoo-2025}.
 
-That work was not approachable either, but referenced a more understandable earlier work about a type system with similar properties \cite{jones-practical-2007} authored by the creator of the GHC.
+The following sections
+% TODO add links to implementations.
 
-\cite{jones-practical-2007} provided an implementation of the algorithm.
+\subsection{Bidirectional typing}
 
-That fact was convenient because it allowed us to better understand an algorithm similar to the one used in GHC.
+There are two modes in bidirectional typing - the inference mode that helps reduce the number of type annotations required from the programmer and propagates the available type information, and the checking mode that can type expressions for which a type could not be inferred otherwise \cite{dunfield-bidirectional-2020}.
 
-Our next step was to revive the code and use a new AST representation.
+In \cite{dunfield-complete-2013}, \citeauthor{dunfield-complete-2013} provided an arguably simple bidirectional type inference algorithm for a system with higher-rank predicative polymorphism. Their algorithm had similar properties \cite[Fig. 15]{dunfield-complete-2013} as the one presented in \cite[Sec.~6]{jones-practical-2007}, namely, it abided the $\eta$-law \cite[Ch.~4]{selinger-lecture-2013} and was sound and complete wrt. the System F \cite[Ch.~8]{selinger-lecture-2013}. The authors argued that using ordered contexts, existential variables, and precise scoping rules in their work were a better fit from the type-theoretic point of view than using the ``bag of constraints" approach, unification variables, and skolemization that were described, e.g., in \cite{jones-practical-2007}.
+
+In a later work \cite{dunfield-sound-2019}, \citeauthor{dunfield-sound-2019} built on \cite{dunfield-complete-2013} and described the type inference algorithm for a significantly extended language that featured existential quantification, sums, products, pattern matching, etc. For their algorithm and proofs, they used a desugared version \cite[Fig. 11]{dunfield-sound-2019} of the surface language \cite[Fig. 1]{dunfield-sound-2019}.
+
+Additionally, \citeauthor{dunfield-bidirectional-2020} extensively surveyed \cite{dunfield-bidirectional-2020} the works on bidirectional typing and supplied a guide to creating new programmer-friendly bidirectional type inference algorithms.
+
+\subsection{Modifications of bidirectional typing}
+
+\citeauthor{xie-higher-rank} \cite{xie-higher-rank} reviews \cite{dunfield-complete-2013} (Sec. 2.3), suggests using the application mode in addition to inference and checking modes (Sec. 3), provides a novel algorithm for kind inference (Sec. 7), and relates it to the current GHC implementation (Sec. 8.6), noting possible points for improvement (Appendix Sec. C).
+
+\citeauthor{xue-contextual-2024} \cite{xue-contextual-2024} explain the limitations of bidirectional typing (Sec 2.5) and generalize bidirectional typing to contextual typing by propagating any necessary contextual information instead of just type information and replacing the two modes (inference and checking) with counters that track the amount of the contextual information to be propagated. Their approach allows to specify exact places in the code where a programmer must provide annotations.
+
+\subsection{Beyond bidirectional typing}
+
+\citeauthor{parreaux-when-2024} suggest a novel non-bidirectional type inference algorithm SuperF that supports first-class (i.e., impredicative) higher-rank polymorphism. Impredicative polymorphism allows instantiation of type variables with polytypes while predicative allows only monotypes \cite[Sec 3.4]{jones-practical-2007}. The algorithm infers a type for each subterm and then checks against user annotations written in System F syntax. The authors claim that subtype inference used in their approach suits much better for implementing first-class polymorphism than first-order unification-based approaches. As a demonstration of the capabilities of the algorithm, the authors show that it types almost any term even without type annotations (Sec 5.4, Sec 5.5).
