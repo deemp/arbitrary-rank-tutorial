@@ -49,12 +49,17 @@ The program pretty-prints the resulting expression.
 \subsection{Use case: user queries a type of a variable.}
 
 \subsubsection{Start language server}
+
 VS Code extension starts the language server if not started.
 VS Code extension makes the language server read the code in the current file.
 
 \subsubsection{Query}
 
 VS Code extension passes a position to the language server and asks for the type of the variable at that position.
+
+\subsection{Process}
+
+The language server updates the AST if necessary, performs type checking, finds the node at the given position, and returns its type to the extension.
 
 \section{AST}
 
