@@ -28,7 +28,7 @@
 }
 
 
-@online{kudasov-free-foil,
+@online{free-foil-hackage,
   title      = {free-foil},
   url        = {https://hackage.haskell.org/package/free-foil},
   abstract   = {Efficient Type-Safe Capture-Avoiding Substitution for Free (Scoped Monads)},
@@ -52,7 +52,7 @@
 }
 
 
-@misc{dunfield-complete-2020,
+@misc{dunfield-complete-2013,
   title      = {Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism},
   url        = {http://arxiv.org/abs/1306.6032},
   doi        = {10.48550/arXiv.1306.6032},
@@ -96,7 +96,7 @@
   langid     = {english}
 }
 
-@misc{najd-trees-2016,
+@misc{trees-that-grow-2016,
   title      = {Trees That Grow},
   url        = {http://arxiv.org/abs/1610.04799},
   doi        = {10.48550/arXiv.1610.04799},
@@ -134,4 +134,219 @@
   urldate    = {2025-04-27},
   date       = {2025-04-24},
   langid     = {english}
+}
+
+
+@online{hypertypes-hackage,
+  title      = {hypertypes},
+  url        = {https://hackage.haskell.org/package/hypertypes},
+  abstract   = {Typed {ASTs}},
+  titleaddon = {Hackage},
+  urldate    = {2025-04-27}
+}
+
+@online{compdata-hackage,
+  title      = {compdata},
+  url        = {https://hackage.haskell.org/package/compdata},
+  abstract   = {Compositional Data Types},
+  titleaddon = {Hackage},
+  urldate    = {2025-04-27}
+}
+
+
+@online{multirec-hackage,
+  title      = {multirec},
+  url        = {https://hackage.haskell.org/package/multirec},
+  abstract   = {Generic programming for families of recursive datatypes},
+  titleaddon = {Hackage},
+  urldate    = {2025-04-27}
+}
+
+@article{swierstra-data-2008,
+  title        = {Data types à la carte},
+  volume       = {18},
+  issn         = {1469-7653, 0956-7968},
+  url          = {https://www.cambridge.org/core/journals/journal-of-functional-programming/article/data-types-a-la-carte/14416CB20C4637164EA9F77097909409},
+  doi          = {10.1017/S0956796808006758},
+  abstract     = {This paper describes a technique for assembling both data types and functions from isolated individual components. We also explore how the same technology can be used to combine free monads and, as a result, structure Haskell's monolithic {IO} monad.},
+  pages        = {423--436},
+  number       = {4},
+  journaltitle = {Journal of Functional Programming},
+  author       = {Swierstra, Wouter},
+  urldate      = {2025-04-27},
+  date         = {2008-07},
+  langid       = {english}
+}
+
+
+@online{lens-hackage,
+  title      = {lens},
+  url        = {https://hackage.haskell.org/package/lens},
+  abstract   = {Lenses, Folds and Traversals},
+  titleaddon = {Hackage},
+  urldate    = {2025-04-27}
+}
+
+
+@software{deemp-higher-rank-free-foil,
+  title    = {deemp/higher-rank-free-foil},
+  url      = {https://github.com/deemp/higher-rank-free-foil},
+  abstract = {A repository for the MS thesis Type Inference for arbitrary-rank types using Free Foil},
+  author   = {Danko, Danila},
+  urldate  = {2025-04-27},
+  date     = {2025-04-27},
+  note     = {original-date: 2024-11-11T16:24:27Z}
+}
+
+
+@article{practical-type-inference-proofs,
+  url    = {https://repository.upenn.edu/server/api/core/bitstreams/7c1dc678-93c6-4516-98fd-f82b384eb75d/content},
+  title  = {Practical type inference for arbitrary-rank types - Technical Appendix},
+  author = {Vytiniotis, Dimitrios and Weirich, Stephanie and Peyton-Jones, Simon},
+  langid = {english}
+}
+
+
+@misc{selinger-lecture-2013,
+  title      = {Lecture notes on the lambda calculus},
+  url        = {http://arxiv.org/abs/0804.3434},
+  doi        = {10.48550/arXiv.0804.3434},
+  abstract   = {This is a set of lecture notes that developed out of courses on the lambda calculus that I taught at the University of Ottawa in 2001 and at Dalhousie University in 2007 and 2013. Topics covered in these notes include the untyped lambda calculus, the Church-Rosser theorem, combinatory algebras, the simply-typed lambda calculus, the Curry-Howard isomorphism, weak and strong normalization, polymorphism, type inference, denotational semantics, complete partial orders, and the language {PCF}.},
+  number     = {{arXiv}:0804.3434},
+  publisher  = {{arXiv}},
+  author     = {Selinger, Peter},
+  urldate    = {2025-04-28},
+  date       = {2013-12-26},
+  eprinttype = {arxiv},
+  eprint     = {0804.3434 [cs]},
+  keywords   = {Computer Science - Logic in Computer Science}
+}
+
+
+@article{dunfield-sound-2019,
+  title        = {Sound and complete bidirectional typechecking for higher-rank polymorphism with existentials and indexed types},
+  volume       = {3},
+  url          = {https://dl.acm.org/doi/10.1145/3290322},
+  doi          = {10.1145/3290322},
+  abstract     = {Bidirectional typechecking, in which terms either synthesize a type or are checked against a known type, has become popular for its applicability to a variety of type systems, its error reporting, and its ease of implementation. Following principles from proof theory, bidirectional typing can be applied to many type constructs. The principles underlying a bidirectional approach to indexed types (generalized algebraic datatypes) are less clear. Building on proof-theoretic treatments of equality, we give a declarative specification of typing based on focalization. This approach permits declarative rules for coverage of pattern matching, as well as support for first-class existential types using a focalized subtyping judgment. We use refinement types to avoid explicitly passing equality proofs in our term syntax, making our calculus similar to languages such as Haskell and {OCaml}. We also extend the declarative specification with an explicit rules for deducing when a type is principal, permitting us to give a complete declarative specification for a rich type system with significant type inference. We also give a set of algorithmic typing rules, and prove that it is sound and complete with respect to the declarative system. The proof requires a number of technical innovations, including proving soundness and completeness in a mutually recursive fashion.},
+  pages        = {9:1--9:28},
+  issue        = {{POPL}},
+  journaltitle = {Proc. {ACM} Program. Lang.},
+  author       = {Dunfield, Jana and Krishnaswami, Neelakantan R.},
+  urldate      = {2025-04-03},
+  date         = {2019-01-02}
+}
+
+
+@software{github-choi-kwanghoonbidi-2025,
+  title    = {kwanghoon/bidi},
+  rights   = {{BSD}-3-Clause},
+  url      = {https://github.com/kwanghoon/bidi},
+  abstract = {bidirectional type checking algorithms for higher-ranked polymorphism},
+  author   = {Choi, Kwanghoon},
+  urldate  = {2025-04-28},
+  date     = {2025-01-03},
+  note     = {original-date: 2020-08-16T11:54:57Z},
+  keywords = {bidirectional-typechecking, functional-programming, haskell, higher-rank-types, typeinference, types}
+}
+
+@software{github-goldenberg-artem-goldenbergbidirectionalsystem-2025,
+  title    = {Artem-Goldenberg/{BidirectionalSystem}},
+  url      = {https://github.com/Artem-Goldenberg/BidirectionalSystem},
+  abstract = {Implementation of higher-rank polymorphic type inference with user supplied annotations},
+  author   = {Goldenberg, Artem},
+  urldate  = {2025-04-28},
+  date     = {2025-01-23},
+  note     = {original-date: 2024-11-23T14:06:35Z}
+}
+
+@software{github-chen-cu1ch3ntype-inference-zoo-2025,
+  title    = {cu1ch3n/type-inference-zoo},
+  rights   = {{MIT}},
+  url      = {https://github.com/cu1ch3n/type-inference-zoo},
+  abstract = {🦖 Implementations of various type inference algorithms. Online interactive playground is available at https://zoo.cuichen.cc/},
+  author   = {Chen, Cui},
+  urldate  = {2025-04-28},
+  date     = {2025-04-26},
+  note     = {original-date: 2024-12-27T09:05:39Z},
+  keywords = {functional-programming, haskell, programming-languages, type-inference, zoo}
+}
+
+@article{xie-higher-rank,
+  title  = {Higher-rank Polymorphism: Type Inference and Extensions},
+  url    = {https://i.cs.hku.hk/~bruno/thesis/NingningXie.pdf},
+  author = {Xie, Ningning},
+  langid = {english}
+}
+
+
+@article{xue-contextual-2024,
+  title        = {Contextual Typing},
+  volume       = {8},
+  issn         = {2475-1421},
+  url          = {https://dl.acm.org/doi/10.1145/3674655},
+  doi          = {10.1145/3674655},
+  pages        = {880--908},
+  issue        = {{ICFP}},
+  journaltitle = {Proc. {ACM} Program. Lang.},
+  author       = {Xue, Xu and Oliveira, Bruno C. D. S.},
+  urldate      = {2025-04-04},
+  date         = {2024-08-15},
+  langid       = {english}
+}
+
+
+@article{parreaux-when-2024,
+  title        = {When Subtyping Constraints Liberate: A Novel Type Inference Approach for First-Class Polymorphism},
+  volume       = {8},
+  issn         = {2475-1421},
+  url          = {https://dl.acm.org/doi/10.1145/3632890},
+  doi          = {10.1145/3632890},
+  shorttitle   = {When Subtyping Constraints Liberate},
+  pages        = {1418--1450},
+  issue        = {{POPL}},
+  journaltitle = {Proc. {ACM} Program. Lang.},
+  author       = {Parreaux, Lionel and Boruch-Gruszecki, Aleksander and Fan, Andong and Chau, Chun Yin},
+  urldate      = {2025-04-24},
+  date         = {2024-01-05},
+  langid       = {english}
+}
+
+
+@inproceedings{eisenberg-stitch-2020,
+  location   = {Virtual Event {USA}},
+  title      = {Stitch: the sound type-indexed type checker (functional pearl)},
+  isbn       = {978-1-4503-8050-8},
+  url        = {https://dl.acm.org/doi/10.1145/3406088.3409015},
+  doi        = {10.1145/3406088.3409015},
+  shorttitle = {Stitch},
+  abstract   = {A classic example of the power of generalized algebraic datatypes ({GADTs}) to verify a delicate implementation is the type-indexed expression {AST}. This functional pearl refreshes this example, casting it in modern Haskell using many of {GHC}’s bells and whistles. The Stitch interpreter is a full executable interpreter, with a parser, type checker, commonsubexpression elimination, and a {REPL}. Making heavy use of {GADTs} and type indices, the Stitch implementation is clean Haskell code and serves as an existence proof that Haskell’s type system is advanced enough for the use of fancy types in a practical setting. The paper focuses on guiding the reader through these advanced topics, enabling them to adopt the techniques demonstrated here.},
+  eventtitle = {{ICFP} '20: {ACM} {SIGPLAN} International Conference on Functional Programming},
+  pages      = {39--53},
+  booktitle  = {Proceedings of the 13th {ACM} {SIGPLAN} International Symposium on Haskell},
+  publisher  = {{ACM}},
+  author     = {Eisenberg, Richard A.},
+  urldate    = {2025-04-27},
+  date       = {2020-08-27},
+  langid     = {english}
+}
+
+
+@article{trees-that-grow-2016,
+	title = {Trees that Grow},
+	volume = {23},
+	rights = {2017 Shayan Najd, Simon Jones},
+	issn = {0948-6968},
+	url = {https://lib.jucs.org/article/22912/},
+	doi = {10.3217/jucs-023-01-0042},
+	abstract = {We study the notion of extensibility in functional data types, as a new approach to the problem of decorating abstract syntax trees with additional information. We observed the need for such extensibility while redesigning the data types representing Haskell abstract syntax inside Glasgow Haskell Compiler ({GHC}). Specifically, we describe a programming idiom that exploits type-level functions to allow a particular form of extensibility. The approach scales to support existentials and generalised algebraic data types, and we can use pattern synonyms to make it convenient in practice.},
+	pages = {42--62},
+	number = {1},
+	journaltitle = {{JUCS} - Journal of Universal Computer Science},
+	author = {Najd, Shayan and Jones, Simon},
+	urldate = {2025-04-28},
+	date = {2017-01-28},
+	langid = {english},
+	note = {Number: 1
+Publisher: Journal of Universal Computer Science},
 }
