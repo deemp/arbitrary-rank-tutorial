@@ -112,6 +112,66 @@ data Type
   ...
 \end{minted}
 
+\section{Type system}
+
+A \textit{type system} specifies syntactic rules of assigning types to terms (e.g., expressions, operators, statements) of a program written in a programming language, allowing one to reason about the run-time properties of that program \cite{pierce-types-2002}.
+A \textit{bidirectional} type system has some rules that infer and some rules that check types of terms \cite{dunfield-bidirectional-2020}.
+We use a slightly revised version (\cref{fig:TypeSystem}) of the bidirectional type system suggested by \citeauthor{jones-practical-2007} \cite[Sec. 4.7]{jones-practical-2007}.
+
+\newpage
+
+% TODO improve the alignment
+
+\newcommand{\Qquad}{\hspace{0.25em}}
+\newcommand{\mexp}[1]{\mathnormal{#1}}
+\newcommand{\msyn}[1]{\normalfont\asciifamily\text{#1}}
+\newcommand{\mlg}[1]{\mathlarger{\mathlarger{#1}}}
+
+\begin{figure}[h]
+  \begin{tcolorbox}[breakable, colback=white]
+    \small
+    % Using gather* to center each rule or pair of rules on a line
+    \begin{gather*}
+      \mlg{\text{Rho-types} \quad \rho \Qquad \Coloneqq \Qquad \tau \mid \sigma \to \sigma}
+      \\[\bigskipamount]
+      \boxed{\mlg{\Gamma \vdash_\delta \mexp{t} : \rho}} \qquad \delta \Coloneqq \Qquad \Uparrow \Qquad \mid \Qquad \Downarrow
+      \\[\bigskipamount]
+      \frac{}{\Gamma \vdash_\delta \mexp{i} : \msyn{Int}} \text{INT}
+      \qquad \qquad
+      \frac{\mexp{\vdash_\delta^{inst} \sigma \leq \rho}}{\Gamma, \mexp{(x:\sigma) \vdash_\delta x : \rho}} \text{VAR}
+      \\[\bigskipamount]
+      \frac{\Gamma, \mexp{(x:\tau) \vdash_\Uparrow \mexp{t} : \rho}}{\Gamma \Qquad \mexp{\vdash_\Uparrow (\lambda x.t) : (\tau \to \rho)}} \text{ABS1}
+      \qquad \qquad
+      \frac{\Gamma, \mexp{(x:\sigma_a) \vdash_\Downarrow^{poly} t : \sigma_r}}{\Gamma \Qquad \mexp{\vdash_\Downarrow (\lambda x.t) : (\sigma_a \to \sigma_r)}} \text{ABS2}
+      \\[\bigskipamount]
+      \frac{\Gamma, \mexp{(x:\sigma) \vdash_\Uparrow t : \rho}}{\Gamma \Qquad \mexp{\vdash_\Uparrow (\forall x \msyn{::} \sigma).t : (\sigma \to \rho)}} \text{AABS1}
+      \\[\bigskipamount]
+      \frac{\mexp{\vdash^{dsk} \sigma_a \leq \sigma_x} \quad \Gamma, \mexp{(x:\sigma_x) \vdash_\Downarrow^{poly} t : \sigma_r}}{\Gamma \Qquad \mexp{\vdash_\Downarrow (\forall x \msyn{::} \sigma_x).t : (\sigma_a \to \sigma_r)}} \text{AABS2}
+      \\[\bigskipamount]
+      \frac{\Gamma \Qquad \mexp{\vdash_\Uparrow t : (\sigma \to \sigma')} \quad \Gamma \Qquad \mexp{\vdash_\delta^{poly} u : \sigma \quad \vdash_\delta^{inst} \sigma' \leq \rho}}{\Gamma \Qquad \mexp{\vdash_\delta t \Qquad u : \rho}} \text{APP}
+      \\[\bigskipamount]
+      \frac{\Gamma \Qquad \mexp{\vdash_\delta^{poly} t : \sigma \quad \vdash_\delta^{inst} \sigma \leq \rho}}{\Gamma \Qquad \mexp{\vdash_\delta (t \msyn{::} \sigma) : \rho}} \text{ANNOT}
+      \qquad
+      \frac{\Gamma \Qquad \mexp{\vdash_\delta^{poly} u : \sigma} \quad \Gamma, \mexp{x:\sigma \vdash_\delta t : \rho}}{\Gamma \vdash_\delta \msyn{let} \Qquad \mexp{x} \Qquad = \Qquad \mexp{u} \Qquad \msyn{in} \Qquad \mexp{t : \rho}} \text{LET}
+      \\[\bigskipamount]
+      \boxed{\mlg{\Gamma \Qquad \mexp{\vdash_\delta^{poly} t : \sigma}}}
+      \\[\bigskipamount]
+      \frac{\mexp{\bar{a}} = \mexp{ftv}(\rho) - \mexp{ftv}(\Gamma) \quad \Gamma \Qquad \mexp{\vdash_\Uparrow t : \rho}}{\Gamma \Qquad \mexp{\vdash_\Uparrow^{poly} t : \forall \bar{a}.\rho}} \text{GEN1}
+      \\[\bigskipamount]
+      \frac{\mexp{\bar{a}} \notin \mexp{ftv}(\Gamma) \quad \Gamma \Qquad \mexp{\vdash_\Downarrow t : \rho \quad pr(\sigma) = \forall \bar{a}.\rho}}{\Gamma \Qquad \mexp{\vdash_\Downarrow^{poly} t : \sigma}} \quad \text{GEN2}
+      \\[\bigskipamount]
+      \boxed{\mlg{\mexp{\vdash_\delta^{inst} \sigma \leq \rho}}}
+      \\[\bigskipamount]
+      \frac{}{\mexp{\vdash_\Uparrow^{inst} \forall \bar{a}.\rho \leq [a \mapsto \tau] \rho}} \text{INST1}
+      \qquad \qquad
+      \frac{\mexp{\vdash^{dsk} \sigma \leq \rho}}{\mexp{\vdash_\Downarrow^{inst} \sigma \leq \rho}} \text{INST2}
+    \end{gather*}
+  \end{tcolorbox}
+  \caption{Bidirectional type system}
+  \label{fig:TypeSystem}
+\end{figure}
+
+\section{TODO}
 
 TODO use the Free Foil representation for Type
 TODO Free foil - try to marry with indices assigned by the Tc monad
