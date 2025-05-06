@@ -3,25 +3,17 @@
 
 \epigraph{Any sufficiently advanced technology is indistinguishable from magic.}{\textit{Arthur C. Clarke}}
 
-For us, the Glasgow Haskell Compiler (GHC) \cite{ghc-site} represented that "sufficiently advanced technology."
+For us, the Glasgow Haskell Compiler (GHC) \cite{ghc-site-2025} represented that "sufficiently advanced technology."
 Despite programming in Haskell for several years prior to beginning this thesis, we had not yet explored the internal workings of its primary compiler.
 
 % TODO: Consider adding specific links to key resources like the GHC wiki, relevant publications, or community forums?
 Fortunately, GHC is open source, its implementation is grounded in scientific publications, and a wealth of resources --- including the project wiki, online presentations, and supportive online communities with compiler developers and experts --- facilitated our learning.
 
-To deepen our understanding of GHC's internals and create a practical context for further Haskell programming, we decided to implement a small, extensible, typed functional language employing approaches similar to those used in GHC.
-
-Key techniques adopted from GHC included utilizing a sophisticated abstract syntax tree (AST) representation, supporting parametric predicative higher-rank polymorphism, implementing a bidirectional type inference algorithm, employing constraint generation and solving, translating the source language to a System F-based core language, and interpreting this core language.
-
-Additionally, we investigated available options for the AST representation and type inference engine to inform our design choices. For example, we studied the Free Foil approach \cite{kudasov-free-2024}, which enabled type-safe capture-avoiding substitution and offered potential applications for representing types or the core language.
-
-To facilitate rapid iteration on the language syntax, we chose the BNFC parser generator \cite{bnfc-parser-generator} rather than the combination of Happy and Alex employed by GHC \cite{ghc-2025}.
+To deepen our understanding of GHC's internals and create a practical context for further Haskell programming, we decided to implement a small, extensible, typed functional programming language employing approaches similar to those used in GHC. We called this language Practical Lambda Calculus (PLC) as it was based on a variant of lambda calculus introduced in the paper \citetitle{jones-practical-2007} \cite{jones-practical-2007}.
 
 The project aimed to produce a complete toolchain for our language, including a parser, a type inference engine, an interpreter, a language server, and a corresponding VS Code extension.
 
-Our search on GitHub revealed a lack of well-documented, open-source implementations of simple languages that feature parametric predicative higher-rank polymorphism, include the aforementioned components, and closely mirror GHC's architecture. This work attempts to partially address this gap by documenting the design options considered and detailing our final implementation. The implementation \cite{deemp-higher-rank-free-foil} is available on GitHub under the MIT license.
-
-\newpage
+Our search on GitHub revealed a lack of well-documented, open-source implementations of simple languages that feature parametric predicative higher-rank polymorphism, include the aforementioned components, and mirror GHC's architecture. This work attempts to partially address this gap by documenting the design options considered and detailing our final implementation. The implementation \cite{deemp-higher-rank-free-foil} is available on GitHub under the MIT license.
 
 \section{Overview}
 
