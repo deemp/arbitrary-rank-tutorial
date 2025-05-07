@@ -8,10 +8,10 @@
 \newpage
 
 \begin{figure}[h]
-    \centering
-    \includegraphics[scale=0.25]{Architecture.png}
-    \caption{Static view}
-    \label{Architecture}
+  \centering
+  \includegraphics[scale=0.25]{Architecture.png}
+  \caption{Static view}
+  \label{Architecture}
 \end{figure}
 
 \newpage
@@ -20,7 +20,7 @@
 
 \subsubsection{Parsing}
 
-A BNFC-generated parser reads the source code written in our language and produces a raw BNFC AST with positions of tokens.
+A BNFC-generated parser reads the source code written in my language and produces a raw BNFC AST with positions of tokens.
 
 \subsubsection{Renaming}
 
@@ -63,9 +63,9 @@ The language server updates the AST if necessary, performs type checking, finds 
 
 \section{AST}
 
-We used the Trees That Grow approach \cite{trees-that-grow-2016} for the AST representation.
+I used the Trees That Grow approach \cite{trees-that-grow-2016} for the AST representation.
 
-In GHC, some fields are just types constructed using the index parameter. In contrary, we used type family applications to the index parameter in all fields of the AST to make the AST more flexible. Additionally, we named the type families and constructors consistently to improve code navigation.
+In GHC, some fields are just types constructed using the index parameter. In contrary, I used type family applications to the index parameter in all fields of the AST to make the AST more flexible. Additionally, I named the type families and constructors consistently to improve code navigation.
 
 \begin{minted}{haskell}
 -- GHC
@@ -94,7 +94,7 @@ data SynTerm x
 type instance XSynTerm'Var x = Name
 \end{minted}
 
-Like in GHC, we had separate data types that represented syntactic types and types used during typing.
+Like in GHC, I had separate data types that represented syntactic types and types used during typing.
 
 \begin{minted}{haskell}
 -- Ours
@@ -116,7 +116,7 @@ data Type
 
 A \textit{type system} specifies syntactic rules of assigning types to terms (e.g., expressions, operators, statements) of a program written in a programming language, allowing one to reason about the run-time properties of that program \cite{pierce-types-2002}.
 A \textit{bidirectional} type system has some rules that infer and some rules that check types of terms \cite{dunfield-bidirectional-2020}.
-We use a slightly revised version (\cref{fig:TypeSystem}) of the bidirectional type system suggested by \citeauthor{jones-practical-2007} \cite[Sec. 4.7]{jones-practical-2007}.
+I use a slightly revised version (\cref{fig:TypeSystem}) of the bidirectional type system suggested by \citeauthor{jones-practical-2007} \cite[Sec. 4.7]{jones-practical-2007}.
 
 \newpage
 
@@ -178,7 +178,7 @@ TODO Free foil - try to marry with indices assigned by the Tc monad
 TODO write about the type system.
 
 % perform typing on a slightly desugared AST.
-% We used the Free Foil representation of the Core types.
+% I used the Free Foil representation of the Core types.
 
 % TODO schema
 

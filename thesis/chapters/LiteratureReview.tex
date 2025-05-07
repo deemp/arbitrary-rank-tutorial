@@ -1,18 +1,18 @@
 \chapter{Literature Review}
 \label{chap:LiteratureReview}
 
-This chapter reviews several abstract syntax tree (AST) representations (\cref{sec:AstRepresentations}) and type inference algorithms (\cref{sec:TypeInferenceAlgorithm}). This review aimed to identify approaches suitable for different aspects of our implementation, considering the technical constraints outlined below.
+This chapter reviews several abstract syntax tree (AST) representations (\cref{sec:AstRepresentations}) and type inference algorithms (\cref{sec:TypeInferenceAlgorithm}). This review aimed to identify approaches suitable for different aspects of my implementation, considering the technical constraints outlined below.
 
 \section{Technical Constraints}
 \label{chap:LiteratureReview:sec:AstRepresentations:TechnicalConstraints}
 
-Our design and implementation choices were guided by the following technical constraints and requirements:
+My design and implementation choices were guided by the following technical constraints and requirements:
 
 \begin{itemize}
-  \item \textbf{Extensibility:} We anticipated future extensions to the language, including support for modules, integer and floating-point numbers, and record types. The chosen AST representation should accommodate such additions gracefully.
+  \item \textbf{Extensibility:} I anticipated future extensions to the language, including support for modules, integer and floating-point numbers, and record types. The chosen AST representation should accommodate such additions gracefully.
   \item \textbf{Mutual Recursion:} A requirement was the ability to employ mutually recursive data types for different categories of AST nodes. For instance, categories like modules and statements might be mutually dependent: a module could contain statements, and a statement could potentially introduce a nested module.
   \item \textbf{Annotation for Tooling:} The language server necessitated annotating AST nodes with auxiliary information. This includes the source code location (span) corresponding to each node and the inferred type of the expression represented by a node's subtree.
-  \item \textbf{Parser Generator Integration:} We utilized the BNFC parser generator. BNFC produces an AST data type parameterized by an annotation type variable. Post-parsing, the annotation for most AST nodes includes the source code span from which the node was derived.
+  \item \textbf{Parser Generator Integration:} I utilized the BNFC parser generator. BNFC produces an AST data type parameterized by an annotation type variable. Post-parsing, the annotation for most AST nodes includes the source code span from which the node was derived.
         % TODO note about span details can remain a comment or be integrated if relevant now.
         % Original TODO: not only start position - see https://github.com/BNFC/bnfc/pull/463
 \end{itemize}
@@ -63,7 +63,7 @@ The Free Foil approach \cite{kudasov-free-2024} by \citeauthor{kudasov-free-2024
 
 The example in \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil-Example.html}{\texttt{Control.Monad.Free.Foil.Example}} demonstrates defining an AST for an untyped lambda calculus, using the \href{https://hackage.haskell.org/package/free-foil-0.2.0/docs/src/Control.Monad.Free.Foil.Example.html#LamE}{\texttt{LamE}} pattern synonym to construct expressions under a binder.
 
-Initially, we considered using the Free Foil representation of our AST to track bound variables. However, we later found out that the Free Foil approach presented two potential limitations relative to our technical constraints (\cref{chap:LiteratureReview:sec:AstRepresentations:TechnicalConstraints}):
+Initially, I considered using the Free Foil representation of my AST to track bound variables. However, I later found out that the Free Foil approach presented two potential limitations relative to my technical constraints (\cref{chap:LiteratureReview:sec:AstRepresentations:TechnicalConstraints}):
 
 First, the current library version requires mutually recursive types within the AST to be combined into a single sum data type acting as the signature \texttt{sig}. The library author notes that supporting truly separate mutually recursive types might be theoretically possible using a different internal representation.
 
@@ -84,7 +84,7 @@ GHC utilizes a variant of the Trees That Grow pattern \cite{trees-that-grow-2016
 \section{Type Inference Algorithms}
 \label{sec:TypeInferenceAlgorithm}
 
-We reviewed several approaches to typing, ranging from the established system used in GHC to more recent algorithmic developments. We primarily focused on the bidirectional algorithms as they were said to produce better error messages due to error locality \cite{dunfield-bidirectional-2020}.
+I reviewed several approaches to typing, ranging from the established system used in GHC to more recent algorithmic developments. I primarily focused on the bidirectional algorithms as they were said to produce better error messages due to error locality \cite{dunfield-bidirectional-2020}.
 
 \subsection{GHC's Type Inference}
 
