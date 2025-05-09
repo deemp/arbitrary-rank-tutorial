@@ -495,24 +495,24 @@ type instance XSynType'Concrete x = Name
 
 type NameFs = FastString
 
-newUnique :: (ConvertAbsToBTEnv) => IO Int
+newUnique :: (IConvertRename) => IO Int
 newUnique = do
   r <- readIORef ?uniqueSupply
   writeIORef ?uniqueSupply (r + 1)
   pure r
 
-getEnvVarId :: (ConvertAbsToBTEnv) => NameFs -> Maybe Int
+getEnvVarId :: (IConvertRename) => NameFs -> Maybe Int
 getEnvVarId k = Map.lookup k ?scope
 
-getUnique :: (ConvertAbsToBTEnv) => NameFs -> IO Int
+getUnique :: (IConvertRename) => NameFs -> IO Int
 getUnique name = maybe newUnique pure (getEnvVarId name)
 
-withNameInScope :: (ConvertAbsToBTEnv) => Name -> ((ConvertAbsToBTEnv) => IO a) -> IO a
+withNameInScope :: (IConvertRename) => Name -> ((IConvertRename) => IO a) -> IO a
 withNameInScope name act =
   let ?scope = Map.insert name.nameOcc.occNameFS name.nameUnique ?scope
    in act
 
-withNamesInScope :: (ConvertAbsToBTEnv) => [Name] -> ((ConvertAbsToBTEnv) => IO a) -> IO a
+withNamesInScope :: (IConvertRename) => [Name] -> ((IConvertRename) => IO a) -> IO a
 withNamesInScope names act =
   -- Map.union prefers the first argument
   -- and we need to add new names to the scope
@@ -520,19 +520,21 @@ withNamesInScope names act =
   let ?scope = Map.union (Map.fromList ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)) ?scope
    in act
 
+type IUniqueSupply = (?uniqueSupply :: IORef Int)
+type IScope = (?scope :: Map NameFs Int)
+
 -- TODO add index because the parse type isn't enough to differentiate
 -- TODO add built-in types to the scope
-
--- Should we have a separate scope for terms and types?
-type ConvertAbsToBTEnv = (?uniqueSupply :: IORef Int, ?scope :: Map NameFs Int)
+-- TODO Should we have a separate scope for terms and types?
+type IConvertRename = (IUniqueSupply, IScope)
 
 class ConvertAbsToBT a where
   type To a
-  convertAbsToBT :: (ConvertAbsToBTEnv) => a -> (To a)
+  convertAbsToBT :: (IConvertRename) => a -> (To a)
 
 instance ConvertAbsToBT Abs.Exp where
   type To Abs.Exp = IO (SynTerm CompRn)
-  convertAbsToBT :: (ConvertAbsToBTEnv) => Abs.Exp -> To Abs.Exp
+  convertAbsToBT :: (IConvertRename) => Abs.Exp -> To Abs.Exp
   convertAbsToBT = \case
     Abs.ExpVar _pos var -> do
       SynTerm'Var ()
@@ -771,7 +773,7 @@ data TypeConcrete
   = TypeConcrete'Int
   | TypeConcrete'Bool
   deriving (Eq)
-  
+
 instance Show TypeConcrete where
   show = \case
     TypeConcrete'Int -> "Int"
