@@ -495,13 +495,21 @@ type instance XSynType'Concrete x = Name
 
 type NameFs = FastString
 
-newUnique :: (IConvertRename) => IO Int
+type IUniqueSupply = (?uniqueSupply :: IORef Int)
+type IScope = (?scope :: Map NameFs Int)
+
+-- TODO add index because the parse type isn't enough to differentiate
+-- TODO add built-in types to the scope
+-- TODO Should we have a separate scope for terms and types?
+type IConvertRename = (IUniqueSupply, IScope)
+
+newUnique :: (IUniqueSupply) => IO Int
 newUnique = do
   r <- readIORef ?uniqueSupply
   writeIORef ?uniqueSupply (r + 1)
   pure r
 
-getEnvVarId :: (IConvertRename) => NameFs -> Maybe Int
+getEnvVarId :: (IScope) => NameFs -> Maybe Int
 getEnvVarId k = Map.lookup k ?scope
 
 getUnique :: (IConvertRename) => NameFs -> IO Int
@@ -519,14 +527,6 @@ withNamesInScope names act =
   -- to implement shadowing
   let ?scope = Map.union (Map.fromList ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)) ?scope
    in act
-
-type IUniqueSupply = (?uniqueSupply :: IORef Int)
-type IScope = (?scope :: Map NameFs Int)
-
--- TODO add index because the parse type isn't enough to differentiate
--- TODO add built-in types to the scope
--- TODO Should we have a separate scope for terms and types?
-type IConvertRename = (IUniqueSupply, IScope)
 
 class ConvertAbsToBT a where
   type To a
