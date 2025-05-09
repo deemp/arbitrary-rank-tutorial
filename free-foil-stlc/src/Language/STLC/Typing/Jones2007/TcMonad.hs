@@ -35,20 +35,21 @@ import Prettyprinter
 --      The monad itself                --
 ------------------------------------------
 
-data TcEnv ann
+data TcEnv
   = TcEnv
-  { uniqs :: IORef Uniq -- Unique supply
-  , var_env :: Map.Map (Name (Maybe ann)) (Sigma (Maybe ann)) -- (Type ann) environment for term variables
+  { uniqs :: IORef Unique -- Unique supply
+  , var_env :: Map.Map Name Sigma -- (Type ann) environment for term variables
   }
 
-newtype Tc ann a = Tc (TcEnv ann -> IO (Either (ErrMsg) a))
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types.hs#L271
+newtype Tc a = Tc (TcEnv -> IO (Either ErrMsg a))
 
-unTc :: Tc ann a -> (TcEnv ann -> IO (Either (ErrMsg) a))
+unTc :: Tc a -> (TcEnv -> IO (Either ErrMsg a))
 unTc (Tc a) = a
 
 type ErrMsg = Doc Text
 
-instance Functor (Tc ann) where
+instance Functor Tc where
   fmap f x =
     Tc
       ( \env -> do
@@ -58,7 +59,7 @@ instance Functor (Tc ann) where
             Right x2 -> return (Right (f x2))
       )
 
-instance Applicative (Tc ann) where
+instance Applicative Tc where
   pure x = Tc (\_env -> return (Right x))
   f <*> x =
     Tc
@@ -73,7 +74,7 @@ instance Applicative (Tc ann) where
                 Right x2 -> return (Right (f2 x2))
       )
 
-instance Monad (Tc ann) where
+instance Monad Tc where
   return = pure
   m >>= k =
     Tc
@@ -84,17 +85,17 @@ instance Monad (Tc ann) where
             Right v -> unTc (k v) env
       )
 
-instance MonadFail (Tc ann) where
+instance MonadFail Tc where
   fail err = Tc (\_env -> return (Left (pretty err)))
 
-failTc :: Doc ann -> Tc ann a -- Fail unconditionally
+failTc :: Doc ann -> Tc a -- Fail unconditionally
 failTc d = fail (docToString d)
 
-check :: Bool -> Doc ann -> Tc ann ()
+check :: Bool -> Doc ann -> Tc ()
 check True _ = return ()
 check False d = failTc d
 
-runTc :: [(Name (Maybe ann), Sigma (Maybe ann))] -> Tc ann a -> IO (Either (ErrMsg) a)
+runTc :: [(Name, Sigma)] -> Tc a -> IO (Either ErrMsg a)
 -- Run type-check, given an initial environment
 runTc binds (Tc tc) =
   do
@@ -107,34 +108,34 @@ runTc binds (Tc tc) =
     tc env
  where
 
-lift :: IO a -> Tc ann a
+lift :: IO a -> Tc a
 -- Lift a state transformer action into the typechecker monad
 -- ignores the environment and always succeeds
 lift st = Tc (\_env -> do r <- st; return (Right r))
 
-newTcRef :: a -> Tc ann (IORef a)
+newTcRef :: a -> Tc (IORef a)
 newTcRef v = lift (newIORef v)
 
-readTcRef :: IORef a -> Tc ann a
+readTcRef :: IORef a -> Tc a
 readTcRef r = lift (readIORef r)
 
-writeTcRef :: IORef a -> a -> Tc ann ()
+writeTcRef :: IORef a -> a -> Tc ()
 writeTcRef r v = lift (writeIORef r v)
 
 --------------------------------------------------
 --      Dealing with the type environment       --
 ------------------------------------------------- -
 
-extendVarEnv :: (Name (Maybe ann)) -> (Sigma (Maybe ann)) -> Tc ann a -> Tc ann a
+extendVarEnv :: Name -> Sigma -> Tc a -> Tc a
 extendVarEnv var ty (Tc m) =
   Tc (\env -> m (extend env))
  where
   extend env = env{var_env = Map.insert var ty (var_env env)}
 
-getEnv :: Tc ann (Map.Map (Name (Maybe ann)) (Sigma (Maybe ann)))
+getEnv :: Tc (Map.Map Name Sigma)
 getEnv = Tc (\env -> return (Right (var_env env)))
 
-lookupVar :: (Name (Maybe ann)) -> Tc ann (Sigma (Maybe ann)) -- May fail
+lookupVar :: Name -> Tc Sigma -- May fail
 lookupVar n = do
   env <- getEnv
   case Map.lookup n env of
@@ -145,29 +146,29 @@ lookupVar n = do
 --      Creating, reading, writing MetaTvs        --
 --------------------------------------------------
 
-newTyVarTy :: Tc ann (Tau (Maybe ann))
+newTyVarTy :: Tc Tau
 newTyVarTy = do
   tv <- newMetaTyVar
   return (MetaTv Nothing tv)
 
-newMetaTyVar :: Tc ann (MetaTv (Maybe ann))
+newMetaTyVar :: Tc MetaTv
 newMetaTyVar = do
   uniq <- newUnique
   tref <- newTcRef Nothing
   return (Meta Nothing uniq tref)
 
-newSkolemTyVar :: (TyVar (Maybe ann)) -> Tc ann (TyVar (Maybe ann))
+newSkolemTyVar :: TyVar -> Tc TyVar
 newSkolemTyVar tv = do
   uniq <- newUnique
   return (SkolemTv Nothing (tyVarName tv) uniq)
 
-readTv :: (MetaTv (Maybe ann)) -> Tc ann (Maybe (Tau (Maybe ann)))
+readTv :: MetaTv -> Tc (Maybe Tau)
 readTv (Meta _ _ ref) = readTcRef ref
 
-writeTv :: (MetaTv (Maybe ann)) -> (Tau (Maybe ann)) -> Tc ann ()
+writeTv :: MetaTv -> Tau -> Tc ()
 writeTv (Meta _ _ ref) ty = writeTcRef ref (Just ty)
 
-newUnique :: Tc ann Uniq
+newUnique :: Tc Uniq
 newUnique =
   Tc
     ( \(TcEnv{uniqs = ref}) ->
@@ -181,7 +182,7 @@ newUnique =
 --      Instantiation                   --
 ------------------------------------------
 
-instantiate :: (Sigma (Maybe ann)) -> Tc ann (Rho (Maybe ann))
+instantiate :: Sigma -> Tc Rho
 -- Instantiate the topmost for-alls of the argument type
 -- with flexible type variables
 instantiate (ForAll' tvs ty) =
@@ -192,7 +193,7 @@ instantiate (ForAll' tvs ty) =
 instantiate ty =
   return (ty)
 
-skolemise :: (Sigma (Maybe ann)) -> Tc ann ([TyVar (Maybe ann)], Rho (Maybe ann))
+skolemise :: Sigma -> Tc ([TyVar], Rho)
 -- Performs deep skolemisation, retuning the
 -- skolem constants and the skolemised type
 skolemise (ForAll' tvs ty) -- Rule PRPOLY
@@ -214,7 +215,7 @@ skolemise ty -- Rule PRMONO
 --      Quantification                  --
 ------------------------------------------
 
-quantify :: [(MetaTv (Maybe ann))] -> (Rho (Maybe ann)) -> Tc ann (Sigma (Maybe ann))
+quantify :: [MetaTv] -> Rho -> Tc Sigma
 -- Quantify over the specified type variables (all flexible)
 quantify tvs ty =
   do
@@ -226,7 +227,7 @@ quantify tvs ty =
   new_bndrs = take (length tvs) (allBinders \\ used_bndrs)
   bind (tv, name) = writeTv tv ((TyVar Nothing) name)
 
-allBinders :: [(TyVar (Maybe ann))] -- a,b,..z, a1, b1,... z1, a2, b2,...
+allBinders :: [TyVar] -- a,b,..z, a1, b1,... z1, a2, b2,...
 allBinders =
   [BoundTv Nothing (pack [x]) | x <- ['a' .. 'z']]
     ++ [BoundTv Nothing (pack (x : show i)) | i <- [1 :: Integer ..], x <- ['a' .. 'z']]
@@ -235,20 +236,20 @@ allBinders =
 --      Getting the free tyvars         --
 ------------------------------------------
 
-getEnvTypes :: Tc ann [(Type (Maybe ann))]
+getEnvTypes :: Tc [Type]
 -- Get the types mentioned in the environment
 getEnvTypes = do
   env <- getEnv
   return (Map.elems env)
 
-getMetaTyVars :: [(Type (Maybe ann))] -> Tc ann [(MetaTv (Maybe ann))]
+getMetaTyVars :: [Type] -> Tc [MetaTv]
 -- This function takes account of zonking, and returns a set
 -- (no duplicates) of unbound meta-type variables
 getMetaTyVars tys = do
   tys' <- mapM zonkType tys
   return (metaTvs tys')
 
-getFreeTyVars :: [(Type (Maybe ann))] -> Tc ann [(TyVar (Maybe ann))]
+getFreeTyVars :: [Type] -> Tc [TyVar]
 -- This function takes account of zonking, and returns a set
 -- (no duplicates) of free type variables
 getFreeTyVars tys = do
@@ -260,7 +261,7 @@ getFreeTyVars tys = do
 -- Eliminate any substitutions in the type
 ------------------------------------------
 
-zonkType :: (Type (Maybe ann)) -> Tc ann (Type (Maybe ann))
+zonkType :: Type -> Tc Type
 zonkType (ForAll ann ns ty) = do
   ty' <- zonkType ty
   return (ForAll ann ns ty')
@@ -285,7 +286,7 @@ zonkType (MetaTv ann tv) -- A mutable type variable
 --      Unification                     --
 ------------------------------------------
 
-unify :: (Tau (Maybe ann)) -> (Tau (Maybe ann)) -> Tc ann ()
+unify :: Tau -> Tau -> Tc ()
 unify ty1 ty2
   | badType ty1 || badType ty2 -- Compiler error
     =
@@ -307,7 +308,7 @@ unify (TyCon' tc1) (TyCon' tc2)
 unify ty1 ty2 = failTc (pretty "Cannot unify types:" <+> vcat [ppr ty1, ppr ty2])
 
 -----------------------------------------
-unifyVar :: (MetaTv (Maybe ann)) -> (Tau (Maybe ann)) -> Tc ann ()
+unifyVar :: MetaTv -> Tau -> Tc ()
 -- Invariant: tv1 is a flexible type variable
 unifyVar tv1 ty2 -- Check whether tv1 is bound
   =
@@ -317,7 +318,7 @@ unifyVar tv1 ty2 -- Check whether tv1 is bound
       Just ty1 -> unify ty1 ty2
       Nothing -> unifyUnboundVar tv1 ty2
 
-unifyUnboundVar :: (MetaTv (Maybe ann)) -> (Tau (Maybe ann)) -> Tc ann ()
+unifyUnboundVar :: MetaTv -> Tau -> Tc ()
 -- Invariant: the flexible type variable tv1 is not bound
 unifyUnboundVar tv1 ty2@(MetaTv' tv2) =
   do
@@ -338,7 +339,7 @@ unifyUnboundVar tv1 ty2 =
         writeTv tv1 ty2
 
 -----------------------------------------
-unifyFun :: Rho (Maybe ann) -> Tc ann (Sigma (Maybe ann), Rho (Maybe ann))
+unifyFun :: Rho -> Tc (Sigma, Rho)
 --      (arg,res) <- unifyFunTy fun
 -- unifies 'fun' with '(arg -> res)'
 unifyFun (Fun' arg res) = return (arg, res)
@@ -349,7 +350,7 @@ unifyFun tau = do
   return (arg_ty, res_ty)
 
 -----------------------------------------
-occursCheckErr :: (MetaTv (Maybe ann)) -> (Tau (Maybe ann)) -> Tc ann ()
+occursCheckErr :: MetaTv -> Tau -> Tc ()
 -- Raise an occurs-check error
 occursCheckErr tv ty =
   failTc

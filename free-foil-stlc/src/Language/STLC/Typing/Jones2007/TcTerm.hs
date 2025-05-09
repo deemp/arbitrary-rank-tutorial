@@ -10,7 +10,7 @@ import Prettyprinter
 --      The top-level wrapper           --
 ------------------------------------------
 
-typecheck :: Term (Maybe ann) -> Tc ann (Sigma (Maybe ann))
+typecheck :: Term -> Tc Sigma
 typecheck e = do
   ty <- inferSigma e
   zonkType ty
@@ -25,18 +25,18 @@ data Expected a = Infer (IORef a) | Check a
 --      tcRho, and its variants         --
 ------------------------------------------
 
-checkRho :: Term (Maybe ann) -> Rho (Maybe ann) -> Tc ann ()
+checkRho :: Term -> Rho -> Tc ()
 -- Invariant: the Rho is always in weak-prenex form
 checkRho expr ty = tcRho expr (Check ty)
 
-inferRho :: Term (Maybe ann) -> Tc ann (Rho (Maybe ann))
+inferRho :: Term -> Tc Rho
 inferRho expr =
   do
     ref <- newTcRef (error "inferRho: empty result")
     tcRho expr (Infer ref)
     readTcRef ref
 
-tcRho :: Term (Maybe ann) -> Expected (Rho (Maybe ann)) -> Tc ann ()
+tcRho :: Term -> Expected Rho -> Tc ()
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
 tcRho (Lit _ann _) exp_ty =
@@ -82,7 +82,7 @@ tcRho (Ann _ann body ann_ty) exp_ty =
 --      inferSigma and checkSigma
 ------------------------------------------
 
-inferSigma :: Term (Maybe ann) -> Tc ann (Sigma (Maybe ann))
+inferSigma :: Term -> Tc Sigma
 inferSigma e =
   do
     exp_ty <- inferRho e
@@ -92,7 +92,7 @@ inferSigma e =
     let forall_tvs = res_tvs \\ env_tvs
     quantify forall_tvs exp_ty
 
-checkSigma :: Term (Maybe ann) -> Sigma (Maybe ann) -> Tc ann ()
+checkSigma :: Term -> Sigma -> Tc ()
 checkSigma expr sigma =
   do
     (skol_tvs, rho) <- skolemise sigma
@@ -108,7 +108,7 @@ checkSigma expr sigma =
 --      Subsumption checking            --
 ------------------------------------------
 
-subsCheck :: Sigma (Maybe ann) -> Sigma (Maybe ann) -> Tc ann ()
+subsCheck :: Sigma -> Sigma -> Tc ()
 -- (subsCheck args off exp) checks that
 --     'off' is at least as polymorphic as 'args -> exp'
 
@@ -129,7 +129,7 @@ subsCheck sigma1 sigma2 -- Rule DEEP-SKOL
           ]
       )
 
-subsCheckRho :: Sigma (Maybe ann) -> Rho (Maybe ann) -> Tc ann ()
+subsCheckRho :: Sigma -> Rho -> Tc ()
 -- Invariant: the second argument is in weak-prenex form
 
 subsCheckRho sigma1@(ForAll' _ _) rho2 -- Rule SPEC
@@ -147,11 +147,11 @@ subsCheckRho tau1 tau2 -- Rule MONO
   =
   unify tau1 tau2 -- Revert to ordinary unification
 
-subsCheckFun :: Sigma (Maybe ann) -> Rho (Maybe ann) -> Sigma (Maybe ann) -> Rho (Maybe ann) -> Tc ann ()
+subsCheckFun :: Sigma -> Rho -> Sigma -> Rho -> Tc ()
 subsCheckFun a1 r1 a2 r2 =
   do subsCheck a2 a1; subsCheckRho r1 r2
 
-instSigma :: Sigma (Maybe ann) -> Expected (Rho (Maybe ann)) -> Tc ann ()
+instSigma :: Sigma -> Expected Rho -> Tc ()
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
 instSigma t1 (Check t2) = subsCheckRho t1 t2
