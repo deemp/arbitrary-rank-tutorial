@@ -19,6 +19,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
@@ -32,6 +33,7 @@ module Language.STLC.Typing.Jones2007.BasicTypes where
 -- Everything defined in here is exported
 
 import Control.Monad (forM)
+import Data.Containers.ListUtils (nubIntOn, nubOrd)
 import Data.Data (Data (..), Typeable)
 import Data.Data qualified as Data
 import Data.IORef
@@ -39,8 +41,10 @@ import Data.List (nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text qualified as Text
 import Data.Void (Void)
 import Data.Word (Word64)
 import GHC.Base (absurd)
@@ -315,14 +319,70 @@ type TcType = Type
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
 type Unique = Int
 
+-------------------------------------
+
+-- | UserTypeCtxt describes the origin of the polymorphic type
+-- in the places where we need an expression to have that type
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L98
+data UserTypeCtxt
+  = FunSigCtxt -- Function type signature, when checking the type
+      Name -- Name of the function
+  | InfSigCtxt Name -- Inferred type for function
+  | ExprSigCtxt -- Expression type signature
+  | TyVarBndrKindCtxt Name -- The kind of a type variable being bound
+
+type TcTyVar = Var
+
+-- | 'SkolemInfoAnon' stores the origin of a skolem type variable (e.g. bound by
+-- a user-written forall, the header of a data declaration, a deriving clause, ...).
+--
+-- This information is displayed when reporting an error message, such as
+--
+--  @"Couldn't match 'k' with 'l'"@
+--
+-- This allows us to explain where the type variable came from.
+--
+-- When several skolem type variables are bound at once, prefer using 'SkolemInfo',
+-- which stores a 'Unique' which allows these type variables to be reported
+data SkolemInfoAnon
+  = SigSkol -- A skolem that is created by instantiating
+  -- a programmer-supplied type signature
+  -- Location of the binding site is on the TyVar
+  -- See Note [SigSkol SkolemInfo]
+      UserTypeCtxt -- What sort of signature
+      TcType -- Original type signature (before skolemisation)
+      [(Name, TcTyVar)] -- Maps the original name of the skolemised tyvar
+      -- to its instantiated version
+  | SigTypeSkol UserTypeCtxt
+  | -- like SigSkol, but when we're kind-checking the *type*
+    -- hence, we have less info
+    ForAllSkol -- Bound by a user-written "forall".
+      [TcTyVar] -- Shows just the binders
+  | InferSkol [(Name, TcType)]
+  | -- We have inferred a type for these (mutually recursive)
+    -- polymorphic Ids, and are now checking that their RHS
+    -- constraints are satisfied.
+    UnifyForAllSkol -- We are unifying two for-all types
+      TcType -- The instantiated type *inside* the forall
+
+-- | 'SkolemInfo' stores the origin of a skolem type variable,
+-- so that we can display this information to the user in case of a type error.
+--
+-- The 'Unique' field allows us to report all skolem type variables bound in the
+-- same place in a single report.
+data SkolemInfo
+  = SkolemInfo
+      -- | The Unique is used to common up skolem variables bound
+      --   at the same location (only used in pprSkols)
+      Unique
+      -- | The information about the origin of the skolem type variable
+      SkolemInfoAnon
+
 -- A TyVarDetails is inside a TyVar
 -- See Note [TyVars and TcTyVars during type checking]
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
-  = SkolemTv -- A skolem
-  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L266
-  -- Possibly will need SkolemInfoAnon
-      Unique
+  = SkolemTv SkolemInfo -- A skolem
   | MetaTv (IORef TcType)
 
 -- | Identifier
@@ -347,24 +407,26 @@ data Name = Name
 -- FIXME If TyVar occurs during constraint solving, it means BoundTv
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L257
 data Var
-  = -- | Type and kind variables
+  = -- | Type variables
     TyVar
       { varName :: !Name
-      , varType :: Kind
-      -- ^ The type or kind of the 'Var' in question
       }
   | -- | Used only during type inference
     TcTyVar
       { varName :: !Name
-      , varType :: Kind
       , varDetails :: TcTyVarDetails
       }
   | -- | Variable identifier
     -- Always local and vanilla.
     Id
       { varName :: !Name
-      , varType :: Type
       }
+
+instance Eq Var where
+  var1 == var2 = var1.varName.nameUnique == var2.varName.nameUnique
+
+instance Ord Var where
+  var1 <= var2 = var1.varName.nameUnique <= var2.varName.nameUnique
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
 newtype ModuleName = ModuleName Text deriving (Show, Eq)
@@ -648,9 +710,9 @@ ex2 = do
 -- --      Types                   --
 -- -----------------------------------
 
--- type Sigma ann = Type ann
--- type Rho ann = Type ann -- No top-level ForAll
--- type Tau ann = Type ann -- No ForAlls anywhere
+type Sigma = Type
+type Rho = Type -- No top-level ForAll
+type Tau = Type -- No ForAlls anywhere
 
 -- data X ann x = X ann x
 
@@ -705,33 +767,72 @@ ex2 = do
 
 -- type Uniq = Int
 
--- data TyCon = IntT | BoolT
---   deriving (Eq)
+data TypeConcrete
+  = TypeConcrete'Int
+  | TypeConcrete'Bool
+  deriving (Eq)
+  
+instance Show TypeConcrete where
+  show = \case
+    TypeConcrete'Int -> "Int"
+    TypeConcrete'Bool -> "Bool"
 
 -- ---------------------------------
 -- --      Constructors
 
--- (-->) :: Sigma (Maybe ann) -> Sigma (Maybe ann) -> Sigma (Maybe ann)
--- arg --> res = Fun Nothing arg res
+(-->) :: Sigma -> Sigma -> Sigma
+arg --> res = Type'Fun arg res
 
--- intType, boolType :: Tau (Maybe ann)
--- intType = TyCon Nothing IntT
--- boolType = TyCon Nothing BoolT
+intType, boolType :: Tau
+intType = Type'Concrete (Text.pack $ show TypeConcrete'Int)
+boolType = Type'Concrete (Text.pack $ show TypeConcrete'Bool)
 
 -- ---------------------------------
 -- --  Free and bound variables
 
+-- Get the MetaTvs from a type; no duplicates in result
+metaTvs :: [Type] -> [Var]
+metaTvs tys = nubOrd (foldr (flip go) [] tys)
+ where
+  go acc = \case
+    Type'Var var ->
+      case var of
+        TcTyVar{varDetails = MetaTv{}} -> var : acc
+        _ -> acc
+    Type'ForAll _ ty -> go acc ty
+    Type'Concrete _ -> acc
+    Type'Fun ty1 ty2 -> go (go acc ty1) ty2
+
 -- metaTvs :: [Type ann] -> [MetaTv ann]
--- -- Get the MetaTvs from a type; no duplicates in result
--- metaTvs tys = foldr go [] tys
---  where
---   -- go (MetaTv' tv) acc
---   --   | tv `elem` acc = acc
---   --   | otherwise = tv : acc
---   go (TyVar' _) acc = acc
---   go (TyCon' _) acc = acc
---   go (Fun' arg res) acc = go arg (go res acc)
---   go (ForAll' _ ty) acc = go ty acc -- ForAll binds TyVars only
+-- go (MetaTv' tv) acc
+--   | tv `elem` acc = acc
+--   | otherwise = tv : acc
+-- go (TyVar' _) acc = acc
+-- go (TyCon' _) acc = acc
+-- go (Fun' arg res) acc = go arg (go res acc)
+-- go (ForAll' _ ty) acc = go ty acc -- ForAll binds TyVars only
+
+freeTyVars :: [Type] -> [Var]
+-- Get the free TyVars from a type; no duplicates in result
+freeTyVars tys = nubOrd (foldr (go Set.empty) [] tys)
+ where
+  go ::
+    -- Bound type variables
+    Set.Set TyVar ->
+    -- Type to look at
+    Type ->
+    -- Accumulates result
+    [TyVar] ->
+    [TyVar]
+  go bound v acc =
+    case v of
+      Type'Var var
+        -- Ignore occurrences of bound Type variables
+        | Set.member var bound -> acc
+        | otherwise -> var : acc
+      Type'Concrete _ -> acc
+      Type'ForAll vars ty -> go (Set.fromList vars <> bound) ty acc
+      Type'Fun ty1 ty2 -> go bound ty1 (go bound ty2 acc)
 
 -- freeTyVars :: [Type ann] -> [TyVar ann]
 -- -- Get the free TyVars from a type; no duplicates in result
@@ -751,6 +852,17 @@ ex2 = do
 --   go bound (Fun' arg res) acc = go bound arg (go bound res acc)
 --   go bound (ForAll' tvs ty) acc = go (tvs ++ bound) ty acc
 
+tyVarBndrs :: Type -> [TyVar]
+-- Get all the binders used in ForAlls in the type, so that
+-- when quantifying an outer for-all we can avoid these inner ones
+tyVarBndrs ty = nub (bndrs ty)
+ where
+  bndrs = \case
+    Type'ForAll vars body -> vars <> bndrs body
+    -- (ForAll' tvs body) = tvs ++ bndrs body
+    Type'Fun arg res -> bndrs arg <> bndrs res
+    _ -> []
+
 -- tyVarBndrs :: Rho ann -> [TyVar ann]
 -- -- Get all the binders used in ForAlls in the type, so that
 -- -- when quantifying an outer for-all we can avoid these inner ones
@@ -760,6 +872,10 @@ ex2 = do
 --   bndrs (Fun' arg res) = bndrs arg ++ bndrs res
 --   bndrs _ = []
 
+-- TODO return Name?
+tyVarName :: TyVar -> Text
+tyVarName = (.varName.nameOcc.occNameFS)
+
 -- tyVarName :: TyVar ann -> Text
 -- tyVarName (BoundTv _ann n) = n
 -- tyVarName (SkolemTv _ann n _) = n
@@ -767,14 +883,24 @@ ex2 = do
 -- ---------------------------------
 -- --      Substitution
 
--- type Env ann = [(TyVar ann, Tau ann)]
+type Env = Map.Map TyVar Tau
 
--- substTy :: [TyVar (Maybe ann)] -> [Type (Maybe ann)] -> Type (Maybe ann) -> Type (Maybe ann)
--- -- Replace the specified quantified Type ann variables by
--- -- given meta Type ann variables
--- -- No worries about capture, because the two kinds of type
--- -- variable are distinct
--- substTy tvs tys ty = subst_ty (tvs `zip` tys) ty
+substTy :: [TyVar] -> [Type] -> Type -> Type
+-- Replace the specified quantified Type ann variables by
+-- given meta Type ann variables
+-- No worries about capture, because the two kinds of type
+-- variable are distinct
+substTy tvs tys ty = subst_ty (Map.fromList (tvs `zip` tys)) ty
+
+subst_ty :: Env -> Type -> Type
+subst_ty env (Type'Fun arg res) = Type'Fun (subst_ty env arg) (subst_ty env res)
+subst_ty env (Type'Var n) = fromMaybe (Type'Var n) (Map.lookup n env)
+-- subst_ty _env (MetaTv tv) = MetaTv tv
+subst_ty _env (Type'Concrete tc) = Type'Concrete tc
+subst_ty env (Type'ForAll ns rho) = Type'ForAll ns (subst_ty env' rho)
+ where
+  ns' = Set.fromList ns
+  env' = Map.withoutKeys env ns'
 
 -- subst_ty :: Env ann -> Type ann -> Type ann
 -- subst_ty env (Fun ann arg res) = Fun ann (subst_ty env arg) (subst_ty env res)
