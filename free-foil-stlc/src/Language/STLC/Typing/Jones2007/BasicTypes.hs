@@ -268,7 +268,11 @@ data OccName = OccName
   deriving (Show)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
-data UnhelpfulSpanReason = UnhelpfulNoLocationInfo deriving (Eq, Show)
+data UnhelpfulSpanReason
+  = UnhelpfulNoLocationInfo
+  | UnhelpfulGenerated
+  | UnhelpfulOther !FastString
+  deriving (Eq, Show)
 
 -- | Real Source Span
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L367
@@ -290,6 +294,7 @@ data RealSrcSpan
 data SrcSpan
   = -- TODO Replace with RealSrcSpan
     RealSrcSpan !Abs.BNFC'Position
+  | UnhelpfulSpan UnhelpfulSpanReason
   deriving (Show)
 
 -- | The key type representing kinds in the compiler.
@@ -313,6 +318,9 @@ data Type
     Type'Concrete FastString
   | Type'Fun Type Type
 
+-- TODO separate Type from TcType
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
+
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 type TcType = Type
 
@@ -331,7 +339,13 @@ data UserTypeCtxt
   | ExprSigCtxt -- Expression type signature
   | TyVarBndrKindCtxt Name -- The kind of a type variable being bound
 
+-- | Type variable that might be a metavariable.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L169
 type TcTyVar = Var
+
+-- | Type variable that is a metavariable.
+-- requires explicit checks in function definitions.
+type TcTyVarMeta = Var
 
 -- | 'SkolemInfoAnon' stores the origin of a skolem type variable (e.g. bound by
 -- a user-written forall, the header of a data declaration, a deriving clause, ...).
@@ -344,6 +358,7 @@ type TcTyVar = Var
 --
 -- When several skolem type variables are bound at once, prefer using 'SkolemInfo',
 -- which stores a 'Unique' which allows these type variables to be reported
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L266
 data SkolemInfoAnon
   = SigSkol -- A skolem that is created by instantiating
   -- a programmer-supplied type signature
@@ -370,6 +385,7 @@ data SkolemInfoAnon
 --
 -- The 'Unique' field allows us to report all skolem type variables bound in the
 -- same place in a single report.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L246
 data SkolemInfo
   = SkolemInfo
       -- | The Unique is used to common up skolem variables bound
@@ -378,12 +394,30 @@ data SkolemInfo
       -- | The information about the origin of the skolem type variable
       SkolemInfoAnon
 
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
+data MetaDetails
+  = Flexi -- Flexi type variables unify to become Indirects
+          -- Means that the type variable is unfilled
+          -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
+  | Indirect TcType
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
+data TcLevel = TcLevel {-# UNPACK #-} !Int
+
 -- A TyVarDetails is inside a TyVar
 -- See Note [TyVars and TcTyVars during type checking]
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
-  = SkolemTv SkolemInfo -- A skolem
-  | MetaTv (IORef TcType)
+  = SkolemTv -- A skolem
+      SkolemInfo -- See Note [Keeping SkolemInfo inside a SkolemTv]
+      TcLevel -- Level of the implication that binds it
+      -- See GHC.Tc.Utils.Unify Note [Deeper level on the left] for
+      --     how this level number is used
+  | MetaTv
+      { metaTvInfo :: MetaInfo
+      , metaTvRef :: IORef MetaDetails
+      , metaTvTcLevel :: TcLevel -- See Note [TcLevel invariants]
+      }
 
 -- | Identifier
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L150
@@ -394,6 +428,8 @@ data Name = Name
   { nameOcc :: OccName
   , nameUnique :: {-# UNPACK #-} !Unique
   , nameLoc :: !SrcSpan
+  -- , nameSort :: NameSort
+  -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L148
   }
   deriving (Show)
 
@@ -904,6 +940,29 @@ subst_ty env (Type'ForAll ns rho) = Type'ForAll ns (subst_ty env' rho)
   ns' = Set.fromList ns
   env' = Map.withoutKeys env ns'
 
+-- | What restrictions are on this metavariable around unification?
+-- These are checked in GHC.Tc.Utils.Unify.checkTopShape
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L640
+data MetaInfo
+  = -- | This MetaTv is an ordinary unification variable
+    -- A TauTv is always filled in with a tau-type, which
+    -- never contains any ForAlls.
+    TauTv
+  | -- | A variant of TauTv, except that it should not be
+    --   unified with a type, only with a type variable
+    -- See Note [TyVarTv] in GHC.Tc.Utils.TcMType
+    TyVarTv
+  -- | CycleBreakerTv -- Used to fix occurs-check problems in Givens
+  -- See Note [Type equality cycles] in
+  -- GHC.Tc.Solver.Equality
+  --  | ConcreteTv ConcreteTvOrigin
+  --       -- ^ A unification variable that can only be unified
+  --       -- with a concrete type, in the sense of
+  --       -- Note [Concrete types] in GHC.Tc.Utils.Concrete.
+  --       -- See Note [ConcreteTv] in GHC.Tc.Utils.Concrete.
+  --       -- See also Note [The Concrete mechanism] in GHC.Tc.Utils.Concrete
+  --       -- for an overview of how this works in context.
+
 -- subst_ty :: Env ann -> Type ann -> Type ann
 -- subst_ty env (Fun ann arg res) = Fun ann (subst_ty env arg) (subst_ty env res)
 -- subst_ty env (TyVar ann n) = fromMaybe (TyVar ann n) (lookup n env)
@@ -969,8 +1028,8 @@ subst_ty env (Type'ForAll ns rho) = Type'ForAll ns (subst_ty env' rho)
 --   go (App' e1 e2) es = go e1 (e2 : es)
 --   go e' es = pprParendTerm e' <+> sep (map pprParendTerm es)
 
--- pprName :: Name (Maybe ann) -> Doc ann
--- pprName n = pretty n
+pprName :: Name -> Doc ann
+pprName n = pretty n
 
 -- -------------- Pretty-printing types ---------------------
 
