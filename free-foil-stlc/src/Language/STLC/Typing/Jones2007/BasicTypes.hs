@@ -314,9 +314,17 @@ data Type
   | Type'ForAll
       [TyVar]
       Type
+  | -- | This is a special case of a type constructor
+    -- where the type constructor is (->).
+    Type'Fun Type Type
   | -- | Type literals are similar to type constructors.
     Type'Concrete FastString
-  | Type'Fun Type Type
+
+-- TODO implement
+instance Show Type where
+
+-- TODO implement
+instance Pretty Type where
 
 -- TODO separate Type from TcType
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
@@ -379,6 +387,13 @@ data SkolemInfoAnon
     -- constraints are satisfied.
     UnifyForAllSkol -- We are unifying two for-all types
       TcType -- The instantiated type *inside* the forall
+  
+-- TODO implement
+instance Show SkolemInfoAnon
+  
+-- TODO implement
+instance Pretty SkolemInfoAnon where
+  
 
 -- | 'SkolemInfo' stores the origin of a skolem type variable,
 -- so that we can display this information to the user in case of a type error.
@@ -397,8 +412,8 @@ data SkolemInfo
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
 data MetaDetails
   = Flexi -- Flexi type variables unify to become Indirects
-          -- Means that the type variable is unfilled
-          -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
+  -- Means that the type variable is unfilled
+  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
   | Indirect TcType
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
@@ -408,15 +423,20 @@ data TcLevel = TcLevel {-# UNPACK #-} !Int
 -- See Note [TyVars and TcTyVars during type checking]
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
-  = SkolemTv -- A skolem
-      SkolemInfo -- See Note [Keeping SkolemInfo inside a SkolemTv]
-      TcLevel -- Level of the implication that binds it
+  = -- A skolem
+    SkolemTv
+      { skolemInfo :: SkolemInfo
+      -- ^ See Note [Keeping SkolemInfo inside a SkolemTv]
+      , skolemTcLevel :: TcLevel
+      -- ^ Level of the implication that binds it
       -- See GHC.Tc.Utils.Unify Note [Deeper level on the left] for
       --     how this level number is used
+      }
   | MetaTv
       { metaTvInfo :: MetaInfo
       , metaTvRef :: IORef MetaDetails
-      , metaTvTcLevel :: TcLevel -- See Note [TcLevel invariants]
+      , metaTvTcLevel :: TcLevel
+      -- ^ See Note [TcLevel invariants]
       }
 
 -- | Identifier
@@ -433,6 +453,12 @@ data Name = Name
   }
   deriving (Show)
 
+instance Eq Name where
+  n1 == n2 = n1.nameUnique == n2.nameUnique
+
+instance Ord Name where
+  n1 <= n2 = n1.nameUnique <= n2.nameUnique
+
 -- | Variable
 --
 -- Essentially a typed 'Name', that may also contain some additional information
@@ -443,7 +469,7 @@ data Name = Name
 -- FIXME If TyVar occurs during constraint solving, it means BoundTv
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L257
 data Var
-  = -- | Type variables
+  = -- | Type variables3
     TyVar
       { varName :: !Name
       }
@@ -459,10 +485,16 @@ data Var
       }
 
 instance Eq Var where
-  var1 == var2 = var1.varName.nameUnique == var2.varName.nameUnique
+  var1 == var2 = var1.varName == var2.varName
 
 instance Ord Var where
-  var1 <= var2 = var1.varName.nameUnique <= var2.varName.nameUnique
+  var1 <= var2 = var1.varName <= var2.varName
+
+-- TODO implement
+instance Show Var
+
+-- TODO implement
+instance Pretty Var
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
 newtype ModuleName = ModuleName Text deriving (Show, Eq)
@@ -952,16 +984,17 @@ data MetaInfo
     --   unified with a type, only with a type variable
     -- See Note [TyVarTv] in GHC.Tc.Utils.TcMType
     TyVarTv
-  -- | CycleBreakerTv -- Used to fix occurs-check problems in Givens
-  -- See Note [Type equality cycles] in
-  -- GHC.Tc.Solver.Equality
-  --  | ConcreteTv ConcreteTvOrigin
-  --       -- ^ A unification variable that can only be unified
-  --       -- with a concrete type, in the sense of
-  --       -- Note [Concrete types] in GHC.Tc.Utils.Concrete.
-  --       -- See Note [ConcreteTv] in GHC.Tc.Utils.Concrete.
-  --       -- See also Note [The Concrete mechanism] in GHC.Tc.Utils.Concrete
-  --       -- for an overview of how this works in context.
+
+-- \| CycleBreakerTv -- Used to fix occurs-check problems in Givens
+-- See Note [Type equality cycles] in
+-- GHC.Tc.Solver.Equality
+--  | ConcreteTv ConcreteTvOrigin
+--       -- ^ A unification variable that can only be unified
+--       -- with a concrete type, in the sense of
+--       -- Note [Concrete types] in GHC.Tc.Utils.Concrete.
+--       -- See Note [ConcreteTv] in GHC.Tc.Utils.Concrete.
+--       -- See also Note [The Concrete mechanism] in GHC.Tc.Utils.Concrete
+--       -- for an overview of how this works in context.
 
 -- subst_ty :: Env ann -> Type ann -> Type ann
 -- subst_ty env (Fun ann arg res) = Fun ann (subst_ty env arg) (subst_ty env res)

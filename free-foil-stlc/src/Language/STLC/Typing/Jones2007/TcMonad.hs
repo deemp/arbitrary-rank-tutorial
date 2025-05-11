@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordPuns #-}
+{-# LANGUAGE TupleSections #-}
 
 module Language.STLC.Typing.Jones2007.TcMonad (
   TcM, -- The monad type constructor
@@ -19,7 +20,7 @@ module Language.STLC.Typing.Jones2007.TcMonad (
   getFreeTyVars,
   getMetaTyVars,
   -- Types and unification
-  newTyVarTy,
+  -- newTyVarTy,
   instantiate,
   skolemise,
   zonkType,
@@ -33,12 +34,13 @@ module Language.STLC.Typing.Jones2007.TcMonad (
 ) where
 
 import Data.IORef
-import Data.List ((\\))
+import Data.List (partition, (\\))
 import Data.Map qualified as Map
-import Data.Text (Text, pack)
+import Data.Text (pack)
 import Data.Traversable (forM)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Prettyprinter
+import Prettyprinter.Render.Text
 
 ------------------------------------------
 --      The monad itself                --
@@ -53,16 +55,20 @@ import Prettyprinter
 type IVarEnv = (?varEnv :: Map.Map Name Sigma)
 type ITcLevel = (?tcLevel :: TcLevel)
 
+type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel)
+
 -- TcM in GHC is a ReaderT (Env a) IO b.
 -- It can be replaced with ImplicitParams
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types.hs#L271
-type TcM a = (IUniqueSupply, IVarEnv, ITcLevel) => IO a
+type TcM a = (ITcEnv) => IO a
 
--- TODO
+-- TODO fail with a different message?
 failTc :: Doc ann -> TcM a -- Fail unconditionally
-failTc d = fail (docToString d)
+failTc d = do
+  putDoc d
+  fail "Error!"
 
--- TODO
+-- TODO use somewhere
 check :: Bool -> Doc ann -> TcM ()
 check True _ = pure ()
 check False d = failTc d
@@ -104,7 +110,7 @@ lookupVar n = do
   env <- getEnv
   case Map.lookup n env of
     Just ty -> pure ty
-    Nothing -> failTc (pretty "Not in scope:" <+> dquotes (pprName n))
+    Nothing -> failTc ("Not in scope:" <+> dquotes (pprName n))
 
 --------------------------------------------------
 --      Creating, reading, writing MetaTvs        --
@@ -112,11 +118,12 @@ lookupVar n = do
 
 -- TODO pattern synonym for MetaTv
 
-newTyVarTy :: TcM Tau
-newTyVarTy = do
-  -- TODO use a supplied name
-  tv <- newMetaTyVar "a"
-  pure (Type'Var tv)
+-- TODO rename to use Meta
+-- newTyVarTy :: TcM Tau
+-- newTyVarTy = do
+--   -- TODO use a supplied name
+--   tv <- newMetaTyVar "a"
+--   pure (Type'Var tv)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L552
 mkSystemNameAt :: Unique -> OccName -> SrcSpan -> Name
@@ -174,7 +181,7 @@ newMetaDetails info =
       MetaTv
         { metaTvInfo = info
         , metaTvRef = ref
-        , metaTvTcLevel = ?tclvl
+        , metaTvTcLevel = ?tcLevel
         }
 
 -- Similar to `newMetaTyVarTyAtLevel`
@@ -202,7 +209,7 @@ mkTcTyVar name details =
     }
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L765
-newSkolemTyVar' :: (IUniqueSupply) => SkolemInfo -> Name -> TcTyVar
+newSkolemTyVar' :: (ITcLevel) => SkolemInfo -> Name -> TcTyVar
 newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 
 -- TODO use `uniqFromTag`
@@ -219,7 +226,8 @@ newSkolemTyVar infoAnon tv@TyVar{} = do
       skolemInfo = SkolemInfo tv.varName.nameUnique infoAnon
   pure $ newSkolemTyVar' skolemInfo name
 -- TODO improve message
-newSkolemTyVar infoAnon _tv = failTc ("Expected a TyVar, but got: " <> pretty _tv <> " in " <> pretty infoAnon)
+newSkolemTyVar infoAnon _tv =
+  failTc ("Expected a TyVar, but got: " <> pretty _tv <> " in " <> pretty infoAnon)
 
 -- `metaTyVarRef` panics if a tv doesn't have a ref
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L1317
@@ -274,28 +282,68 @@ skolemise ty = pure ([], ty)
 ------------------------------------------
 
 isMetaTv :: Var -> Bool
-isMetaTv (TcTyVar{varDetails = MetaTv{}}) = True
+isMetaTv TcTyVar{varDetails = MetaTv{}} = True
 isMetaTv _ = False
 
+isFlexiTv :: Var -> TcM Bool
+isFlexiTv TcTyVar{varDetails = MetaTv{metaTvRef}} =
+  readTcRef metaTvRef >>= \case
+    Flexi -> pure True
+    _ -> pure False
+isFlexiTv _ = pure False
+
+-- TODO should `quantify` use `SkolemTv` or `TyVar` in forall?
+-- TyVarDetails, MetaDetails, MetaInfo
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L549
+
+-- As written in Sec. 5.5
+-- > Furthermore, quantify guarantees to return a type that is fully substituted;
+-- this makes it easier to instantiate later, because the proper type variables
+-- can all be found without involving the substitution.
+--
+-- Hence, `quantify` should probably use `Id` in forall
+
+-- TODO account for levels
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1677
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1750
 quantify :: [TcTyVar] -> Rho -> TcM Sigma
 -- Quantify over the specified type variables (all flexible)
-quantify tvs ty | all isMetaTv tvs =
-  do
-    
-    mapM_ bind (tvs `zip` new_bndrs) -- 'bind' is just a cunning way of doing the substitution
-    ty' <- zonkType ty
-    pure (Type'ForAll new_bndrs ty')
+quantify tvs ty | all isMetaTv tvs = do
+  -- TODO remove this check?
+  tvs' <- forM tvs (\x -> (x,) <$> isFlexiTv x) >>= pure . partition snd
+  case tvs' of
+    (_, x : xs) -> failTc ("Expected all variables to be Flexi, but these are not: " <> pretty (x : xs))
+    _ -> pure ()
+  -- 'bind' is just a cunning way of doing the substitution
+  -- TODO is it correct to use these vars in ForAll?
+  vars <- mapM bind (tvs `zip` newBinders)
+  ty' <- zonkType ty
+  pure (Type'ForAll vars ty')
  where
-  -- TODO create new uniques and not care about numbers?
-  used_bndrs = tyVarBndrs ty -- Avoid quantified type variables in use
-  new_bndrs = take (length tvs) (allBinders \\ used_bndrs)
-  bind (tv, name) = writeTv tv (Type'Var name)
+  -- TODO optimize
+  usedBinders = tyVarBndrs ty
+  -- -- Avoid quantified type variables in use
+  newBinders :: [FastString]
+  newBinders = take (length tvs) (allBinders \\ ((.varName.nameOcc.occNameFS) <$> usedBinders))
+  bind :: (TcTyVarMeta, FastString) -> TcM Var
+  bind (tv, name) = do
+    -- TODO use info from tv?
+    name' <- newSysName (mkTyVarOccFS name)
+    let var = Id{varName = name'}
+    writeTv tv (Type'Var var)
+    pure var
 quantify tvs _ = failTc $ "Expected all type variables to not be metavariables, but got: " <> pretty tvs
 
-allBinders :: [TyVar] -- a,b,..z, a1, b1,... z1, a2, b2,...
+-- GHC uses tags, IIUC
+-- TODO link to explanation
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/Opt/Monad.hs#L125
+allBinders :: [FastString] -- a,b,..z, a1, b1,... z1, a2, b2,...
 allBinders =
-  [BoundTv (pack [x]) | x <- ['a' .. 'z']]
-    ++ [BoundTv (pack (x : show i)) | i <- [1 :: Integer ..], x <- ['a' .. 'z']]
+  [(pack [x]) | x <- ['a' .. 'z']]
+    <> [ (pack (x : show i))
+       | i <- [1 :: Integer ..]
+       , x <- ['a' .. 'z']
+       ]
 
 ------------------------------------------
 --      Getting the free tyvars         --
@@ -334,18 +382,19 @@ zonkType (Type'Fun arg res) = do
   arg' <- zonkType arg
   res' <- zonkType res
   pure (Type'Fun arg' res')
-zonkType (Type'Concrete tc) = pure (TyCon tc)
-zonkType (Type'Var var) =
+zonkType (Type'Concrete tc) = pure (Type'Concrete tc)
+zonkType t@(Type'Var var) =
   case var of
-    TcTyVar{varDetails = MetaTv{metaTvRef = tv}} ->
+    TcTyVar{varDetails = MetaTv{}} ->
       do
-        mb_ty <- readTv tv
+        mb_ty <- readTv var
         case mb_ty of
-          Nothing -> pure ((TcTyVar) tv)
+          -- TODO why does zonking keep metavariables with flexi types?
+          Nothing -> pure t
           Just ty -> do
             ty' <- zonkType ty
             -- "Short out" multiple hops
-            writeTv tv ty'
+            writeTv var ty'
             pure ty'
     _ -> pure (Type'Var var)
 
@@ -358,18 +407,19 @@ unify ty1 ty2
   | badType ty1 || badType ty2 -- Compiler error
     =
       failTc
-        ( pretty "Panic! Unexpected types in unification:"
-            <+> vcat [ppr ty1, ppr ty2]
+        ( "Panic! Unexpected types in unification:"
+            <+> vcat [pretty ty1, pretty ty2]
         )
 unify (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}}) (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}}) | tv1 == tv2 = pure ()
-unify (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv}}) ty = unifyVar tv ty
-unify ty (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv}}) = unifyVar tv ty
+unify (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) ty = unifyVar tv ty
+unify ty (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) = unifyVar tv ty
+-- TODO is equality defined correctly?
 unify (Type'Var tv1@TcTyVar{}) (Type'Var tv2@TcTyVar{}) | tv1 == tv2 = pure ()
 unify (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
   unify arg1 arg2
   unify res1 res2
 unify (Type'Concrete tc1) (Type'Concrete tc2) | tc1 == tc2 = pure ()
-unify ty1 ty2 = failTc (pretty "Cannot unify types:" <+> vcat [ppr ty1, ppr ty2])
+unify ty1 ty2 = failTc ("Cannot unify types:" <+> vcat [pretty ty1, pretty ty2])
 
 -----------------------------------------
 unifyVar :: TcTyVar -> Tau -> TcM ()
@@ -384,13 +434,13 @@ unifyVar _ _ = pure ()
 
 unifyUnboundVar :: TcTyVar -> Tau -> TcM ()
 -- Invariant: the flexible type variable tv1 is not bound
-unifyUnboundVar tv1 ty2@((Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}})) =
+unifyUnboundVar tv1 ty2@((Type'Var tv2@TcTyVar{varDetails = MetaTv{}})) =
   do
     -- We know that tv1 /= tv2 (else the
     -- top case in unify would catch it)
     mb_ty2 <- readTv tv2
     case mb_ty2 of
-      Just ty2' -> unify (Type'Var (TcTyVar tv1)) ty2'
+      Just ty2' -> unify (Type'Var tv1) ty2'
       Nothing -> writeTv tv1 ty2
 unifyUnboundVar tv1 ty2 =
   do
@@ -407,9 +457,10 @@ unifyFun :: Rho -> TcM (Sigma, Rho)
 -- unifies 'fun' with '(arg -> res)'
 unifyFun (Type'Fun arg res) = pure (arg, res)
 unifyFun tau = do
-  arg_ty <- newTyVarTy
-  res_ty <- newTyVarTy
-  unify tau (Type'Fun Nothing arg_ty res_ty)
+  -- TODO use better names?
+  arg_ty <- Type'Var <$> newMetaTyVar' "a"
+  res_ty <- Type'Var <$> newMetaTyVar' "b"
+  unify tau (Type'Fun arg_ty res_ty)
   pure (arg_ty, res_ty)
 
 -----------------------------------------
@@ -417,10 +468,10 @@ occursCheckErr :: TcTyVar -> Tau -> TcM ()
 -- Raise an occurs-check error
 occursCheckErr tv ty =
   failTc
-    ( pretty "Occurs check for"
-        <+> dquotes (ppr tv)
-        <+> pretty "in:"
-        <+> ppr ty
+    ( "Occurs check for"
+        <+> dquotes (pretty tv)
+        <+> "in:"
+        <+> pretty ty
     )
 
 badType :: Tau -> Bool
