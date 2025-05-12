@@ -209,53 +209,65 @@ type family IdCompP pass where
   IdCompP 'Renamed = Name
   IdCompP 'Typechecked = Id
 
--- -- TODO use ping-pong style
--- -- > If this were done with the constructor extension point of TTG, 
--- -- then one would lose some type safety: 
--- -- There would no longer be a guaruntee that there will always 
--- -- be a Located layer between the Expr layers in our huge expression sandwich.
--- -- https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/handling-source-locations#ping-pong-style
+-- TODO use ping-pong
 
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L120
--- type family XRec p a = r | r -> a
+-- Note [Ping-pong in TTG]
+-- ~~~~~~~~~~~~~~~~~~~~
+-- 
+-- Why do we annotate some nodes without using the extension field?
+-- 
+-- See
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L125
+-- and
+-- https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/handling-source-locations#ping-pong-style
+-- 
+-- > If this were done with the constructor extension point of TTG, 
+-- then one would lose some type safety: 
+-- There would no longer be a guaruntee that there will always 
+-- be a Located layer between the Expr layers in our huge expression sandwich.
 
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L101
--- type instance XRec (CompPass p) a = XAnno a
+data GenLocated l e = L l e
+  deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
 
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L210
--- type LIdCompP p = XAnno (IdCompP p)
+type Located = GenLocated SrcSpan
 
--- -- | We attach SrcSpans to lots of things, so let's have a datatype for it.
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L759
--- data Annotated l e = Annotated l e
---   deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L120
+type family XRec p a = r | r -> a
 
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L122
--- type family Anno a = b
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L101
+type instance XRec (CompPass p) a = XAnno a
 
--- -- (XAnno tree) wraps `tree` in a Compiler-specific,
--- -- but pass-independent, source location
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L105
--- type XAnno a = Annotated (Anno a) a
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L210
+type LIdCompP p = XAnno (IdCompP p)
 
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L167
--- type family IdP p
+-- | We attach SrcSpans to lots of things, so let's have a datatype for it.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L759
+data Annotated l e = Annotated l e
+  deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
 
--- -- TODO use for XSynTerm'Var
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L122
+type family Anno a = b
 
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L169
--- type XVar p = XRec p (IdP p)
+-- (XAnno tree) wraps `tree` in a Compiler-specific,
+-- but pass-independent, source location
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L105
+type XAnno a = Annotated (Anno a) a
 
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L202
--- type instance IdP (CompPass p) = IdCompP p
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L167
+type family IdP p
 
--- -- The Name already has SrcSpan, so this annotation might be redundant.
--- -- This annotation is used in GHC. Do we need it?
--- -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L647
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
--- type instance Anno Name = SrcSpan
--- type instance Anno (SynLit x) = SrcSpan
--- type instance Anno Var = SrcSpan
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L169
+type XVar p = XRec p (IdP p)
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L202
+type instance IdP (CompPass p) = IdCompP p
+
+-- See Note [Ping-pong in TTG]
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L647
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
+type instance Anno Name = SrcSpan
+type instance Anno SynLit = SrcSpan
+type instance Anno Var = SrcSpan
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
 data NameSpace
