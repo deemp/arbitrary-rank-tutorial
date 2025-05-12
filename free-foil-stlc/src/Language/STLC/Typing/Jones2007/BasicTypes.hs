@@ -120,9 +120,9 @@ data SynType x
     SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Lit.hs#L48
-data SynLit x
-  = SynLit'Num (XSynLit'Num' x) Integer
-  | SynLit'Str (XSynLit'Str' x) FastString
+data SynLit
+  = SynLit'Num Integer
+  | SynLit'Str FastString
 
 -- TODO add case to support Trees That Grow
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L537
@@ -513,8 +513,8 @@ type instance Anno Var = SrcSpan
 type instance XSynTerm'Var' x = ()
 type instance XSynTerm'Var x = Name
 
-type instance XSynTerm'Lit' x = ()
-type instance XSynTerm'Lit x = XAnno (SynLit x)
+type instance XSynTerm'Lit' x = SrcSpan
+type instance XSynTerm'Lit x = SynLit
 
 type instance XSynTerm'App' x = SrcSpan
 type instance XSynTerm'App'Fun x = SynTerm x
@@ -608,7 +608,7 @@ instance ConvertAbsToBT Abs.Exp where
       SynTerm'Var ()
         <$> convertAbsToBT var False
     Abs.ExpInt pos val ->
-      pure $ SynTerm'Lit () (Annotated (RealSrcSpan pos) (SynLit'Num () val))
+      pure $ SynTerm'Lit (RealSrcSpan pos) (SynLit'Num val)
     Abs.ExpApp pos term1 term2 ->
       SynTerm'App (RealSrcSpan pos)
         <$> (convertAbsToBT term1)
@@ -708,15 +708,15 @@ instance ConvertAbsToBT Abs.Type where
     Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
     Abs.TypeParen pos ty -> SynType'Paren (RealSrcSpan pos) <$> convertAbsToBT ty
 
-instance Pretty (SynLit x) where
+instance Pretty SynLit where
   pretty = \case
-    SynLit'Num _ val -> pretty val
-    SynLit'Str _ val -> pretty val
+    SynLit'Num val -> pretty val
+    SynLit'Str val -> pretty val
 
 instance Pretty (SynTerm CompRn) where
   pretty = \case
     SynTerm'Var _ var -> pretty var
-    SynTerm'Lit _ (Annotated _pos val) -> pretty val
+    SynTerm'Lit _ val -> pretty val
     SynTerm'App _ term1 term2 -> parens (pretty term1) <+> pretty term2
     SynTerm'Lam _ var term -> "\\" <> pretty var <> "." <+> pretty term
     SynTerm'ALam _ var ty term -> "\\" <> pretty var <+> "::" <+> pretty ty <> "." <+> pretty term
