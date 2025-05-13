@@ -95,6 +95,16 @@ data SynTerm x
   | -- | (f x) :: Int
     SynTerm'Ann (XSynTerm'Ann' x) (XSynTerm'Ann'Term x) (XSynTerm'Ann'Type x)
 
+-- TODO
+-- In SynTerm GhcTc, XSynTerm'Var' x resolves to NoFieldExt
+-- For other fields, the extension field is used to store the inferred type
+
+-- TODO add extension field
+-- TODO explain what it can be used for
+-- XXExprGhcRn
+-- XXExprGhcTc
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Expr.hs#L1294
+
 -- TODO uncomment
 -- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
 data SynType x
@@ -186,22 +196,22 @@ type family XSynType'Concrete' x
 type family XSynType'Concrete x
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L169
-data Pass = Parsed | Renamed | Typechecked
+data Pass = Renamed | Typechecked | Zonked
   deriving (Data)
 
 -- | Used as a data type index for the hsSyn AST; also serves
 -- as a singleton type for Pass
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L157
 data CompPass (c :: Pass) where
-  CompPs :: CompPass 'Parsed
   CompRn :: CompPass 'Renamed
   CompTc :: CompPass 'Typechecked
+  CompZn :: CompPass 'Zonked
 
 -- Type synonyms as a shorthand for tagging
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L173
-type CompPs = CompPass 'Parsed -- Output of parser
 type CompRn = CompPass 'Renamed -- Output of renamer
 type CompTc = CompPass 'Typechecked -- Output of typechecker
+type CompZn = CompPass 'Zonked -- Output of zonker that by construction doesn't contain metavariables
 
 -- | Maps the "normal" id type for a given GHC pass
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
@@ -268,6 +278,8 @@ type instance IdP (CompPass p) = IdCompP p
 type instance Anno Name = SrcSpan
 type instance Anno SynLit = SrcSpan
 type instance Anno Var = SrcSpan
+
+-- ----------------------
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
 data NameSpace
@@ -348,13 +360,20 @@ data Type
     Type'Concrete FastString
 
 -- TODO implement
-instance Show Type where
+instance Show Type
 
 -- TODO implement
-instance Pretty Type where
+instance Pretty Type
 
 -- TODO separate Type from TcType
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L260
+-- Possible design: two types of Indirects
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_158972
+-- + Separate TcType from Type
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
+
+-- TODO use CompZn
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 type TcType = Type
@@ -414,13 +433,12 @@ data SkolemInfoAnon
     -- constraints are satisfied.
     UnifyForAllSkol -- We are unifying two for-all types
       TcType -- The instantiated type *inside* the forall
-  
+
 -- TODO implement
 instance Show SkolemInfoAnon
-  
+
 -- TODO implement
-instance Pretty SkolemInfoAnon where
-  
+instance Pretty SkolemInfoAnon
 
 -- | 'SkolemInfo' stores the origin of a skolem type variable,
 -- so that we can display this information to the user in case of a type error.
@@ -509,6 +527,7 @@ data Var
     -- Always local and vanilla.
     Id
       { varName :: !Name
+      , varType :: Type
       }
 
 instance Eq Var where
@@ -527,6 +546,7 @@ instance Pretty Var
 newtype ModuleName = ModuleName Text deriving (Show, Eq)
 
 -- TODO specify instances for each phase
+-- TODO store instances in a separate module
 
 ---------------- Terms ---------------------
 
@@ -615,6 +635,8 @@ withNamesInScope names act =
   -- to implement shadowing
   let ?scope = Map.union (Map.fromList ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)) ?scope
    in act
+
+-- TODO use different annotations in different phases
 
 class ConvertAbsToBT a where
   type To a

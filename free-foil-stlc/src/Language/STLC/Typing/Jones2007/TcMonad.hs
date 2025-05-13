@@ -7,31 +7,33 @@
 {-# LANGUAGE RecordPuns #-}
 {-# LANGUAGE TupleSections #-}
 
-module Language.STLC.Typing.Jones2007.TcMonad (
-  TcM, -- The monad type constructor
-  -- runTc,
-  -- ErrMsg,
-  lift,
-  -- check,
-  -- Environment manipulation
-  extendVarEnv,
-  lookupVar,
-  getEnvTypes,
-  getFreeTyVars,
-  getMetaTyVars,
-  -- Types and unification
-  -- newTyVarTy,
-  instantiate,
-  skolemise,
-  zonkType,
-  quantify,
-  unify,
-  unifyFun,
-  -- Ref cells
-  newTcRef,
-  readTcRef,
-  writeTcRef,
-) where
+module Language.STLC.Typing.Jones2007.TcMonad 
+-- (
+--   TcM, -- The monad type constructor
+--   -- runTc,
+--   -- ErrMsg,
+--   lift,
+--   check,
+--   -- Environment manipulation
+--   extendVarEnv,
+--   lookupVar,
+--   getEnvTypes,
+--   getFreeTyVars,
+--   getMetaTyVars,
+--   -- Types and unification
+--   -- newTyVarTy,
+--   instantiate,
+--   skolemise,
+--   zonkType,
+--   quantify,
+--   unify,
+--   unifyFun,
+--   -- Ref cells
+--   newTcRef,
+--   readTcRef,
+--   writeTcRef,
+-- ) 
+where
 
 import Data.IORef
 import Data.List (partition, (\\))
@@ -195,9 +197,9 @@ newMetaTyVar' str = do
 -- TODO how to remember the origin of a metavariable?
 
 -- It's usually `newMetaTyVarName` + `mkTcTyVar`
-newMetaTyVar :: TcTyVar -> TcM TcTyVar
-newMetaTyVar TyVar{varName} = newMetaTyVar' varName.nameOcc.occNameFS
-newMetaTyVar tv = failTc $ "Expected a TyVar, but got: " <> pretty tv
+tyVarToMetaTyVar :: TcTyVar -> TcM TcTyVar
+tyVarToMetaTyVar TyVar{varName} = newMetaTyVar' varName.nameOcc.occNameFS
+tyVarToMetaTyVar tv = failTc $ "Expected a TyVar, but got: " <> pretty tv
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L1046
 mkTcTyVar :: Name -> TcTyVarDetails -> TyVar
@@ -257,7 +259,7 @@ instantiate :: Sigma -> TcM Rho
 -- Instantiate the topmost for-alls of the argument type
 -- with flexible type variables
 instantiate (Type'ForAll tvs ty) = do
-  tvs' <- forM tvs newMetaTyVar
+  tvs' <- forM tvs tyVarToMetaTyVar
   pure (substTy tvs (Type'Var <$> tvs') ty)
 instantiate ty = pure ty
 
@@ -374,6 +376,10 @@ getFreeTyVars tys = do
 -- Eliminate any substitutions in the type
 ------------------------------------------
 
+-- TODO backsubstitution
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L925
+
+
 zonkType :: Type -> TcM Type
 zonkType (Type'ForAll ns ty) = do
   ty' <- zonkType ty
@@ -477,5 +483,5 @@ occursCheckErr tv ty =
 badType :: Tau -> Bool
 -- Tells which types should never be encountered during unification
 badType (Type'Var (TyVar _)) = True
-badType (Type'Var (Id _)) = True
+badType (Type'Var (Id _ _)) = True
 badType _ = False
