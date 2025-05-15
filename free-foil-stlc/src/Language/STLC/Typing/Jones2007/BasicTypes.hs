@@ -6,6 +6,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -29,31 +30,25 @@
 
 module Language.STLC.Typing.Jones2007.BasicTypes where
 
--- This module defines the basic types used by the Type ann checker
+-- This module defines the basic types used by the type checker
 -- Everything defined in here is exported
 
 import Control.Monad (forM)
-import Data.Containers.ListUtils (nubIntOn, nubOrd)
-import Data.Data (Data (..), Typeable)
-import Data.Data qualified as Data
+import Data.Containers.ListUtils (nubOrd)
+import Data.Data (Data (..))
 import Data.IORef
 import Data.List (nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
-import Data.Text qualified as T
 import Data.Text qualified as Text
-import Data.Void (Void)
-import Data.Word (Word64)
-import GHC.Base (absurd)
-import Language.STLC.Common
+import Language.STLC.Common ()
 import Language.STLC.Syntax.Abs qualified as Abs
 import Prettyprinter
 import Prelude hiding ((<>))
 
--- infixr 4 --> -- The arrow Type ann constructor
+-- infixr 4 --> -- The arrow type constructor
 -- infixl 4 `App` -- Application
 
 -----------------------------------
@@ -132,6 +127,7 @@ data SynType x
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Lit.hs#L48
 data SynLit
   = SynLit'Num Integer
+  | SynLit'Bool Bool
   | SynLit'Str FastString
 
 -- TODO add case to support Trees That Grow
@@ -217,23 +213,24 @@ type CompZn = CompPass 'Zonked -- Output of zonker that by construction doesn't 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
 type family IdCompP pass where
   IdCompP 'Renamed = Name
-  IdCompP 'Typechecked = Id
+  IdCompP 'Typechecked = TcTyVar
+  IdCompP 'Zonked = Id
 
 -- TODO use ping-pong
 
 -- Note [Ping-pong in TTG]
 -- ~~~~~~~~~~~~~~~~~~~~
--- 
+--
 -- Why do we annotate some nodes without using the extension field?
--- 
+--
 -- See
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L125
 -- and
 -- https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/handling-source-locations#ping-pong-style
--- 
--- > If this were done with the constructor extension point of TTG, 
--- then one would lose some type safety: 
--- There would no longer be a guaruntee that there will always 
+--
+-- > If this were done with the constructor extension point of TTG,
+-- then one would lose some type safety:
+-- There would no longer be a guaruntee that there will always
 -- be a Located layer between the Expr layers in our huge expression sandwich.
 
 data GenLocated l e = L l e
@@ -245,6 +242,7 @@ type Located = GenLocated SrcSpan
 type family XRec p a = r | r -> a
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L101
+-- TODO why XAnno doesn't use pass
 type instance XRec (CompPass p) a = XAnno a
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L210
@@ -277,7 +275,7 @@ type instance IdP (CompPass p) = IdCompP p
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
 type instance Anno Name = SrcSpan
 type instance Anno SynLit = SrcSpan
-type instance Anno Var = SrcSpan
+type instance Anno TcTyVar = SrcSpan
 
 -- ----------------------
 
@@ -344,26 +342,26 @@ type Kind = Type
 type KindOrType = Type
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L163
-type TyVar = Var
+type TyVar = RnVar
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L124
-data Type
+data Type p
   = -- | Vanilla type variable
-    Type'Var Var
+    Type'Var (XVar' p)
   | Type'ForAll
-      [TyVar]
-      Type
+      [XVar' p]
+      (Type p)
   | -- | This is a special case of a type constructor
     -- where the type constructor is (->).
-    Type'Fun Type Type
+    Type'Fun (Type p) (Type p)
   | -- | Type literals are similar to type constructors.
     Type'Concrete FastString
 
 -- TODO implement
-instance Show Type
+instance Show (Type p)
 
 -- TODO implement
-instance Pretty Type
+instance Pretty (Type p)
 
 -- TODO separate Type from TcType
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
@@ -376,10 +374,14 @@ instance Pretty Type
 -- TODO use CompZn
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
-type TcType = Type
+type TcType = Type CompTc
+
+type RnType = Type CompRn
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
 type Unique = Int
+
+type ZnType = Type CompZn
 
 -------------------------------------
 
@@ -393,13 +395,13 @@ data UserTypeCtxt
   | ExprSigCtxt -- Expression type signature
   | TyVarBndrKindCtxt Name -- The kind of a type variable being bound
 
--- | Type variable that might be a metavariable.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L169
-type TcTyVar = Var
-
 -- | Type variable that is a metavariable.
 -- requires explicit checks in function definitions.
-type TcTyVarMeta = Var
+type TcTyVarMeta = TcTyVar
+
+type TcTyVarSkolem = TcTyVar
+
+type TcTypeMeta = TcType
 
 -- | 'SkolemInfoAnon' stores the origin of a skolem type variable (e.g. bound by
 -- a user-written forall, the header of a data declaration, a deriving clause, ...).
@@ -419,8 +421,9 @@ data SkolemInfoAnon
   -- Location of the binding site is on the TyVar
   -- See Note [SigSkol SkolemInfo]
       UserTypeCtxt -- What sort of signature
-      TcType -- Original type signature (before skolemisation)
-      [(Name, TcTyVar)] -- Maps the original name of the skolemised tyvar
+      (Type CompRn) -- Original type signature (before skolemisation)
+      -- TODO why list?
+      [(Name, TcType)] -- Maps the original name of the skolemised tyvar
       -- to its instantiated version
   | SigTypeSkol UserTypeCtxt
   | -- like SigSkol, but when we're kind-checking the *type*
@@ -454,6 +457,12 @@ data SkolemInfo
       -- | The information about the origin of the skolem type variable
       SkolemInfoAnon
 
+type family XVar' p
+
+type instance XVar' CompRn = RnVar
+type instance XVar' CompTc = TcTyVar
+type instance XVar' CompZn = ZnVar
+
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
 data MetaDetails
   = Flexi -- Flexi type variables unify to become Indirects
@@ -464,11 +473,29 @@ data MetaDetails
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
 data TcLevel = TcLevel {-# UNPACK #-} !Int
 
+-- | What restrictions are on this metavariable around unification?
+-- These are checked in GHC.Tc.Utils.Unify.checkTopShape
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L640
+data MetaInfo
+  = -- | This MetaTv is an ordinary unification variable
+    -- A TauTv is always filled in with a tau-type, which
+    -- never contains any ForAlls.
+    TauTv
+  | -- | A variant of TauTv, except that it should not be
+    --   unified with a type, only with a type variable
+    -- See Note [TyVarTv] in GHC.Tc.Utils.TcMType
+    TyVarTv
+
 -- A TyVarDetails is inside a TyVar
 -- See Note [TyVars and TcTyVars during type checking]
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
-  = -- A skolem
+  = -- | Deep skolemisation doesn't affect argument sigmas, only result ones (p. 24).
+    -- We don't have deep instantiation (p. 28).
+    -- The original definition of TyVar had a BoundTv constructor (p.41).
+    -- Hence, we should be able to represent bound tyvars during typechecking.
+    BoundTv
+  | -- A skolem
     SkolemTv
       { skolemInfo :: SkolemInfo
       -- ^ See Note [Keeping SkolemInfo inside a SkolemTv]
@@ -486,7 +513,7 @@ data TcTyVarDetails
 
 -- | Identifier
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L150
-type Id = Var
+type Id = ZnVar
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
 data Name = Name
@@ -504,6 +531,9 @@ instance Eq Name where
 instance Ord Name where
   n1 <= n2 = n1.nameUnique <= n2.nameUnique
 
+-- TODO use a single Var type and select varDetails depending on the phase?
+-- E.g., In CompRn, varDetails is Void
+
 -- | Variable
 --
 -- Essentially a typed 'Name', that may also contain some additional information
@@ -513,34 +543,76 @@ instance Ord Name where
 --
 -- FIXME If TyVar occurs during constraint solving, it means BoundTv
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L257
-data Var
-  = -- | Type variables3
-    TyVar
-      { varName :: !Name
-      }
-  | -- | Used only during type inference
-    TcTyVar
-      { varName :: !Name
-      , varDetails :: TcTyVarDetails
-      }
-  | -- | Variable identifier
-    -- Always local and vanilla.
-    Id
-      { varName :: !Name
-      , varType :: Type
-      }
+data RnVar = RnVar
+  { varName :: !Name
+  }
 
-instance Eq Var where
+-- TODO What happens to bound type variables?
+-- They are skolemised (`skolemise`, `newSkolemTyVar`) or instantiated (`instantiate`) with metavariables
+-- Can we immediately replace them with TcTyVar?
+
+type TcBoundVar = TcTyVar
+
+-- | Type variable that might be a metavariable.
+-- A separate type instead of a type synonym
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L169
+-- and a constructor
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L268
+data TcTyVar
+  = -- | Used only during type inference
+    TcTyVar
+    { varName :: !Name
+    , varDetails :: TcTyVarDetails
+    }
+
+-- TODO write error in each vartype?
+-- so that it must be filled
+data TcTermVar
+  = TcTermVar
+  { varName :: !Name
+  , varType :: IORef TcType
+  }
+
+-- Zonked type variable or a term variable with a zonked type
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L277
+data ZnVar
+  = -- | Variable identifier
+    -- Always local and vanilla.
+    ZnVar
+    { varName :: !Name
+    , varType :: ZnType
+    }
+
+-- instance (HasField "varName" b Name) => Eq b where
+--   var1 == var2 = var1.varName == var2.varName
+
+instance Eq RnVar where
   var1 == var2 = var1.varName == var2.varName
 
-instance Ord Var where
+instance Eq TcTyVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Eq ZnVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Ord RnVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
+instance Ord TcTyVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
+instance Ord ZnVar where
   var1 <= var2 = var1.varName <= var2.varName
 
 -- TODO implement
-instance Show Var
+instance Show RnVar
+instance Show TcTyVar
+instance Show ZnVar
 
 -- TODO implement
-instance Pretty Var
+instance Pretty RnVar
+instance Pretty TcTyVar
+instance Pretty ZnVar
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
 newtype ModuleName = ModuleName Text deriving (Show, Eq)
@@ -550,31 +622,52 @@ newtype ModuleName = ModuleName Text deriving (Show, Eq)
 
 ---------------- Terms ---------------------
 
-type instance XSynTerm'Var' x = ()
-type instance XSynTerm'Var x = Name
+data Expected a = Infer (IORef a) | Check a
 
-type instance XSynTerm'Lit' x = SrcSpan
+data AnnoTc = AnnoTc
+  { annoSrcLoc :: SrcSpan
+  , annoTy :: Expected TcType
+  }
+
+type instance XSynTerm'Var' x = ()
+
+-- TODO is this true?
+-- Seems like we can use the same representation
+-- for type-level and term-level variables
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L334
+type instance XSynTerm'Var CompRn = Name
+type instance XSynTerm'Var CompTc = TcTermVar
+type instance XSynTerm'Var CompZn = Id
+
+type instance XSynTerm'Lit' CompRn = SrcSpan
+type instance XSynTerm'Lit' CompTc = AnnoTc
 type instance XSynTerm'Lit x = SynLit
 
-type instance XSynTerm'App' x = SrcSpan
+type instance XSynTerm'App' CompRn = SrcSpan
+type instance XSynTerm'App' CompTc = AnnoTc
 type instance XSynTerm'App'Fun x = SynTerm x
 type instance XSynTerm'App'Arg x = SynTerm x
 
-type instance XSynTerm'Lam' x = SrcSpan
+type instance XSynTerm'Lam' CompRn = SrcSpan
+type instance XSynTerm'Lam' CompTc = AnnoTc
 type instance XSynTerm'Lam'Var x = Name
 type instance XSynTerm'Lam'Body x = SynTerm x
 
-type instance XSynTerm'ALam' x = SrcSpan
+type instance XSynTerm'ALam' CompRn = SrcSpan
+type instance XSynTerm'ALam' CompTc = AnnoTc
 type instance XSynTerm'ALam'Var x = Name
 type instance XSynTerm'ALam'Type x = SynType x
 type instance XSynTerm'ALam'Body x = SynTerm x
 
-type instance XSynTerm'Let' x = SrcSpan
+type instance XSynTerm'Let' CompRn = SrcSpan
+type instance XSynTerm'Let' CompTc = AnnoTc
 type instance XSynTerm'Let'Name x = Name
 type instance XSynTerm'Let'AssignedTerm x = SynTerm x
 type instance XSynTerm'Let'InTerm x = SynTerm x
 
-type instance XSynTerm'Ann' x = SrcSpan
+type instance XSynTerm'Ann' CompRn = SrcSpan
+type instance XSynTerm'Ann' CompTc = AnnoTc
 type instance XSynTerm'Ann'Term x = SynTerm x
 type instance XSynTerm'Ann'Type x = SynType x
 
@@ -585,7 +678,14 @@ type instance XSynLit'Num' x = ()
 ---------------- Types (syntactic) ---------------------
 
 type instance XSynType'Var' x = ()
-type instance XSynType'Var x = Name
+
+-- TODO note about the same representations
+-- of type-level and term-level variables
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L334
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L828
+type instance XSynType'Var CompRn = Name
+type instance XSynType'Var CompTc = TcTyVar
+type instance XSynType'Var CompZn = Id
 
 type instance XSynType'ForAll' x = SrcSpan
 type instance XSynType'ForAll'Vars x = [Name]
@@ -754,6 +854,7 @@ instance Pretty SynLit where
   pretty = \case
     SynLit'Num val -> pretty val
     SynLit'Str val -> pretty val
+    SynLit'Bool val -> pretty val
 
 instance Pretty (SynTerm CompRn) where
   pretty = \case
@@ -794,100 +895,25 @@ ex2 = do
 -- >>> ex2
 -- \x_1 :: forall b_2. Int. (\z_3. z_3) x_1
 
--- type Term' ann = Term (IORef (Maybe (Type ann)))
-
--- pattern Var' :: Name ann -> Term a
--- pattern Var' n <- Var _a n
--- pattern Lit' :: Integer -> Term a
--- pattern Lit' t <- Lit _a t
--- pattern App' :: Term a -> Term a -> Term a
--- pattern App' t1 t2 <- App _a t1 t2
--- pattern Lam' :: Name ann -> Term a -> Term a
--- pattern Lam' n t <- Lam _a n t
--- pattern ALam' :: Name ann -> Sigma ann -> Term a -> Term a
--- pattern ALam' n s t <- ALam _a n s t
--- pattern Let' :: Name ann -> Term a -> Term a -> Term a
--- pattern Let' n t1 t2 <- Let _a n t1 t2
--- pattern Ann' :: Term a -> Sigma ann -> Term a
--- pattern Ann' t s <- Ann _a t s
-
--- {-# COMPLETE Var', Lit', App', Lam', ALam', Let', Ann' #-}
-
--- atomicTerm :: Term a -> Bool
--- atomicTerm (Var' _) = True
--- atomicTerm (Lit' _) = True
--- atomicTerm _ = False
-
 -- -----------------------------------
 -- --      Types                   --
 -- -----------------------------------
 
-type Sigma = Type
-type Rho = Type -- No top-level ForAll
-type Tau = Type -- No ForAlls anywhere
-
--- data X ann x = X ann x
-
--- -- data Type ann
--- --   = ForAll [(TyVar ann)] (Rho ann) -- Forall type
--- --   | Fun (Type ann) (Type ann) -- Function type
--- --   | TyCon TyCon -- Type constants
--- --   | TyVar (TyVar ann) -- Always bound by a ForAll
-
--- -- data MetaTv = MetaTv ann (MetaTv ann) -- A meta Type ann variable
--- -- pattern MetaTv' :: MetaTv ann -> Type ann
--- -- pattern MetaTv' tv <- MetaTv _ann tv
-
--- -- pattern TyVar' :: TyVar ann -> Type ann
--- -- pattern TyVar' tv <- TyVar _ann tv
--- -- pattern TyCon' :: TyCon -> Type ann
--- -- pattern TyCon' tc <- TyCon _ann tc
--- -- pattern Fun' :: Type ann -> Type ann -> Type ann
--- -- pattern Fun' arg res <- Fun _ann arg res
--- -- pattern ForAll' :: [TyVar ann] -> Rho ann -> Type ann
--- -- pattern ForAll' tvs ty <- ForAll _ann tvs ty
-
--- -- {-# COMPLETE ForAll', Fun', TyCon', TyVar' #-}
-
--- -- data TyVar
--- --   = BoundTv Text -- A Type ann variable bound by a ForAll
--- --   | SkolemTv Text Uniq -- A skolem constant; the String is
--- --   -- just to improve error messages
-
--- -- pattern BoundTv' :: Text -> TyVar ann
--- -- pattern BoundTv' t <- BoundTv _ann t
-
--- -- pattern SkolemTv' :: Text -> Uniq -> TyVar ann
--- -- pattern SkolemTv' t u <- SkolemTv _ann t u
-
--- -- {-# COMPLETE BoundTv', SkolemTv' #-}
-
--- -- data MetaTv ann = Meta ann Uniq (TyRef ann) -- Can unify with any tau-type
-
--- -- data TyRef ann = TyRef ann (IORef (Maybe (Tau ())))
-
--- -- 'Nothing' means the Type ann variable is not substituted
--- -- 'Just ty' means it has been substituted by 'ty'
-
--- -- instance Eq (MetaTv ann) where
--- --   (Meta _ann1 u1 _) == (Meta _ann2 u2 _) = u1 == u2
-
--- -- instance Eq (TyVar ann) where
--- --   (BoundTv' s1) == (BoundTv' s2) = s1 == s2
--- --   (SkolemTv' _ u1) == (SkolemTv' _ u2) = u1 == u2
--- --   _ == _ = error "Mismatched Type ann variables"
-
--- type Uniq = Int
+type Sigma = TcType
+type Rho = TcType -- No top-level ForAll
+type Tau = TcType -- No ForAlls anywhere
 
 data TypeConcrete
   = TypeConcrete'Int
   | TypeConcrete'Bool
+  | TypeConcrete'String
   deriving (Eq)
 
 instance Show TypeConcrete where
   show = \case
     TypeConcrete'Int -> "Int"
     TypeConcrete'Bool -> "Bool"
+    TypeConcrete'String -> "String"
 
 -- ---------------------------------
 -- --      Constructors
@@ -895,17 +921,14 @@ instance Show TypeConcrete where
 (-->) :: Sigma -> Sigma -> Sigma
 arg --> res = Type'Fun arg res
 
-intType, boolType :: Tau
-intType = Type'Concrete (Text.pack $ show TypeConcrete'Int)
-boolType = Type'Concrete (Text.pack $ show TypeConcrete'Bool)
-
 -- ---------------------------------
 -- --  Free and bound variables
 
 -- Get the MetaTvs from a type; no duplicates in result
-metaTvs :: [Type] -> [Var]
+metaTvs :: [TcType] -> [TcTyVar]
 metaTvs tys = nubOrd (foldr (flip go) [] tys)
  where
+  go :: [TcTyVar] -> TcType -> [TcTyVar]
   go acc = \case
     Type'Var var ->
       case var of
@@ -915,56 +938,29 @@ metaTvs tys = nubOrd (foldr (flip go) [] tys)
     Type'Concrete _ -> acc
     Type'Fun ty1 ty2 -> go (go acc ty1) ty2
 
--- metaTvs :: [Type ann] -> [MetaTv ann]
--- go (MetaTv' tv) acc
---   | tv `elem` acc = acc
---   | otherwise = tv : acc
--- go (TyVar' _) acc = acc
--- go (TyCon' _) acc = acc
--- go (Fun' arg res) acc = go arg (go res acc)
--- go (ForAll' _ ty) acc = go ty acc -- ForAll binds TyVars only
-
-freeTyVars :: [Type] -> [Var]
+freeTyVars :: [TcType] -> [TcTyVar]
 -- Get the free TyVars from a type; no duplicates in result
 freeTyVars tys = nubOrd (foldr (go Set.empty) [] tys)
  where
   go ::
     -- Bound type variables
-    Set.Set TyVar ->
+    Set.Set TcTyVar ->
     -- Type to look at
-    Type ->
+    TcType ->
     -- Accumulates result
-    [TyVar] ->
-    [TyVar]
+    [TcTyVar] ->
+    [TcTyVar]
   go bound v acc =
     case v of
       Type'Var var
-        -- Ignore occurrences of bound Type variables
+        -- Ignore occurrences of bound type variables
         | Set.member var bound -> acc
         | otherwise -> var : acc
       Type'Concrete _ -> acc
       Type'ForAll vars ty -> go (Set.fromList vars <> bound) ty acc
       Type'Fun ty1 ty2 -> go bound ty1 (go bound ty2 acc)
 
--- freeTyVars :: [Type ann] -> [TyVar ann]
--- -- Get the free TyVars from a type; no duplicates in result
--- freeTyVars tys = foldr (go []) [] tys
---  where
---   go ::
---     [TyVar ann] -> -- Ignore occurrences of bound Type ann variables
---     Type ann -> -- Type ann to look at
---     [TyVar ann] -> -- Accumulates result
---     [TyVar ann]
---   go bound (TyVar' tv) acc
---     | tv `elem` bound = acc
---     | tv `elem` acc = acc
---     | otherwise = tv : acc
---   -- go _bound (MetaTv' _) acc = acc
---   go _bound (TyCon' _) acc = acc
---   go bound (Fun' arg res) acc = go bound arg (go bound res acc)
---   go bound (ForAll' tvs ty) acc = go (tvs ++ bound) ty acc
-
-tyVarBndrs :: Type -> [TyVar]
+tyVarBndrs :: Rho -> [TcTyVar]
 -- Get all the binders used in ForAlls in the type, so that
 -- when quantifying an outer for-all we can avoid these inner ones
 tyVarBndrs ty = nub (bndrs ty)
@@ -975,57 +971,9 @@ tyVarBndrs ty = nub (bndrs ty)
     Type'Fun arg res -> bndrs arg <> bndrs res
     _ -> []
 
--- tyVarBndrs :: Rho ann -> [TyVar ann]
--- -- Get all the binders used in ForAlls in the type, so that
--- -- when quantifying an outer for-all we can avoid these inner ones
--- tyVarBndrs ty = nub (bndrs ty)
---  where
---   bndrs (ForAll' tvs body) = tvs ++ bndrs body
---   bndrs (Fun' arg res) = bndrs arg ++ bndrs res
---   bndrs _ = []
-
 -- TODO return Name?
 tyVarName :: TyVar -> Text
 tyVarName = (.varName.nameOcc.occNameFS)
-
--- tyVarName :: TyVar ann -> Text
--- tyVarName (BoundTv _ann n) = n
--- tyVarName (SkolemTv _ann n _) = n
-
--- ---------------------------------
--- --      Substitution
-
-type Env = Map.Map TyVar Tau
-
-substTy :: [TyVar] -> [Type] -> Type -> Type
--- Replace the specified quantified Type ann variables by
--- given meta Type ann variables
--- No worries about capture, because the two kinds of type
--- variable are distinct
-substTy tvs tys ty = subst_ty (Map.fromList (tvs `zip` tys)) ty
-
-subst_ty :: Env -> Type -> Type
-subst_ty env (Type'Fun arg res) = Type'Fun (subst_ty env arg) (subst_ty env res)
-subst_ty env (Type'Var n) = fromMaybe (Type'Var n) (Map.lookup n env)
--- subst_ty _env (MetaTv tv) = MetaTv tv
-subst_ty _env (Type'Concrete tc) = Type'Concrete tc
-subst_ty env (Type'ForAll ns rho) = Type'ForAll ns (subst_ty env' rho)
- where
-  ns' = Set.fromList ns
-  env' = Map.withoutKeys env ns'
-
--- | What restrictions are on this metavariable around unification?
--- These are checked in GHC.Tc.Utils.Unify.checkTopShape
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L640
-data MetaInfo
-  = -- | This MetaTv is an ordinary unification variable
-    -- A TauTv is always filled in with a tau-type, which
-    -- never contains any ForAlls.
-    TauTv
-  | -- | A variant of TauTv, except that it should not be
-    --   unified with a type, only with a type variable
-    -- See Note [TyVarTv] in GHC.Tc.Utils.TcMType
-    TyVarTv
 
 -- \| CycleBreakerTv -- Used to fix occurs-check problems in Givens
 -- See Note [Type equality cycles] in
@@ -1037,15 +985,6 @@ data MetaInfo
 --       -- See Note [ConcreteTv] in GHC.Tc.Utils.Concrete.
 --       -- See also Note [The Concrete mechanism] in GHC.Tc.Utils.Concrete
 --       -- for an overview of how this works in context.
-
--- subst_ty :: Env ann -> Type ann -> Type ann
--- subst_ty env (Fun ann arg res) = Fun ann (subst_ty env arg) (subst_ty env res)
--- subst_ty env (TyVar ann n) = fromMaybe (TyVar ann n) (lookup n env)
--- -- subst_ty _env (MetaTv ann tv) = MetaTv ann tv
--- subst_ty _env (TyCon ann tc) = TyCon ann tc
--- subst_ty env (ForAll ann ns rho) = ForAll ann ns (subst_ty env' rho)
---  where
---   env' = [(n, ty') | (n, ty') <- env, not (n `elem` ns)]
 
 -- -----------------------------------
 -- --      Pretty printing class   --
@@ -1103,8 +1042,8 @@ data MetaInfo
 --   go (App' e1 e2) es = go e1 (e2 : es)
 --   go e' es = pprParendTerm e' <+> sep (map pprParendTerm es)
 
-pprName :: Name -> Doc ann
-pprName n = pretty n
+-- pprName :: Name -> Doc ann
+-- pprName n = pretty n
 
 -- -------------- Pretty-printing types ---------------------
 

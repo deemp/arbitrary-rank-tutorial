@@ -1,13 +1,19 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordPuns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 
-module Language.STLC.Typing.Jones2007.TcMonad 
+module Language.STLC.Typing.Jones2007.TcMonad
+where
+
 -- (
 --   TcM, -- The monad type constructor
 --   -- runTc,
@@ -32,14 +38,16 @@ module Language.STLC.Typing.Jones2007.TcMonad
 --   newTcRef,
 --   readTcRef,
 --   writeTcRef,
--- ) 
-where
+-- )
 
 import Data.IORef
 import Data.List (partition, (\\))
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
 import Data.Text (pack)
 import Data.Traversable (forM)
+import GHC.Records (HasField)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Prettyprinter
 import Prettyprinter.Render.Text
@@ -47,12 +55,6 @@ import Prettyprinter.Render.Text
 ------------------------------------------
 --      The monad itself                --
 ------------------------------------------
-
--- data TcEnv
---   = TcEnv
---   { uniqs :: IORef Unique -- Unique supply
---   , var_env :: Map.Map Name Sigma -- (Type) environment for term variables
---   }
 
 type IVarEnv = (?varEnv :: Map.Map Name Sigma)
 type ITcLevel = (?tcLevel :: TcLevel)
@@ -105,14 +107,15 @@ extendVarEnv var ty m =
 getEnv :: TcM (Map.Map Name Sigma)
 getEnv = pure ?varEnv
 
--- TcM (\env -> pure (Right (var_env env)))
-
 lookupVar :: Name -> TcM Sigma -- May fail
 lookupVar n = do
   env <- getEnv
   case Map.lookup n env of
     Just ty -> pure ty
-    Nothing -> failTc ("Not in scope:" <+> dquotes (pprName n))
+    Nothing -> failTc ("Not in scope:" <+> dquotes (pretty n))
+
+-- TODO don't use `pretty` or use it on a newtype
+-- to better control the output format
 
 --------------------------------------------------
 --      Creating, reading, writing MetaTvs        --
@@ -167,8 +170,7 @@ newMetaTyVarName :: FastString -> TcM Name
 -- Makes a /System/ Name, which is eagerly eliminated by
 -- the unifier; see GHC.Tc.Utils.Unify.nicer_to_update_tv1, and
 -- GHC.Tc.Solver.Equality.canEqTyVarTyVar (nicer_to_update_tv2)
-newMetaTyVarName str =
-  newSysName (mkTyVarOccFS str)
+newMetaTyVarName str = newSysName (mkTyVarOccFS str)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/IOEnv.hs#L218
 newMutVar :: a -> TcM (IORef a)
@@ -197,12 +199,11 @@ newMetaTyVar' str = do
 -- TODO how to remember the origin of a metavariable?
 
 -- It's usually `newMetaTyVarName` + `mkTcTyVar`
-tyVarToMetaTyVar :: TcTyVar -> TcM TcTyVar
-tyVarToMetaTyVar TyVar{varName} = newMetaTyVar' varName.nameOcc.occNameFS
-tyVarToMetaTyVar tv = failTc $ "Expected a TyVar, but got: " <> pretty tv
+tyVarToMetaTyVar :: (HasField "varName" x Name) => x -> TcM TcTyVar
+tyVarToMetaTyVar x = newMetaTyVar' x.varName.nameOcc.occNameFS
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L1046
-mkTcTyVar :: Name -> TcTyVarDetails -> TyVar
+mkTcTyVar :: Name -> TcTyVarDetails -> TcTyVar
 mkTcTyVar name details =
   -- NB: 'kind' may be a coercion kind; cf, 'GHC.Tc.Utils.TcMType.newMetaCoVar'
   TcTyVar
@@ -219,17 +220,15 @@ newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 
 -- Similar to `cloneTyVarTyVar`
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L779
-newSkolemTyVar :: SkolemInfoAnon -> TyVar -> TcM TyVar
-newSkolemTyVar infoAnon tv@TyVar{} = do
+newSkolemTyVar :: SkolemInfoAnon -> TcBoundVar -> TcM TcTyVar
+newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv} = do
   uniq <- newUnique
   let name = tv.varName{nameUnique = uniq}
       -- TODO should this skolemInfo contain the uniq of the original tyvar?
       -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L343
       skolemInfo = SkolemInfo tv.varName.nameUnique infoAnon
   pure $ newSkolemTyVar' skolemInfo name
--- TODO improve message
-newSkolemTyVar infoAnon _tv =
-  failTc ("Expected a TyVar, but got: " <> pretty _tv <> " in " <> pretty infoAnon)
+newSkolemTyVar _ x = failTc ("Expected a bound variable, but got: " <> pretty x)
 
 -- `metaTyVarRef` panics if a tv doesn't have a ref
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L1317
@@ -248,29 +247,89 @@ writeTv m@(TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) ty =
   readTcRef ref >>= \case
     Flexi -> writeTcRef ref (Indirect ty)
     -- TODO improve message
-    _ -> failTc ("Expected unfilled variable, but got: " <> pretty m)
+    _ -> failTc ("Expected unfilled metavariable, but got: " <> pretty m)
 writeTv _ _ = pure ()
+
+-- ---------------------------------
+-- --      Preparation
+-- ---------------------------------
+
+-- prepareSynTermTc :: SynTerm CompRn -> SynTerm CompTc
+-- prepareSynTermTc = \case
+--   SynTerm'Var _ _ -> _
+--   SynTerm'Lit _ _ -> _
+--   SynTerm'App _ _ _ -> _
+--   SynTerm'Lam _ _ _ -> _
+--   SynTerm'ALam _ _ _ _ -> _
+--   SynTerm'Let _ _ _ _ -> _
+--   SynTerm'Ann _ _ _ -> _
+
+-- ---------------------------------
+-- --      Substitution
+-- ---------------------------------
+
+type Env = Map.Map TcBoundVar TcType
+
+substTy :: [TcBoundVar] -> [TcTypeMeta] -> TcType -> TcM TcType
+-- Replace the specified quantified type variables by
+-- given meta type variables
+-- No worries about capture, because the two kinds of type
+-- variable are distinct
+substTy tvs tys ty = subst_ty (Map.fromList (tvs `zip` tys)) ty
+
+subst_ty :: Env -> TcType -> TcM TcType
+subst_ty env (Type'Fun arg res) =
+  Type'Fun <$> (subst_ty env arg) <*> (subst_ty env res)
+subst_ty env (Type'Var n@TcTyVar{varDetails = BoundTv}) =
+  pure $ fromMaybe (Type'Var n) (Map.lookup n env)
+subst_ty _ (Type'Var n@TcTyVar{}) =
+  failTc ("Expected a bound type variable, but got: " <> pretty n)
+subst_ty _ (Type'Concrete tc) =
+  pure $ Type'Concrete tc
+subst_ty env (Type'ForAll ns rho) = do
+  let ns' = Set.fromList ns
+      -- TODO works correctly?
+      env' = Map.withoutKeys env ns'
+  -- It's not really skolemisation
+  -- so I think we can leave these variables as they are now
+  Type'ForAll ns <$> (subst_ty env' rho)
 
 ------------------------------------------
 --      Instantiation                   --
 ------------------------------------------
 
+-- TODO explore call sequence from tcRho
+-- and decide on types
+
+-- We don't have deep instantiation (p. 28)
+-- Hence, we should be able to store `RnVar`s along with `TcTyVar`s
 instantiate :: Sigma -> TcM Rho
 -- Instantiate the topmost for-alls of the argument type
 -- with flexible type variables
 instantiate (Type'ForAll tvs ty) = do
   tvs' <- forM tvs tyVarToMetaTyVar
-  pure (substTy tvs (Type'Var <$> tvs') ty)
+  substTy tvs (Type'Var <$> tvs') ty
+-- TODO we should have a way to not do anything to the type
+-- perhaps we need to add constructor to TcTyVar that wraps RnVar
+-- and traverse ty to wrap each RnVar in this constructor
+-- If this is a part of a computation that converts RnType to TcType,
+-- we can return an Either
+
+-- TODO I believe we we should convert the type to a Tc version
+-- using TcRnVar
+
+-- If possible, we shouldn't do that in advance to not lose some type safety
 instantiate ty = pure ty
 
-skolemise :: Sigma -> TcM ([TyVar], Rho)
--- Performs deep skolemisation, retuning the
+skolemise :: Sigma -> TcM ([TcTyVar], Rho)
+-- Performs deep skolemisation, returning the
 -- skolem constants and the skolemised type
 -- Rule PRPOLY
 skolemise (Type'ForAll tvs ty) = do
   let info = ForAllSkol tvs
   sks1 <- mapM (newSkolemTyVar info) tvs
-  (sks2, ty') <- skolemise (substTy tvs (Type'Var <$> sks1) ty)
+  -- TODO fix
+  (sks2, ty') <- skolemise =<< (substTy tvs (Type'Var <$> sks1) ty)
   pure (sks1 <> sks2, ty')
 -- Rule PRFUN
 skolemise (Type'Fun arg_ty res_ty) = do
@@ -283,11 +342,11 @@ skolemise ty = pure ([], ty)
 --      Quantification                  --
 ------------------------------------------
 
-isMetaTv :: Var -> Bool
+isMetaTv :: TcTyVar -> Bool
 isMetaTv TcTyVar{varDetails = MetaTv{}} = True
 isMetaTv _ = False
 
-isFlexiTv :: Var -> TcM Bool
+isFlexiTv :: TcTyVar -> TcM Bool
 isFlexiTv TcTyVar{varDetails = MetaTv{metaTvRef}} =
   readTcRef metaTvRef >>= \case
     Flexi -> pure True
@@ -305,10 +364,21 @@ isFlexiTv _ = pure False
 --
 -- Hence, `quantify` should probably use `Id` in forall
 
+-- GHC uses tags, IIUC
+-- TODO link to explanation
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/Opt/Monad.hs#L125
+allBinders :: [FastString] -- a,b,..z, a1, b1,... z1, a2, b2,...
+allBinders =
+  [(pack [x]) | x <- ['a' .. 'z']]
+    <> [ (pack (x : show i))
+       | i <- [1 :: Integer ..]
+       , x <- ['a' .. 'z']
+       ]
+
 -- TODO account for levels
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1677
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1750
-quantify :: [TcTyVar] -> Rho -> TcM Sigma
+quantify :: [TcTyVarMeta] -> Rho -> TcM Sigma
 -- Quantify over the specified type variables (all flexible)
 quantify tvs ty | all isMetaTv tvs = do
   -- TODO remove this check?
@@ -327,44 +397,34 @@ quantify tvs ty | all isMetaTv tvs = do
   -- -- Avoid quantified type variables in use
   newBinders :: [FastString]
   newBinders = take (length tvs) (allBinders \\ ((.varName.nameOcc.occNameFS) <$> usedBinders))
-  bind :: (TcTyVarMeta, FastString) -> TcM Var
+  bind :: (TcTyVarMeta, FastString) -> TcM TcTyVar
   bind (tv, name) = do
     -- TODO use info from tv?
     name' <- newSysName (mkTyVarOccFS name)
-    let var = Id{varName = name'}
+    -- TODO this should be boundtv, not flexi
+    let var = TcTyVar{varName = name', varDetails = BoundTv}
     writeTv tv (Type'Var var)
     pure var
-quantify tvs _ = failTc $ "Expected all type variables to not be metavariables, but got: " <> pretty tvs
-
--- GHC uses tags, IIUC
--- TODO link to explanation
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/Opt/Monad.hs#L125
-allBinders :: [FastString] -- a,b,..z, a1, b1,... z1, a2, b2,...
-allBinders =
-  [(pack [x]) | x <- ['a' .. 'z']]
-    <> [ (pack (x : show i))
-       | i <- [1 :: Integer ..]
-       , x <- ['a' .. 'z']
-       ]
+quantify tvs _ = failTc $ "Expected all type variables to be metavariables, but got: " <> pretty tvs
 
 ------------------------------------------
 --      Getting the free tyvars         --
 ------------------------------------------
 
-getEnvTypes :: TcM [Type]
+getEnvTypes :: TcM [TcType]
 -- Get the types mentioned in the environment
 getEnvTypes = do
   env <- getEnv
   pure (Map.elems env)
 
-getMetaTyVars :: [Type] -> TcM [TcTyVar]
+getMetaTyVars :: [TcType] -> TcM [TcTyVar]
 -- This function takes account of zonking, and returns a set
 -- (no duplicates) of unbound meta-type variables
 getMetaTyVars tys = do
   tys' <- mapM zonkType tys
   pure (metaTvs tys')
 
-getFreeTyVars :: [Type] -> TcM [TyVar]
+getFreeTyVars :: [TcType] -> TcM [TcTyVar]
 -- This function takes account of zonking, and returns a set
 -- (no duplicates) of free type variables
 getFreeTyVars tys = do
@@ -379,8 +439,7 @@ getFreeTyVars tys = do
 -- TODO backsubstitution
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L925
 
-
-zonkType :: Type -> TcM Type
+zonkType :: TcType -> TcM TcType
 zonkType (Type'ForAll ns ty) = do
   ty' <- zonkType ty
   pure (Type'ForAll ns ty')
@@ -389,14 +448,14 @@ zonkType (Type'Fun arg res) = do
   res' <- zonkType res
   pure (Type'Fun arg' res')
 zonkType (Type'Concrete tc) = pure (Type'Concrete tc)
-zonkType t@(Type'Var var) =
+zonkType v@(Type'Var var) =
   case var of
     TcTyVar{varDetails = MetaTv{}} ->
       do
         mb_ty <- readTv var
         case mb_ty of
           -- TODO why does zonking keep metavariables with flexi types?
-          Nothing -> pure t
+          Nothing -> pure v
           Just ty -> do
             ty' <- zonkType ty
             -- "Short out" multiple hops
@@ -407,6 +466,11 @@ zonkType t@(Type'Var var) =
 ------------------------------------------
 --      Unification                     --
 ------------------------------------------
+
+badType :: Tau -> Bool
+-- Tells which types should never be encountered during unification
+badType (Type'Var TcTyVar{varDetails = BoundTv}) = True
+badType _ = False
 
 unify :: Tau -> Tau -> TcM ()
 unify ty1 ty2
@@ -479,9 +543,3 @@ occursCheckErr tv ty =
         <+> "in:"
         <+> pretty ty
     )
-
-badType :: Tau -> Bool
--- Tells which types should never be encountered during unification
-badType (Type'Var (TyVar _)) = True
-badType (Type'Var (Id _ _)) = True
-badType _ = False
