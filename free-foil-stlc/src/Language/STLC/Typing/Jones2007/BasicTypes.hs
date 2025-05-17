@@ -42,6 +42,7 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Text qualified as Text
 import Language.STLC.Common ()
 import Language.STLC.Syntax.Abs qualified as Abs
@@ -89,6 +90,12 @@ data SynTerm x
     SynTerm'Let (XSynTerm'Let' x) (XSynTerm'Let'Name x) (XSynTerm'Let'AssignedTerm x) (XSynTerm'Let'InTerm x)
   | -- | (f x) :: Int
     SynTerm'Ann (XSynTerm'Ann' x) (XSynTerm'Ann'Term x) (XSynTerm'Ann'Type x)
+
+-- TODO add parenthesized expressions
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L382
+
+-- TODO are concrete types represented as `Name`s?
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Pat.hs#L181
 
 -- TODO
 -- In SynTerm GhcTc, XSynTerm'Var' x resolves to NoFieldExt
@@ -355,13 +362,15 @@ data Type p
     -- where the type constructor is (->).
     Type'Fun (Type p) (Type p)
   | -- | Type literals are similar to type constructors.
-    Type'Concrete FastString
+    Type'Concrete TypeConcrete
 
 -- TODO implement
 instance Show (Type p)
 
 -- TODO implement
 instance Pretty (Type p)
+
+instance Pretty (TypeConcrete)
 
 -- TODO separate Type from TcType
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
@@ -461,7 +470,7 @@ type family XVar' p
 
 type instance XVar' CompRn = RnVar
 type instance XVar' CompTc = TcTyVar
-type instance XVar' CompZn = ZnVar
+type instance XVar' CompZn = ZnTyVar
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
 data MetaDetails
@@ -495,11 +504,13 @@ data TcTyVarDetails
     -- The original definition of TyVar had a BoundTv constructor (p.41).
     -- Hence, we should be able to represent bound tyvars during typechecking.
     BoundTv
+      { tcLevel :: TcLevel
+      }
   | -- A skolem
     SkolemTv
       { skolemInfo :: SkolemInfo
       -- ^ See Note [Keeping SkolemInfo inside a SkolemTv]
-      , skolemTcLevel :: TcLevel
+      , tcLevel :: TcLevel
       -- ^ Level of the implication that binds it
       -- See GHC.Tc.Utils.Unify Note [Deeper level on the left] for
       --     how this level number is used
@@ -507,13 +518,13 @@ data TcTyVarDetails
   | MetaTv
       { metaTvInfo :: MetaInfo
       , metaTvRef :: IORef MetaDetails
-      , metaTvTcLevel :: TcLevel
+      , tcLevel :: TcLevel
       -- ^ See Note [TcLevel invariants]
       }
 
 -- | Identifier
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L150
-type Id = ZnVar
+type Id = ZnTyVar
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
 data Name = Name
@@ -570,17 +581,24 @@ data TcTyVar
 data TcTermVar
   = TcTermVar
   { varName :: !Name
-  , varType :: IORef TcType
+  , varType :: Expected TcType
   }
 
 -- Zonked type variable or a term variable with a zonked type
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L277
-data ZnVar
+data ZnTyVar
   = -- | Variable identifier
     -- Always local and vanilla.
-    ZnVar
+    ZnTyVar
     { varName :: !Name
-    , varType :: ZnType
+    }
+
+data ZnTermVar
+  = -- | Variable identifier
+    -- Always local and vanilla.
+    ZnTermVar
+    { varName :: !Name
+    , varType :: Type CompZn
     }
 
 -- instance (HasField "varName" b Name) => Eq b where
@@ -592,7 +610,7 @@ instance Eq RnVar where
 instance Eq TcTyVar where
   var1 == var2 = var1.varName == var2.varName
 
-instance Eq ZnVar where
+instance Eq ZnTyVar where
   var1 == var2 = var1.varName == var2.varName
 
 instance Ord RnVar where
@@ -601,18 +619,18 @@ instance Ord RnVar where
 instance Ord TcTyVar where
   var1 <= var2 = var1.varName <= var2.varName
 
-instance Ord ZnVar where
+instance Ord ZnTyVar where
   var1 <= var2 = var1.varName <= var2.varName
 
 -- TODO implement
 instance Show RnVar
 instance Show TcTyVar
-instance Show ZnVar
+instance Show ZnTyVar
 
 -- TODO implement
 instance Pretty RnVar
 instance Pretty TcTyVar
-instance Pretty ZnVar
+instance Pretty ZnTyVar
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
 newtype ModuleName = ModuleName Text deriving (Show, Eq)
@@ -626,48 +644,71 @@ data Expected a = Infer (IORef a) | Check a
 
 data AnnoTc = AnnoTc
   { annoSrcLoc :: SrcSpan
-  , annoTy :: Expected TcType
+  , annoType :: Expected TcType
   }
 
-type instance XSynTerm'Var' x = ()
+data AnnoZn = AnnoZn
+  { annoSrcLoc :: SrcSpan
+  , annoType :: ZnType
+  }
+
+data Concrete = Concrete
+  { concreteName :: Name
+  , concreteType :: TypeConcrete
+  }
+
+-- TODO Assume we need the same equations for all variables
+-- Then, we can use another to provide them in that family
+type family XSynTerm'VarCommon x
+type family XSynTerm'AnnoCommon x
+
+type instance XSynTerm'VarCommon CompRn = Name
+type instance XSynTerm'VarCommon CompTc = TcTermVar
+type instance XSynTerm'VarCommon CompZn = ZnTermVar
+
+type instance XSynTerm'AnnoCommon CompRn = SrcSpan
+type instance XSynTerm'AnnoCommon CompTc = AnnoTc
+type instance XSynTerm'AnnoCommon CompZn = AnnoZn
+
+
+-- TODO move 
 
 -- TODO is this true?
 -- Seems like we can use the same representation
 -- for type-level and term-level variables
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L334
-type instance XSynTerm'Var CompRn = Name
-type instance XSynTerm'Var CompTc = TcTermVar
-type instance XSynTerm'Var CompZn = Id
+-- Answer: it's not true
+-- In our calculus, term-level variables don't have types
+
+-- TODO move instances to a separate module
+type instance XSynTerm'Var' x = ()
+type instance XSynTerm'Var x = XSynTerm'VarCommon x
 
 type instance XSynTerm'Lit' CompRn = SrcSpan
-type instance XSynTerm'Lit' CompTc = AnnoTc
+type instance XSynTerm'Lit' CompTc = TypeConcrete
+type instance XSynTerm'Lit' CompZn = TypeConcrete
 type instance XSynTerm'Lit x = SynLit
 
-type instance XSynTerm'App' CompRn = SrcSpan
-type instance XSynTerm'App' CompTc = AnnoTc
+type instance XSynTerm'App' x = XSynTerm'AnnoCommon x
 type instance XSynTerm'App'Fun x = SynTerm x
 type instance XSynTerm'App'Arg x = SynTerm x
 
-type instance XSynTerm'Lam' CompRn = SrcSpan
-type instance XSynTerm'Lam' CompTc = AnnoTc
-type instance XSynTerm'Lam'Var x = Name
+type instance XSynTerm'Lam' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'Lam'Var x = XSynTerm'VarCommon x
 type instance XSynTerm'Lam'Body x = SynTerm x
 
-type instance XSynTerm'ALam' CompRn = SrcSpan
-type instance XSynTerm'ALam' CompTc = AnnoTc
-type instance XSynTerm'ALam'Var x = Name
+type instance XSynTerm'ALam' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'ALam'Var x = XSynTerm'VarCommon x
 type instance XSynTerm'ALam'Type x = SynType x
 type instance XSynTerm'ALam'Body x = SynTerm x
 
-type instance XSynTerm'Let' CompRn = SrcSpan
-type instance XSynTerm'Let' CompTc = AnnoTc
-type instance XSynTerm'Let'Name x = Name
+type instance XSynTerm'Let' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'Let'Name x = XSynTerm'VarCommon x
 type instance XSynTerm'Let'AssignedTerm x = SynTerm x
 type instance XSynTerm'Let'InTerm x = SynTerm x
 
-type instance XSynTerm'Ann' CompRn = SrcSpan
-type instance XSynTerm'Ann' CompTc = AnnoTc
+type instance XSynTerm'Ann' x = XSynTerm'AnnoCommon x
 type instance XSynTerm'Ann'Term x = SynTerm x
 type instance XSynTerm'Ann'Type x = SynType x
 
@@ -685,10 +726,12 @@ type instance XSynType'Var' x = ()
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L828
 type instance XSynType'Var CompRn = Name
 type instance XSynType'Var CompTc = TcTyVar
-type instance XSynType'Var CompZn = Id
+type instance XSynType'Var CompZn = ZnTyVar
 
 type instance XSynType'ForAll' x = SrcSpan
-type instance XSynType'ForAll'Vars x = [Name]
+type instance XSynType'ForAll'Vars CompRn = [Name]
+type instance XSynType'ForAll'Vars CompTc = [TcTyVar]
+type instance XSynType'ForAll'Vars CompZn = [ZnTyVar]
 type instance XSynType'ForAll'Body x = SynType x
 
 type instance XSynType'Fun' x = SrcSpan
@@ -698,8 +741,11 @@ type instance XSynType'Fun'Res x = SynType x
 type instance XSynType'Paren' x = SrcSpan
 type instance XSynType'Paren x = SynType x
 
+-- TODO explain when to use annotations and when not to
 type instance XSynType'Concrete' x = ()
-type instance XSynType'Concrete x = Name
+type instance XSynType'Concrete CompRn = Name
+type instance XSynType'Concrete CompTc = Concrete
+type instance XSynType'Concrete CompZn = Concrete
 
 type NameFs = FastString
 
@@ -814,20 +860,20 @@ instance ConvertAbsToBT Abs.Type where
   convertAbsToBT = \case
     -- TODO not a variable
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
+      -- TODO should all mentions of a type have the same uniques?
       nameUnique <- getUnique name
       pure $
         SynType'Concrete
           ()
-          ( Name
-              { nameOcc =
-                  OccName
-                    { occNameSpace = NameSpace'Type'Concrete
-                    , occNameFS = name
-                    }
-              , nameUnique
-              , nameLoc = RealSrcSpan pos
-              }
-          )
+          Name
+            { nameOcc =
+                OccName
+                  { occNameSpace = NameSpace'Type'Concrete
+                  , occNameFS = name
+                  }
+            , nameUnique
+            , nameLoc = RealSrcSpan pos
+            }
     Abs.TypeVariable pos (Abs.NameLowerCase name) -> do
       nameUnique <- getUnique name
       pure $

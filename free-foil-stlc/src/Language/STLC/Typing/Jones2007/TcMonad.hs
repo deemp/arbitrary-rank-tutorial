@@ -185,7 +185,7 @@ newMetaDetails info =
       MetaTv
         { metaTvInfo = info
         , metaTvRef = ref
-        , metaTvTcLevel = ?tcLevel
+        , tcLevel = ?tcLevel
         }
 
 -- Similar to `newMetaTyVarTyAtLevel`
@@ -221,7 +221,7 @@ newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 -- Similar to `cloneTyVarTyVar`
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L779
 newSkolemTyVar :: SkolemInfoAnon -> TcBoundVar -> TcM TcTyVar
-newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv} = do
+newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv {}} = do
   uniq <- newUnique
   let name = tv.varName{nameUnique = uniq}
       -- TODO should this skolemInfo contain the uniq of the original tyvar?
@@ -280,7 +280,7 @@ substTy tvs tys ty = subst_ty (Map.fromList (tvs `zip` tys)) ty
 subst_ty :: Env -> TcType -> TcM TcType
 subst_ty env (Type'Fun arg res) =
   Type'Fun <$> (subst_ty env arg) <*> (subst_ty env res)
-subst_ty env (Type'Var n@TcTyVar{varDetails = BoundTv}) =
+subst_ty env (Type'Var n@TcTyVar{varDetails = BoundTv{}}) =
   pure $ fromMaybe (Type'Var n) (Map.lookup n env)
 subst_ty _ (Type'Var n@TcTyVar{}) =
   failTc ("Expected a bound type variable, but got: " <> pretty n)
@@ -402,7 +402,8 @@ quantify tvs ty | all isMetaTv tvs = do
     -- TODO use info from tv?
     name' <- newSysName (mkTyVarOccFS name)
     -- TODO this should be boundtv, not flexi
-    let var = TcTyVar{varName = name', varDetails = BoundTv}
+    -- TODO is tcLevel correct?
+    let var = TcTyVar{varName = name', varDetails = BoundTv{tcLevel = ?tcLevel}}
     writeTv tv (Type'Var var)
     pure var
 quantify tvs _ = failTc $ "Expected all type variables to be metavariables, but got: " <> pretty tvs
@@ -469,7 +470,7 @@ zonkType v@(Type'Var var) =
 
 badType :: Tau -> Bool
 -- Tells which types should never be encountered during unification
-badType (Type'Var TcTyVar{varDetails = BoundTv}) = True
+badType (Type'Var TcTyVar{varDetails = BoundTv{}}) = True
 badType _ = False
 
 unify :: Tau -> Tau -> TcM ()
