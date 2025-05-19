@@ -38,6 +38,7 @@ _. Exp11 ::= "(" Exp ")" ;
 
 -- rho
 TypeConcrete. Type1 ::= NameUpperCase ;
+-- TODO use TypeVariable instead of NameLowerCase
 TypeVariable. Type2 ::= NameLowerCase ;
 TypeFunc.     Type3 ::= Type4 "->" Type3 ;
 
@@ -57,6 +58,7 @@ separator TypeVariable " " ;
 
 _. Type4 ::= Type3 ;
 
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L861
 TypeParen. Type5 ::= "(" Type3 ")";
 
 -- type

@@ -1,7 +1,10 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
@@ -40,6 +43,9 @@ where
 --   writeTcRef,
 -- )
 
+import Control.Exception (throw)
+import Control.Exception.Base (Exception)
+import Control.Monad (when)
 import Data.IORef
 import Data.List (partition, (\\))
 import Data.Map qualified as Map
@@ -48,6 +54,7 @@ import Data.Set qualified as Set
 import Data.Text (pack)
 import Data.Traversable (forM)
 import GHC.Records (HasField)
+import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Prettyprinter
 import Prettyprinter.Render.Text
@@ -58,24 +65,41 @@ import Prettyprinter.Render.Text
 
 type IVarEnv = (?varEnv :: Map.Map Name Sigma)
 type ITcLevel = (?tcLevel :: TcLevel)
+type IDebug = (?debug :: Bool)
 
-type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel)
+type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug)
 
 -- TcM in GHC is a ReaderT (Env a) IO b.
 -- It can be replaced with ImplicitParams
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types.hs#L271
-type TcM a = (ITcEnv) => IO a
+type TcM a = (ITcEnv, HasCallStack) => IO a
 
--- TODO fail with a different message?
-failTc :: Doc ann -> TcM a -- Fail unconditionally
-failTc d = do
+newtype DieException = DieException String deriving newtype (Show)
+
+instance Exception DieException
+
+-- TODO
+-- instead of failTc
+die :: (HasCallStack) => Doc ann -> IO a -- Fail unconditionally
+die d = do
+  putStrLn (prettyCallStack callStack)
   putDoc d
-  fail "Error!"
+  putStrLn ""
+  throw $ DieException "Exception!"
+
+debug :: (HasCallStack, IDebug) => Doc a -> Doc b -> IO ()
+debug msg d = when ?debug do
+  putDoc ("[" <> msg <> "]")
+  putStrLn "\n"
+  putDoc d
+  putStrLn "\n"
+  putStrLn (prettyCallStack callStack)
+  putStrLn "\n"
 
 -- TODO use somewhere
 check :: Bool -> Doc ann -> TcM ()
 check True _ = pure ()
-check False d = failTc d
+check False d = die d
 
 -- TODO explain optimizations
 
@@ -108,11 +132,10 @@ getEnv :: TcM (Map.Map Name Sigma)
 getEnv = pure ?varEnv
 
 lookupVar :: Name -> TcM Sigma -- May fail
-lookupVar n = do
-  env <- getEnv
-  case Map.lookup n env of
+lookupVar n =
+  case Map.lookup n ?varEnv of
     Just ty -> pure ty
-    Nothing -> failTc ("Not in scope:" <+> dquotes (pretty n))
+    Nothing -> die ("Not in scope:" <+> dquotes (pretty n))
 
 -- TODO don't use `pretty` or use it on a newtype
 -- to better control the output format
@@ -221,14 +244,14 @@ newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 -- Similar to `cloneTyVarTyVar`
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L779
 newSkolemTyVar :: SkolemInfoAnon -> TcBoundVar -> TcM TcTyVar
-newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv {}} = do
+newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv{}} = do
   uniq <- newUnique
   let name = tv.varName{nameUnique = uniq}
       -- TODO should this skolemInfo contain the uniq of the original tyvar?
       -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L343
       skolemInfo = SkolemInfo tv.varName.nameUnique infoAnon
   pure $ newSkolemTyVar' skolemInfo name
-newSkolemTyVar _ x = failTc ("Expected a bound variable, but got: " <> pretty x)
+newSkolemTyVar _ x = die ("Expected a bound variable, but got: " <> pretty x)
 
 -- `metaTyVarRef` panics if a tv doesn't have a ref
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L1317
@@ -243,11 +266,8 @@ readTv (TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) = do
 readTv _ = pure Nothing
 
 writeTv :: TcTyVarMeta -> Tau -> TcM ()
-writeTv m@(TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) ty =
-  readTcRef ref >>= \case
-    Flexi -> writeTcRef ref (Indirect ty)
-    -- TODO improve message
-    _ -> failTc ("Expected unfilled metavariable, but got: " <> pretty m)
+writeTv (TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) ty =
+  writeTcRef ref (Indirect ty)
 writeTv _ _ = pure ()
 
 -- ---------------------------------
@@ -283,7 +303,7 @@ subst_ty env (Type'Fun arg res) =
 subst_ty env (Type'Var n@TcTyVar{varDetails = BoundTv{}}) =
   pure $ fromMaybe (Type'Var n) (Map.lookup n env)
 subst_ty _ (Type'Var n@TcTyVar{}) =
-  failTc ("Expected a bound type variable, but got: " <> pretty n)
+  die ("Expected a bound type variable, but got: " <> pretty n)
 subst_ty _ (Type'Concrete tc) =
   pure $ Type'Concrete tc
 subst_ty env (Type'ForAll ns rho) = do
@@ -321,6 +341,8 @@ instantiate (Type'ForAll tvs ty) = do
 -- If possible, we shouldn't do that in advance to not lose some type safety
 instantiate ty = pure ty
 
+-- TODO need recursive do?
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L579
 skolemise :: Sigma -> TcM ([TcTyVar], Rho)
 -- Performs deep skolemisation, returning the
 -- skolem constants and the skolemised type
@@ -384,11 +406,12 @@ quantify tvs ty | all isMetaTv tvs = do
   -- TODO remove this check?
   tvs' <- forM tvs (\x -> (x,) <$> isFlexiTv x) >>= pure . partition snd
   case tvs' of
-    (_, x : xs) -> failTc ("Expected all variables to be Flexi, but these are not: " <> pretty (x : xs))
+    (_, x : xs) -> die ("Expected all variables to be Flexi, but these are not: " <> pretty (x : xs))
     _ -> pure ()
   -- 'bind' is just a cunning way of doing the substitution
   -- TODO is it correct to use these vars in ForAll?
   vars <- mapM bind (tvs `zip` newBinders)
+  debug "quantify" (pretty ty)
   ty' <- zonkType ty
   pure (Type'ForAll vars ty')
  where
@@ -402,11 +425,16 @@ quantify tvs ty | all isMetaTv tvs = do
     -- TODO use info from tv?
     name' <- newSysName (mkTyVarOccFS name)
     -- TODO this should be boundtv, not flexi
+    -- Why?
     -- TODO is tcLevel correct?
-    let var = TcTyVar{varName = name', varDetails = BoundTv{tcLevel = ?tcLevel}}
+    let var =
+          TcTyVar
+            { varName = name'
+            , varDetails = BoundTv{tcLevel = ?tcLevel}
+            }
     writeTv tv (Type'Var var)
     pure var
-quantify tvs _ = failTc $ "Expected all type variables to be metavariables, but got: " <> pretty tvs
+quantify tvs _ = die $ "Expected all type variables to be metavariables, but got: " <> pretty tvs
 
 ------------------------------------------
 --      Getting the free tyvars         --
@@ -445,6 +473,7 @@ zonkType (Type'ForAll ns ty) = do
   ty' <- zonkType ty
   pure (Type'ForAll ns ty')
 zonkType (Type'Fun arg res) = do
+  debug "zonkType" (pretty arg <+> "|" <+> pretty res <+> "|" <+> pretty (show arg) <+> "|" <+> pretty (show res))
   arg' <- zonkType arg
   res' <- zonkType res
   pure (Type'Fun arg' res')
@@ -473,15 +502,22 @@ badType :: Tau -> Bool
 badType (Type'Var TcTyVar{varDetails = BoundTv{}}) = True
 badType _ = False
 
+-- Extends the substitution by side effect (p. 43)
 unify :: Tau -> Tau -> TcM ()
 unify ty1 ty2
   | badType ty1 || badType ty2 -- Compiler error
     =
-      failTc
-        ( "Panic! Unexpected types in unification:"
-            <+> vcat [pretty ty1, pretty ty2]
-        )
-unify (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}}) (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}}) | tv1 == tv2 = pure ()
+      do
+        print ?varEnv
+        die
+          ( "Panic! Unexpected types in unification:"
+              <+> vcat [pretty ty1, pretty ty2]
+          )
+unify
+  (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}})
+  (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}})
+    | tv1 == tv2 =
+        pure ()
 unify (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) ty = unifyVar tv ty
 unify ty (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) = unifyVar tv ty
 -- TODO is equality defined correctly?
@@ -490,7 +526,7 @@ unify (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
   unify arg1 arg2
   unify res1 res2
 unify (Type'Concrete tc1) (Type'Concrete tc2) | tc1 == tc2 = pure ()
-unify ty1 ty2 = failTc ("Cannot unify types:" <+> vcat [pretty ty1, pretty ty2])
+unify ty1 ty2 = die ("Cannot unify types:" <+> vcat [pretty ty1, pretty ty2])
 
 -----------------------------------------
 unifyVar :: TcTyVar -> Tau -> TcM ()
@@ -538,7 +574,7 @@ unifyFun tau = do
 occursCheckErr :: TcTyVar -> Tau -> TcM ()
 -- Raise an occurs-check error
 occursCheckErr tv ty =
-  failTc
+  die
     ( "Occurs check for"
         <+> dquotes (pretty tv)
         <+> "in:"

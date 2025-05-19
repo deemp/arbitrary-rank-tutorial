@@ -10,6 +10,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE KindSignatures #-}
@@ -20,7 +21,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
@@ -41,29 +41,13 @@ import Data.List (nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
+import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Text qualified as Text
 import Language.STLC.Common ()
 import Language.STLC.Syntax.Abs qualified as Abs
 import Prettyprinter
 import Prelude hiding ((<>))
-
--- infixr 4 --> -- The arrow type constructor
--- infixl 4 `App` -- Application
-
------------------------------------
---      Ubiquitous types        --
------------------------------------
-
--- data Name ann = Name ann Text
---   deriving (Functor) -- Names are very simple
-
--- instance Eq (Name ann) where
---   Name _ x == Name _ y = x == y
-
--- instance Ord (Name ann) where
---   Name _ x <= Name _ y = x <= y
 
 -----------------------------------
 --      Architecture             --
@@ -200,7 +184,7 @@ type family XSynType'Concrete x
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L169
 data Pass = Renamed | Typechecked | Zonked
-  deriving (Data)
+  deriving stock (Data)
 
 -- | Used as a data type index for the hsSyn AST; also serves
 -- as a singleton type for Pass
@@ -241,7 +225,7 @@ type family IdCompP pass where
 -- be a Located layer between the Expr layers in our huge expression sandwich.
 
 data GenLocated l e = L l e
-  deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
+  deriving stock (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
 
 type Located = GenLocated SrcSpan
 
@@ -258,7 +242,7 @@ type LIdCompP p = XAnno (IdCompP p)
 -- | We attach SrcSpans to lots of things, so let's have a datatype for it.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L759
 data Annotated l e = Annotated l e
-  deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
+  deriving stock (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L122
 type family Anno a = b
@@ -294,7 +278,7 @@ data NameSpace
     NameSpace'Type'Var
   | -- | Built-in types namespace.
     NameSpace'Type'Concrete
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/FastString.hs#L211
 type FastString = Text
@@ -309,14 +293,14 @@ data OccName = OccName
   { occNameSpace :: !NameSpace
   , occNameFS :: !FastString
   }
-  deriving (Show)
+  deriving stock (Show)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
 data UnhelpfulSpanReason
   = UnhelpfulNoLocationInfo
   | UnhelpfulGenerated
   | UnhelpfulOther !FastString
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 -- | Real Source Span
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L367
@@ -328,7 +312,7 @@ data RealSrcSpan
   , srcSpanELine :: {-# UNPACK #-} !Int
   , srcSpanECol :: {-# UNPACK #-} !Int
   }
-  deriving (Eq)
+  deriving stock (Eq)
 
 -- | Source Span
 --
@@ -339,7 +323,7 @@ data SrcSpan
   = -- TODO Replace with RealSrcSpan
     RealSrcSpan !Abs.BNFC'Position
   | UnhelpfulSpan UnhelpfulSpanReason
-  deriving (Show)
+  deriving stock (Show)
 
 -- | The key type representing kinds in the compiler.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
@@ -365,10 +349,28 @@ data Type p
     Type'Concrete TypeConcrete
 
 -- TODO implement
-instance Show (Type p)
+instance (Show (XVar' p)) => Show (Type p) where
+  show = \case
+    Type'Var var -> show var
+    Type'ForAll vars body -> "forall " <> concatMap show vars <> ". " <> show body
+    Type'Fun arg res -> "(" <> show arg <> ")" <> "->" <> "(" <> show res <> ")"
+    Type'Concrete ty -> show ty
 
--- TODO implement
-instance Pretty (Type p)
+instance Pretty (Type CompRn)
+
+instance Pretty (Type CompTc) where
+  pretty = \case
+    Type'Var var -> pretty var
+    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
+    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
+    Type'Concrete ty -> pretty ty
+
+instance Pretty (Type CompZn) where
+  pretty = \case
+    Type'Var var -> pretty var
+    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
+    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
+    Type'Concrete ty -> pretty ty
 
 instance Pretty (TypeConcrete)
 
@@ -447,7 +449,13 @@ data SkolemInfoAnon
       TcType -- The instantiated type *inside* the forall
 
 -- TODO implement
-instance Show SkolemInfoAnon
+instance Show SkolemInfoAnon where
+  show = \case
+    SigSkol _ _ _ -> "SigSkol"
+    SigTypeSkol _ -> "SigTypeSkol"
+    ForAllSkol _ -> "ForAllSkol"
+    InferSkol _ -> "InferSkol"
+    UnifyForAllSkol _ -> "UnifyForAllSkol"
 
 -- TODO implement
 instance Pretty SkolemInfoAnon
@@ -480,7 +488,8 @@ data MetaDetails
   | Indirect TcType
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
-data TcLevel = TcLevel {-# UNPACK #-} !Int
+newtype TcLevel = TcLevel Int
+  deriving newtype (Show)
 
 -- | What restrictions are on this metavariable around unification?
 -- These are checked in GHC.Tc.Utils.Unify.checkTopShape
@@ -499,14 +508,19 @@ data MetaInfo
 -- See Note [TyVars and TcTyVars during type checking]
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
-  = -- | Deep skolemisation doesn't affect argument sigmas, only result ones (p. 24).
+  = -- Always bound by an enclosing ForAll. No well-formed Type ever has a free BoundTv. (p.42)
+
+    -- | Deep skolemisation doesn't affect argument sigmas, only result ones (p. 24).
     -- We don't have deep instantiation (p. 28).
     -- The original definition of TyVar had a BoundTv constructor (p.41).
     -- Hence, we should be able to represent bound tyvars during typechecking.
     BoundTv
       { tcLevel :: TcLevel
+      -- TODO store the info about the binding site, including the id of the binder?
+      -- , binderName :: Name
       }
   | -- A skolem
+    -- A constant of an unknown type. Never bound by a ForAll and can be free in a Type.
     SkolemTv
       { skolemInfo :: SkolemInfo
       -- ^ See Note [Keeping SkolemInfo inside a SkolemTv]
@@ -515,7 +529,9 @@ data TcTyVarDetails
       -- See GHC.Tc.Utils.Unify Note [Deeper level on the left] for
       --     how this level number is used
       }
-  | MetaTv
+  | -- An unknown monotype.
+    -- Never quantified by a ForAll. (p. 42)
+    MetaTv
       { metaTvInfo :: MetaInfo
       , metaTvRef :: IORef MetaDetails
       , tcLevel :: TcLevel
@@ -534,7 +550,7 @@ data Name = Name
   -- , nameSort :: NameSort
   -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L148
   }
-  deriving (Show)
+  deriving stock (Show)
 
 instance Eq Name where
   n1 == n2 = n1.nameUnique == n2.nameUnique
@@ -623,17 +639,40 @@ instance Ord ZnTyVar where
   var1 <= var2 = var1.varName <= var2.varName
 
 -- TODO implement
-instance Show RnVar
-instance Show TcTyVar
-instance Show ZnTyVar
+instance Show RnVar where
+  show RnVar{varName} = show varName
+
+instance Show TcTyVar where
+  show TcTyVar{varName, varDetails} =
+    show varName <> "[" <> show varDetails.tcLevel <> ", " <> getTcTyVarKind varDetails <> "]"
+
+getTcTyVarKind :: (IsString a) => TcTyVarDetails -> a
+getTcTyVarKind = \case
+  BoundTv{} -> "Bound"
+  SkolemTv{} -> "Skolem"
+  MetaTv{} -> "Meta"
+
+instance Show ZnTyVar where
+  show ZnTyVar{varName} = show varName
 
 -- TODO implement
-instance Pretty RnVar
-instance Pretty TcTyVar
-instance Pretty ZnTyVar
+instance Pretty RnVar where
+  pretty RnVar{varName} = pretty varName
+
+instance Pretty TcTyVar where
+  pretty TcTyVar{varName, varDetails} =
+    pretty varName
+      <> brackets
+        ( pretty (show varDetails.tcLevel)
+            <> ","
+            <+> getTcTyVarKind varDetails
+        )
+
+instance Pretty ZnTyVar where
+  pretty ZnTyVar{varName} = pretty varName
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
-newtype ModuleName = ModuleName Text deriving (Show, Eq)
+newtype ModuleName = ModuleName Text deriving newtype (Show, Eq)
 
 -- TODO specify instances for each phase
 -- TODO store instances in a separate module
@@ -670,8 +709,7 @@ type instance XSynTerm'AnnoCommon CompRn = SrcSpan
 type instance XSynTerm'AnnoCommon CompTc = AnnoTc
 type instance XSynTerm'AnnoCommon CompZn = AnnoZn
 
-
--- TODO move 
+-- TODO move
 
 -- TODO is this true?
 -- Seems like we can use the same representation
@@ -750,6 +788,8 @@ type instance XSynType'Concrete CompZn = Concrete
 type NameFs = FastString
 
 type IUniqueSupply = (?uniqueSupply :: IORef Int)
+
+-- Map names to ids
 type IScope = (?scope :: Map NameFs Int)
 
 -- TODO add index because the parse type isn't enough to differentiate
@@ -793,14 +833,14 @@ instance ConvertAbsToBT Abs.Exp where
   convertAbsToBT :: (IConvertRename) => Abs.Exp -> To Abs.Exp
   convertAbsToBT = \case
     Abs.ExpVar _pos var -> do
-      SynTerm'Var ()
-        <$> convertAbsToBT var False
+      var' <- convertAbsToBT var False
+      pure $ SynTerm'Var () var'
     Abs.ExpInt pos val ->
       pure $ SynTerm'Lit (RealSrcSpan pos) (SynLit'Num val)
-    Abs.ExpApp pos term1 term2 ->
-      SynTerm'App (RealSrcSpan pos)
-        <$> (convertAbsToBT term1)
-        <*> (convertAbsToBT term2)
+    Abs.ExpApp pos term1 term2 -> do
+      term1' <- convertAbsToBT term1
+      term2' <- convertAbsToBT term2
+      pure $ SynTerm'App (RealSrcSpan pos) term1' term2'
     Abs.ExpAbs pos var term -> do
       var' <- convertAbsToBT var True
       term' <- withNameInScope var' (convertAbsToBT term)
@@ -817,10 +857,10 @@ instance ConvertAbsToBT Abs.Exp where
       term1' <- convertAbsToBT term1
       term2' <- withNameInScope var' (convertAbsToBT term2)
       pure $ SynTerm'Let (RealSrcSpan pos) var' term1' term2'
-    Abs.ExpAnno pos term ty ->
-      SynTerm'Ann (RealSrcSpan pos)
-        <$> (convertAbsToBT term)
-        <*> (convertAbsToBT ty)
+    Abs.ExpAnno pos term ty -> do
+      term' <- convertAbsToBT term
+      ty' <- convertAbsToBT ty
+      pure $ SynTerm'Ann (RealSrcSpan pos) term' ty'
 
 -- TODO create unique only for new binders
 -- TODO what to do with free variables? Report error?
@@ -890,6 +930,8 @@ instance ConvertAbsToBT Abs.Type where
               }
           )
     Abs.TypeForall pos tys ty -> do
+      -- TODO report
+      -- No variables bound at
       tys' <- forM tys (\x -> convertAbsToBT x)
       ty' <- withNamesInScope tys' (convertAbsToBT ty)
       pure $ SynType'ForAll (RealSrcSpan pos) tys' ty'
@@ -908,9 +950,9 @@ instance Pretty (SynTerm CompRn) where
     SynTerm'Lit _ val -> pretty val
     SynTerm'App _ term1 term2 -> parens (pretty term1) <+> pretty term2
     SynTerm'Lam _ var term -> "\\" <> pretty var <> "." <+> pretty term
-    SynTerm'ALam _ var ty term -> "\\" <> pretty var <+> "::" <+> pretty ty <> "." <+> pretty term
+    SynTerm'ALam _ var ty term -> "\\" <> parens (pretty var <+> "::" <+> pretty ty) <> "." <+> pretty term
     SynTerm'Let _ name term1 term2 -> "let" <+> pretty name <+> "=" <+> pretty term1 <+> "in" <+> pretty term2
-    SynTerm'Ann _ term ty -> parens (pretty term <+> "::" <+> pretty ty)
+    SynTerm'Ann _ term ty -> parens (parens (pretty term) <+> "::" <+> pretty ty)
 
 instance Pretty Name where
   pretty name =
@@ -925,6 +967,30 @@ instance Pretty (SynType CompRn) where
     SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
     SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
+
+instance Pretty ZnTermVar where
+  pretty ZnTermVar{varName, varType} = parens (pretty varName <+> "::" <+> pretty varType)
+
+instance Pretty Concrete where
+  pretty Concrete{concreteName, concreteType} = parens (pretty concreteName <+> "::" <+> pretty concreteType)
+
+instance Pretty (SynType CompZn) where
+  pretty = \case
+    SynType'Var _ var -> pretty var
+    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
+    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
+    SynType'Paren _ ty -> parens (pretty ty)
+    SynType'Concrete _ ty -> pretty ty
+
+instance Pretty (SynTerm CompZn) where
+  pretty = \case
+    SynTerm'Var _ var -> pretty var
+    SynTerm'Lit _ val -> pretty val
+    SynTerm'App _ term1 term2 -> parens (pretty term1) <+> pretty term2
+    SynTerm'Lam _ var term -> "\\" <> pretty var <> "." <+> pretty term
+    SynTerm'ALam _ var ty term -> "\\" <> parens (pretty var <+> "::" <+> pretty ty) <> "." <+> pretty term
+    SynTerm'Let _ name term1 term2 -> "let" <+> pretty name <+> "=" <+> pretty term1 <+> "in" <+> pretty term2
+    SynTerm'Ann _ term ty -> parens (parens (pretty term) <+> "::" <+> pretty ty)
 
 ex1 :: Abs.Exp
 ex1 = "\\ (x :: forall b. Int). (\\ z. z) x"
@@ -953,7 +1019,7 @@ data TypeConcrete
   = TypeConcrete'Int
   | TypeConcrete'Bool
   | TypeConcrete'String
-  deriving (Eq)
+  deriving stock (Eq)
 
 instance Show TypeConcrete where
   show = \case
@@ -966,6 +1032,8 @@ instance Show TypeConcrete where
 
 (-->) :: Sigma -> Sigma -> Sigma
 arg --> res = Type'Fun arg res
+
+infixr 4 --> -- The arrow type constructor
 
 -- ---------------------------------
 -- --  Free and bound variables

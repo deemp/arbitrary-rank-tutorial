@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Language.STLC.Typing.Jones2007.TcTerm where
 
@@ -21,6 +20,7 @@ import Prettyprinter
 --      The top-level wrapper           --
 ------------------------------------------
 
+-- TODO report many independent errors, not fail on the first error
 typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
 typecheck e = do
   (e'tc, _) <- inferSigma e
@@ -28,8 +28,8 @@ typecheck e = do
 
 zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
 zonkFinallySynType = \case
-  SynType'Var anno TcTyVar{..} -> do
-    pure $ SynType'Var anno ZnTyVar{..}
+  SynType'Var anno TcTyVar{varName} -> do
+    pure $ SynType'Var anno ZnTyVar{varName}
   SynType'ForAll srcLoc vars body -> do
     vars' <- forM vars zonkFinallyTcTyVar
     body' <- zonkFinallySynType body
@@ -45,12 +45,12 @@ zonkFinallySynType = \case
     pure $ SynType'Concrete anno lit
 
 zonkFinallyTcTyVar :: TcTyVar -> TcM ZnTyVar
-zonkFinallyTcTyVar TcTyVar{..} = pure ZnTyVar{..}
+zonkFinallyTcTyVar TcTyVar{varName} = pure ZnTyVar{varName}
 
 -- TODO are zonks of different parts of a type independent?
 zonkFinallyTcType :: TcType -> TcM ZnType
 zonkFinallyTcType = \case
-  Type'Var TcTyVar{..} -> pure $ Type'Var ZnTyVar{..}
+  Type'Var TcTyVar{varName} -> pure $ Type'Var ZnTyVar{varName}
   Type'ForAll vars body -> do
     vars' <- forM vars zonkFinallyTcTyVar
     body' <- zonkFinallyTcType body
@@ -62,14 +62,14 @@ zonkFinallyTcType = \case
   Type'Concrete ty -> pure $ Type'Concrete ty
 
 zonkFinallyAnno :: AnnoTc -> TcM AnnoZn
-zonkFinallyAnno AnnoTc{..} = do
+zonkFinallyAnno AnnoTc{annoSrcLoc, annoType} = do
   annoType' <- zonkFinallyExpectedType annoType
-  pure AnnoZn{annoType = annoType', ..}
+  pure AnnoZn{annoSrcLoc, annoType = annoType'}
 
 zonkFinallyTcTermVar :: TcTermVar -> TcM ZnTermVar
-zonkFinallyTcTermVar TcTermVar{..} = do
+zonkFinallyTcTermVar TcTermVar{varName, varType} = do
   varType' <- zonkFinallyExpectedType varType
-  pure ZnTermVar{varType = varType', ..}
+  pure ZnTermVar{varName, varType = varType'}
 
 zonkFinallyExpectedType :: Expected TcType -> TcM ZnType
 zonkFinallyExpectedType ty = do
@@ -129,6 +129,7 @@ checkRho expr ty = tcRho expr (Check ty)
 inferRho :: SynTerm CompRn -> TcM (SynTerm CompTc, Rho)
 inferRho expr =
   do
+    debug "inferRho" (pretty expr)
     ref <- newTcRef (error "inferRho: empty result")
     expr' <- tcRho expr (Infer ref)
     ref' <- readTcRef ref
@@ -173,7 +174,7 @@ parseTypeConcrete name
   | name == T.pack (show TypeConcrete'Bool) = pure TypeConcrete'Bool
   | name == T.pack (show TypeConcrete'String) = pure TypeConcrete'String
   | name == T.pack (show TypeConcrete'Int) = pure TypeConcrete'Int
-  | otherwise = failTc ("Unknown concrete type: " <> pretty name)
+  | otherwise = die ("Unknown concrete type: " <> pretty name)
 
 -- TODO Levels
 convertSynTy :: SynType CompRn -> TcM (SynType CompTc, TcType)
@@ -186,7 +187,7 @@ convertSynTy = \case
     -- TODO correct tcLevel?
     let tvs' = (\varName -> TcTyVar{varName, varDetails = BoundTv{tcLevel = ?tcLevel}}) <$> tvs
     (body', body'ty) <- convertSynTy body
-    pure $ (SynType'ForAll srcLoc tvs' body', body'ty)
+    pure $ (SynType'ForAll srcLoc tvs' body', Type'ForAll tvs' body'ty)
   SynType'Fun srcLoc arg res -> do
     (arg', arg'ty) <- convertSynTy arg
     (res', res'ty) <- convertSynTy res
@@ -217,13 +218,25 @@ tcRho (SynTerm'Lit _ lit) exp_ty = do
     SynTerm'Lit
       ty
       lit
-tcRho (SynTerm'Var _ v) exp_ty = do
-  v_sigma <- lookupVar v
+tcRho (SynTerm'Var _ varName) exp_ty = do
+  v_sigma <- lookupVar varName
+  debug
+    "var"
+    ( pretty varName
+        <+> "|"
+        <+> pretty (show varName)
+        <+> "|\n"
+        <+> pretty v_sigma
+        <+> "|"
+        <+> pretty (show v_sigma)
+        <+> "|\n"
+        <+> (case exp_ty of Infer _ -> "Infer"; Check t -> pretty (show t))
+    )
   instSigma v_sigma exp_ty
   pure $
     SynTerm'Var
       ()
-      TcTermVar{varName = v, varType = exp_ty}
+      TcTermVar{varName, varType = exp_ty}
 tcRho (SynTerm'App annoSrcLoc fun arg) exp_ty = do
   (fun', fun_ty) <- inferRho fun
   (arg_ty, res_ty) <- unifyFun fun_ty
@@ -231,63 +244,62 @@ tcRho (SynTerm'App annoSrcLoc fun arg) exp_ty = do
   instSigma res_ty exp_ty
   pure $
     SynTerm'App
-      (AnnoTc{annoSrcLoc, annoType = exp_ty})
+      AnnoTc{annoSrcLoc, annoType = exp_ty}
       fun'
       arg'
-tcRho (SynTerm'Lam annoSrcLoc var body) annoType@(Check exp_ty) = do
+tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
   (var_ty, body_ty) <- unifyFun exp_ty
-  body' <- extendVarEnv var var_ty (checkRho body body_ty)
+  debug "lam" (pretty varName <+> "|" <+> pretty body <+> "|" <+> pretty exp_ty <+> pretty (var_ty, body_ty))
+  body' <- extendVarEnv varName var_ty (checkRho body body_ty)
   pure $
     SynTerm'Lam
-      AnnoTc{annoSrcLoc, annoType}
-      -- TODO is it correct to use Check here?
-      TcTermVar{varName = var, varType = Check var_ty}
+      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcTermVar{varName, varType = Check var_ty}
       body'
-tcRho (SynTerm'Lam annoSrcLoc var body) annoType@(Infer ref) = do
+tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
   var_ty <- Type'Var <$> newMetaTyVar' "m"
-  (body', body_ty) <- extendVarEnv var var_ty (inferRho body)
+  (body', body_ty) <- extendVarEnv varName var_ty (inferRho body)
   writeTcRef ref (var_ty --> body_ty)
   pure $
     SynTerm'Lam
-      AnnoTc{annoSrcLoc, annoType = annoType}
-      -- TODO is it correct to use Check here?
-      TcTermVar{varName = var, varType = Check var_ty}
+      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcTermVar{varName, varType = Check var_ty}
       body'
-tcRho (SynTerm'ALam annoSrcLoc var var_ty body) annoType@(Check exp_ty) = do
+tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
   (arg_ty, body_ty) <- unifyFun exp_ty
   (var_ty_syn, var_ty') <- convertSynTy var_ty
   subsCheck arg_ty var_ty'
-  body' <- extendVarEnv var var_ty' (checkRho body body_ty)
+  body' <- extendVarEnv varName var_ty' (checkRho body body_ty)
   pure $
     SynTerm'ALam
-      AnnoTc{annoSrcLoc, annoType}
-      -- TODO is it correct to use Check here?
-      TcTermVar{varName = var, varType = Check var_ty'}
+      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcTermVar{varName, varType = Check var_ty'}
       var_ty_syn
       body'
-tcRho (SynTerm'ALam annoSrcLoc var var_ty body) (Infer ref) = do
+tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
   (var_ty_syn, var_ty') <- convertSynTy var_ty
-  (body', body_ty) <- extendVarEnv var var_ty' (inferRho body)
+  (body', body_ty) <- extendVarEnv varName var_ty' (inferRho body)
   writeTcRef ref (var_ty' --> body_ty)
+  -- TODO is it correct to use Check here?
   pure $
     SynTerm'ALam
-      AnnoTc{annoSrcLoc, annoType = Infer ref}
-      -- TODO is it correct to use Check here?
-      TcTermVar{varName = var, varType = Check var_ty'}
+      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcTermVar{varName, varType = Check var_ty'}
       var_ty_syn
       body'
-tcRho (SynTerm'Let annoSrcLoc var rhs body) exp_ty = do
+tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
   (rhs', var_ty) <- inferSigma rhs
-  body' <- extendVarEnv var var_ty (tcRho body exp_ty)
+  body' <- extendVarEnv varName var_ty (tcRho body exp_ty)
   pure $
     SynTerm'Let
-      AnnoTc{annoSrcLoc, annoType = exp_ty}
+      AnnoTc{annoType = exp_ty, annoSrcLoc}
       -- TODO is it correct to use Check here?
-      TcTermVar{varName = var, varType = Check var_ty}
+      TcTermVar{varName, varType = Check var_ty}
       rhs'
       body'
 tcRho (SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
   (ann_ty_syn, ann_ty') <- convertSynTy ann_ty
+  debug "tcRho Ann" (pretty body <+> "|" <+> pretty ann_ty <+> "|" <+> pretty ann_ty')
   body' <- checkSigma body ann_ty'
   instSigma ann_ty' exp_ty
   pure $
@@ -308,13 +320,27 @@ inferSigma e =
     env_tvs <- getMetaTyVars env_tys
     res_tvs <- getMetaTyVars [exp_ty]
     let forall_tvs = res_tvs \\ env_tvs
+    debug
+      "inferSigma"
+      ( pretty env_tvs
+          <+> "| res tvs:"
+          <+> pretty res_tvs
+          <+> "| Forall tvs:"
+          <+> pretty forall_tvs
+          <+> "| Exp ty (pretty):"
+          <+> pretty exp_ty
+          <+> "| Exp ty:"
+          <+> pretty (show exp_ty)
+      )
     ty' <- quantify forall_tvs exp_ty
     pure (e', ty')
 
 checkSigma :: SynTerm CompRn -> Sigma -> TcM (SynTerm CompTc)
 checkSigma expr sigma =
   do
+    debug "checkSigma before skolemise" (pretty sigma)
     (skol_tvs, rho) <- skolemise sigma
+    debug "checkSigma after skolemise" (pretty skol_tvs <+> "|" <+> pretty rho)
     expr' <- checkRho expr rho
     env_tys <- getEnvTypes
     esc_tvs <- getFreeTyVars (sigma : env_tys)
@@ -332,22 +358,22 @@ subsCheck :: Sigma -> Sigma -> TcM ()
 -- (subsCheck args off exp) checks that
 --     'off' is at least as polymorphic as 'args -> exp'
 
-subsCheck sigma1 sigma2 -- Rule DEEP-SKOL
-  =
-  do
-    (skol_tvs, rho2) <- skolemise sigma2
-    subsCheckRho sigma1 rho2
-    esc_tvs <- getFreeTyVars [sigma1, sigma2]
-    let bad_tvs = filter (`elem` esc_tvs) skol_tvs
-    check
-      (null bad_tvs)
-      ( vcat
-          [ "Subsumption check failed:"
-          , nest 2 (pretty sigma1)
-          , "is not as polymorphic as"
-          , nest 2 (pretty sigma2)
-          ]
-      )
+-- Rule DEEP-SKOL
+subsCheck sigma1 sigma2 = do
+  (skol_tvs, rho2) <- skolemise sigma2
+  subsCheckRho sigma1 rho2
+  esc_tvs <- getFreeTyVars [sigma1, sigma2]
+  -- TODO levels?
+  let bad_tvs = filter (`elem` esc_tvs) skol_tvs
+  check
+    (null bad_tvs)
+    ( vcat
+        [ "Subsumption check failed:"
+        , nest 2 (pretty sigma1)
+        , "is not as polymorphic as"
+        , nest 2 (pretty sigma2)
+        ]
+    )
 
 subsCheckRho :: Sigma -> Rho -> TcM ()
 -- Invariant: the second argument is in weak-prenex form
@@ -356,19 +382,23 @@ subsCheckRho :: Sigma -> Rho -> TcM ()
 subsCheckRho sigma1@(Type'ForAll _ _) rho2 = do
   rho1 <- instantiate sigma1
   subsCheckRho rho1 rho2
-subsCheckRho rho1 (Type'Fun a2 r2) -- Rule FUN
-  =
-  do (a1, r1) <- unifyFun rho1; subsCheckFun a1 r1 a2 r2
-subsCheckRho (Type'Fun a1 r1) rho2 -- Rule FUN
-  =
-  do (a2, r2) <- unifyFun rho2; subsCheckFun a1 r1 a2 r2
-subsCheckRho tau1 tau2 -- Rule MONO
-  =
-  unify tau1 tau2 -- Revert to ordinary unification
+-- Rule FUN
+subsCheckRho rho1 (Type'Fun a2 r2) = do
+  (a1, r1) <- unifyFun rho1
+  subsCheckFun a1 r1 a2 r2
+-- Rule FUN
+subsCheckRho (Type'Fun a1 r1) rho2 = do
+  (a2, r2) <- unifyFun rho2
+  subsCheckFun a1 r1 a2 r2
+-- Rule MONO
+subsCheckRho tau1 tau2 =
+  -- Revert to ordinary unification
+  unify tau1 tau2
 
 subsCheckFun :: Sigma -> Rho -> Sigma -> Rho -> TcM ()
-subsCheckFun a1 r1 a2 r2 =
-  do subsCheck a2 a1; subsCheckRho r1 r2
+subsCheckFun a1 r1 a2 r2 = do
+  subsCheck a2 a1
+  subsCheckRho r1 r2
 
 instSigma :: Sigma -> Expected Rho -> TcM ()
 -- Invariant: if the second argument is (Check rho),
