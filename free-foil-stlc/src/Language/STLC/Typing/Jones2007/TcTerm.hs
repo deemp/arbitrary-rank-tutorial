@@ -21,22 +21,12 @@ import Prettyprinter
 ------------------------------------------
 
 -- TODO Too much boilerplate...
-annotateTc :: Sigma -> SynTerm CompTc -> SynTerm CompTc
-annotateTc s = \case
-  SynTerm'Var anno v -> SynTerm'Var anno v
-  SynTerm'Lit anno l -> SynTerm'Lit anno l
-  SynTerm'App AnnoTc{annoSrcLoc} arg res -> SynTerm'App AnnoTc{annoSrcLoc, annoType = Check s} arg res
-  SynTerm'Lam AnnoTc{annoSrcLoc} var body -> SynTerm'Lam AnnoTc{annoSrcLoc, annoType = Check s} var body
-  SynTerm'ALam AnnoTc{annoSrcLoc} var ty body -> SynTerm'ALam AnnoTc{annoSrcLoc, annoType = Check s} var ty body
-  SynTerm'Let AnnoTc{annoSrcLoc} var val term -> SynTerm'Let AnnoTc{annoSrcLoc, annoType = Check s} var val term
-  SynTerm'Ann AnnoTc{annoSrcLoc} body ty -> SynTerm'Ann AnnoTc{annoSrcLoc, annoType = Check s} body ty
 
 -- TODO report many independent errors, not fail on the first error
 typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
 typecheck e = do
-  (e'tc, e'ty) <- inferSigma e
-  let e' = annotateTc e'ty e'tc
-  zonkFinallyTerm e'
+  (e'tc, _) <- inferSigma e
+  zonkFinallyTerm e'tc
 
 zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
 zonkFinallySynType = \case
@@ -341,6 +331,16 @@ tcRho (SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
 --      inferSigma and checkSigma
 ------------------------------------------
 
+annotateTc :: Sigma -> SynTerm CompTc -> SynTerm CompTc
+annotateTc s = \case
+  SynTerm'Var anno v -> SynTerm'Var anno v
+  SynTerm'Lit anno l -> SynTerm'Lit anno l
+  SynTerm'App AnnoTc{annoSrcLoc} arg res -> SynTerm'App AnnoTc{annoSrcLoc, annoType = Check s} arg res
+  SynTerm'Lam AnnoTc{annoSrcLoc} var body -> SynTerm'Lam AnnoTc{annoSrcLoc, annoType = Check s} var body
+  SynTerm'ALam AnnoTc{annoSrcLoc} var ty body -> SynTerm'ALam AnnoTc{annoSrcLoc, annoType = Check s} var ty body
+  SynTerm'Let AnnoTc{annoSrcLoc} var val term -> SynTerm'Let AnnoTc{annoSrcLoc, annoType = Check s} var val term
+  SynTerm'Ann AnnoTc{annoSrcLoc} body ty -> SynTerm'Ann AnnoTc{annoSrcLoc, annoType = Check s} body ty
+
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
 inferSigma e =
   do
@@ -363,7 +363,8 @@ inferSigma e =
       , pretty (show exp_ty)
       ]
     ty' <- quantify forall_tvs exp_ty
-    pure (e', ty')
+    let e'' = annotateTc ty' e'
+    pure (e'', ty')
 
 checkSigma :: SynTerm CompRn -> Sigma -> TcM (SynTerm CompTc)
 checkSigma expr sigma =

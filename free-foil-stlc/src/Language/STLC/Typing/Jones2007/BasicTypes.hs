@@ -36,6 +36,7 @@ module Language.STLC.Typing.Jones2007.BasicTypes where
 import Control.Monad (forM)
 import Data.Containers.ListUtils (nubOrd)
 import Data.Data (Data (..))
+import Data.Function ((&))
 import Data.IORef
 import Data.List (nub)
 import Data.Map (Map)
@@ -43,6 +44,7 @@ import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text)
+import Data.Text qualified as T
 import Language.STLC.Common ()
 import Language.STLC.Syntax.Abs qualified as Abs
 import Prettyprinter
@@ -364,13 +366,6 @@ instance Pretty (Type CompTc) where
     Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
     Type'Concrete ty -> pretty ty
 
-instance Pretty (Type CompZn) where
-  pretty = \case
-    Type'Var var -> pretty var
-    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
-    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
-    Type'Concrete ty -> pretty ty
-
 instance Pretty (TypeConcrete)
 
 -- TODO separate Type from TcType
@@ -667,9 +662,6 @@ instance Pretty TcTyVar where
             <+> getTcTyVarKind varDetails
         )
 
-instance Pretty ZnTyVar where
-  pretty ZnTyVar{varName} = pretty varName
-
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
 newtype ModuleName = ModuleName Text deriving newtype (Show, Eq)
 
@@ -836,6 +828,8 @@ instance ConvertAbsToBT Abs.Exp where
       pure $ SynTerm'Var () var'
     Abs.ExpInt pos val ->
       pure $ SynTerm'Lit (RealSrcSpan pos) (SynLit'Num val)
+    Abs.ExpString pos val ->
+      pure $ SynTerm'Lit (RealSrcSpan pos) (SynLit'Str (T.pack val))
     Abs.ExpApp pos term1 term2 -> do
       term1' <- convertAbsToBT term1
       term2' <- convertAbsToBT term2
@@ -935,12 +929,13 @@ instance ConvertAbsToBT Abs.Type where
       ty' <- withNamesInScope tys' (convertAbsToBT ty)
       pure $ SynType'ForAll (RealSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
-    Abs.TypeParen pos ty -> SynType'Paren (RealSrcSpan pos) <$> convertAbsToBT ty
+
+-- Abs.TypeParen pos ty -> SynType'Paren (RealSrcSpan pos) <$> convertAbsToBT ty
 
 instance Pretty SynLit where
   pretty = \case
     SynLit'Num val -> pretty val
-    SynLit'Str val -> pretty val
+    SynLit'Str val -> "\"" <> pretty val <> "\""
     SynLit'Bool val -> pretty val
 
 instance Pretty (SynTerm CompRn) where
@@ -967,11 +962,28 @@ instance Pretty (SynType CompRn) where
     SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
 
+instance Pretty (Type CompZn) where
+  pretty = \case
+    Type'Var var -> pretty var
+    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
+    Type'Fun arg res -> arg' <+> "->" <+> pretty res
+     where
+      arg' =
+        pretty arg
+          & case arg of
+            Type'Fun _ _ -> parens
+            Type'ForAll _ _ -> parens
+            _ -> id
+    Type'Concrete ty -> pretty ty
+
 instance Pretty ZnTermVar where
   pretty ZnTermVar{varName, varType} = parens (pretty varName <+> "::" <+> pretty varType)
 
 instance Pretty Concrete where
-  pretty Concrete{concreteName, concreteType} = parens (pretty concreteName <+> "::" <+> pretty concreteType)
+  pretty Concrete{concreteType} = pretty concreteType
+
+instance Pretty ZnTyVar where
+  pretty ZnTyVar{varName} = pretty varName
 
 instance Pretty (SynType CompZn) where
   pretty = \case
@@ -990,7 +1002,7 @@ instance Pretty (SynTerm CompZn) where
     SynTerm'Lit _ val -> pretty val
     SynTerm'App AnnoZn{annoType} term1 term2 ->
       hsep
-        [ parensNest (parensNest (pretty term1) <+> pretty term2)
+        [ parensNest (parensNest (pretty term1) <> line <> indent 2 (pretty term2))
         , "::"
         , pretty annoType
         ]
@@ -1001,7 +1013,8 @@ instance Pretty (SynTerm CompZn) where
                 <> pretty var
                 <> "."
                 <> line
-                <> indent 2 (pretty term)
+                <> indent 2 (parensNest (pretty term))
+                
             )
         , "::"
         , pretty annoType
@@ -1047,7 +1060,7 @@ instance Pretty (SynTerm CompZn) where
                         ]
                     )
                 , "in"
-                , pretty term2
+                , indent 2 (pretty term2)
                 ]
             )
         , "::"
