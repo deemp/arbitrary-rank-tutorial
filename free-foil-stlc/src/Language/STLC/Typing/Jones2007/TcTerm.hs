@@ -20,11 +20,23 @@ import Prettyprinter
 --      The top-level wrapper           --
 ------------------------------------------
 
+-- TODO Too much boilerplate...
+annotateTc :: Sigma -> SynTerm CompTc -> SynTerm CompTc
+annotateTc s = \case
+  SynTerm'Var anno v -> SynTerm'Var anno v
+  SynTerm'Lit anno l -> SynTerm'Lit anno l
+  SynTerm'App AnnoTc{annoSrcLoc} arg res -> SynTerm'App AnnoTc{annoSrcLoc, annoType = Check s} arg res
+  SynTerm'Lam AnnoTc{annoSrcLoc} var body -> SynTerm'Lam AnnoTc{annoSrcLoc, annoType = Check s} var body
+  SynTerm'ALam AnnoTc{annoSrcLoc} var ty body -> SynTerm'ALam AnnoTc{annoSrcLoc, annoType = Check s} var ty body
+  SynTerm'Let AnnoTc{annoSrcLoc} var val term -> SynTerm'Let AnnoTc{annoSrcLoc, annoType = Check s} var val term
+  SynTerm'Ann AnnoTc{annoSrcLoc} body ty -> SynTerm'Ann AnnoTc{annoSrcLoc, annoType = Check s} body ty
+
 -- TODO report many independent errors, not fail on the first error
 typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
 typecheck e = do
-  (e'tc, _) <- inferSigma e
-  zonkTermFinally e'tc
+  (e'tc, e'ty) <- inferSigma e
+  let e' = annotateTc e'ty e'tc
+  zonkFinallyTerm e'
 
 zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
 zonkFinallySynType = \case
@@ -45,12 +57,14 @@ zonkFinallySynType = \case
     pure $ SynType'Concrete anno lit
 
 zonkFinallyTcTyVar :: TcTyVar -> TcM ZnTyVar
-zonkFinallyTcTyVar TcTyVar{varName} = pure ZnTyVar{varName}
+zonkFinallyTcTyVar TcTyVar{varName} =
+  pure ZnTyVar{varName}
 
 -- TODO are zonks of different parts of a type independent?
 zonkFinallyTcType :: TcType -> TcM ZnType
 zonkFinallyTcType = \case
-  Type'Var TcTyVar{varName} -> pure $ Type'Var ZnTyVar{varName}
+  Type'Var TcTyVar{varName} -> do
+    pure $ Type'Var ZnTyVar{varName}
   Type'ForAll vars body -> do
     vars' <- forM vars zonkFinallyTcTyVar
     body' <- zonkFinallyTcType body
@@ -59,7 +73,8 @@ zonkFinallyTcType = \case
     arg' <- zonkFinallyTcType arg
     res' <- zonkFinallyTcType res
     pure $ Type'Fun arg' res'
-  Type'Concrete ty -> pure $ Type'Concrete ty
+  Type'Concrete ty -> do
+    pure $ Type'Concrete ty
 
 zonkFinallyAnno :: AnnoTc -> TcM AnnoZn
 zonkFinallyAnno AnnoTc{annoSrcLoc, annoType} = do
@@ -79,37 +94,38 @@ zonkFinallyExpectedType ty = do
       Check t -> pure t
   zonkFinallyTcType varType'
 
-zonkTermFinally :: SynTerm CompTc -> TcM (SynTerm CompZn)
-zonkTermFinally = \case
+zonkFinallyTerm :: SynTerm CompTc -> TcM (SynTerm CompZn)
+zonkFinallyTerm = \case
   SynTerm'Var _ var -> do
     var' <- zonkFinallyTcTermVar var
     pure $ SynTerm'Var () var'
-  SynTerm'Lit ann lit -> pure $ SynTerm'Lit ann lit
+  SynTerm'Lit ann lit -> do
+    pure $ SynTerm'Lit ann lit
   SynTerm'App anno fun arg -> do
-    fun' <- zonkTermFinally fun
-    arg' <- zonkTermFinally arg
+    fun' <- zonkFinallyTerm fun
+    arg' <- zonkFinallyTerm arg
     anno' <- zonkFinallyAnno anno
     pure $ SynTerm'App anno' fun' arg'
   SynTerm'Lam anno var ty -> do
     anno' <- zonkFinallyAnno anno
     var' <- zonkFinallyTcTermVar var
-    ty' <- zonkTermFinally ty
+    ty' <- zonkFinallyTerm ty
     pure $ SynTerm'Lam anno' var' ty'
   SynTerm'ALam anno var ty body -> do
     anno' <- zonkFinallyAnno anno
     var' <- zonkFinallyTcTermVar var
     ty' <- zonkFinallySynType ty
-    body' <- zonkTermFinally body
+    body' <- zonkFinallyTerm body
     pure $ SynTerm'ALam anno' var' ty' body'
   SynTerm'Let anno var val term -> do
     anno' <- zonkFinallyAnno anno
     var' <- zonkFinallyTcTermVar var
-    val' <- zonkTermFinally val
-    term' <- zonkTermFinally term
+    val' <- zonkFinallyTerm val
+    term' <- zonkFinallyTerm term
     pure $ SynTerm'Let anno' var' val' term'
   SynTerm'Ann anno term ty -> do
     anno' <- zonkFinallyAnno anno
-    term' <- zonkTermFinally term
+    term' <- zonkFinallyTerm term
     ty' <- zonkFinallySynType ty
     pure $ SynTerm'Ann anno' term' ty'
 
@@ -129,7 +145,9 @@ checkRho expr ty = tcRho expr (Check ty)
 inferRho :: SynTerm CompRn -> TcM (SynTerm CompTc, Rho)
 inferRho expr =
   do
-    debug "inferRho" (pretty expr)
+    debug'
+      "inferRho"
+      [pretty expr]
     ref <- newTcRef (error "inferRho: empty result")
     expr' <- tcRho expr (Infer ref)
     ref' <- readTcRef ref
@@ -220,18 +238,16 @@ tcRho (SynTerm'Lit _ lit) exp_ty = do
       lit
 tcRho (SynTerm'Var _ varName) exp_ty = do
   v_sigma <- lookupVar varName
-  debug
+  debug'
     "var"
-    ( pretty varName
-        <+> "|"
-        <+> pretty (show varName)
-        <+> "|\n"
-        <+> pretty v_sigma
-        <+> "|"
-        <+> pretty (show v_sigma)
-        <+> "|\n"
-        <+> (case exp_ty of Infer _ -> "Infer"; Check t -> pretty (show t))
-    )
+    [ pretty varName
+    , pretty (show varName)
+    , pretty v_sigma
+    , pretty (show v_sigma)
+    , case exp_ty of
+        Infer _ -> "Infer"
+        Check t -> "Check" <> pretty (show t)
+    ]
   instSigma v_sigma exp_ty
   pure $
     SynTerm'Var
@@ -249,7 +265,12 @@ tcRho (SynTerm'App annoSrcLoc fun arg) exp_ty = do
       arg'
 tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
   (var_ty, body_ty) <- unifyFun exp_ty
-  debug "lam" (pretty varName <+> "|" <+> pretty body <+> "|" <+> pretty exp_ty <+> pretty (var_ty, body_ty))
+  debug'
+    "lam"
+    [ pretty varName
+    , pretty body
+    , pretty exp_ty <+> pretty (var_ty, body_ty)
+    ]
   body' <- extendVarEnv varName var_ty (checkRho body body_ty)
   pure $
     SynTerm'Lam
@@ -299,7 +320,15 @@ tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
       body'
 tcRho (SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
   (ann_ty_syn, ann_ty') <- convertSynTy ann_ty
-  debug "tcRho Ann" (pretty body <+> "|" <+> pretty ann_ty <+> "|" <+> pretty ann_ty')
+  debug'
+    "tcRho Ann"
+    [ "body (pretty):"
+    , pretty body
+    , "ann_ty (pretty):"
+    , pretty ann_ty
+    , "ann_ty' (pretty)"
+    , pretty ann_ty'
+    ]
   body' <- checkSigma body ann_ty'
   instSigma ann_ty' exp_ty
   pure $
@@ -320,27 +349,38 @@ inferSigma e =
     env_tvs <- getMetaTyVars env_tys
     res_tvs <- getMetaTyVars [exp_ty]
     let forall_tvs = res_tvs \\ env_tvs
-    debug
+    debug'
       "inferSigma"
-      ( pretty env_tvs
-          <+> "| res tvs:"
-          <+> pretty res_tvs
-          <+> "| Forall tvs:"
-          <+> pretty forall_tvs
-          <+> "| Exp ty (pretty):"
-          <+> pretty exp_ty
-          <+> "| Exp ty:"
-          <+> pretty (show exp_ty)
-      )
+      [ "env_tvs (pretty):"
+      , pretty env_tvs
+      , "res_tvs (pretty):"
+      , pretty res_tvs
+      , "forall_tvs (pretty):"
+      , pretty forall_tvs
+      , "exp_ty (pretty): "
+      , pretty exp_ty
+      , "exp_ty"
+      , pretty (show exp_ty)
+      ]
     ty' <- quantify forall_tvs exp_ty
     pure (e', ty')
 
 checkSigma :: SynTerm CompRn -> Sigma -> TcM (SynTerm CompTc)
 checkSigma expr sigma =
   do
-    debug "checkSigma before skolemise" (pretty sigma)
+    debug'
+      "checkSigma before skolemise"
+      [ "sigma (pretty):"
+      , pretty sigma
+      ]
     (skol_tvs, rho) <- skolemise sigma
-    debug "checkSigma after skolemise" (pretty skol_tvs <+> "|" <+> pretty rho)
+    debug'
+      "checkSigma after skolemise"
+      [ "skol_tvs (pretty):"
+      , pretty skol_tvs
+      , "rho (pretty):"
+      , pretty rho
+      ]
     expr' <- checkRho expr rho
     env_tys <- getEnvTypes
     esc_tvs <- getFreeTyVars (sigma : env_tys)

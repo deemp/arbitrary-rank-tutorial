@@ -43,7 +43,6 @@ import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text)
-import Data.Text qualified as T
 import Language.STLC.Common ()
 import Language.STLC.Syntax.Abs qualified as Abs
 import Prettyprinter
@@ -982,15 +981,90 @@ instance Pretty (SynType CompZn) where
     SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
 
+parensNest :: Doc ann -> Doc ann
+parensNest x = parens (line <> indent 2 x <> line)
+
 instance Pretty (SynTerm CompZn) where
   pretty = \case
     SynTerm'Var _ var -> pretty var
     SynTerm'Lit _ val -> pretty val
-    SynTerm'App _ term1 term2 -> parens (pretty term1) <+> pretty term2
-    SynTerm'Lam _ var term -> "\\" <> pretty var <> "." <+> pretty term
-    SynTerm'ALam _ var ty term -> "\\" <> parens (pretty var <+> "::" <+> pretty ty) <> "." <+> pretty term
-    SynTerm'Let _ name term1 term2 -> "let" <+> pretty name <+> "=" <+> pretty term1 <+> "in" <+> pretty term2
-    SynTerm'Ann _ term ty -> parens (parens (pretty term) <+> "::" <+> pretty ty)
+    SynTerm'App AnnoZn{annoType} term1 term2 ->
+      hsep
+        [ parensNest (parensNest (pretty term1) <+> pretty term2)
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'Lam AnnoZn{annoType} var term ->
+      hsep
+        [ parensNest
+            ( "\\"
+                <> pretty var
+                <> "."
+                <> line
+                <> indent 2 (pretty term)
+            )
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'ALam AnnoZn{annoType} ZnTermVar{varName, varType} ty term ->
+      hsep
+        [ parens
+            ( line
+                <> "\\"
+                <> parens
+                  ( hsep
+                      [ pretty varName
+                      , "::"
+                      , braces (pretty ty)
+                      , "::"
+                      , pretty varType
+                      ]
+                  )
+                <> "."
+                <+> pretty term
+                <> line
+            )
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'Let AnnoZn{annoType} ZnTermVar{varName, varType} term1 term2 ->
+      hsep
+        [ parensNest
+            ( vsep
+                [ "let"
+                , indent
+                    2
+                    ( vsep
+                        [ pretty varName <+> "="
+                        , indent
+                            2
+                            ( hsep
+                                [ parensNest (pretty term1)
+                                , "::"
+                                , pretty varType
+                                ]
+                            )
+                        ]
+                    )
+                , "in"
+                , pretty term2
+                ]
+            )
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'Ann AnnoZn{annoType} term ty ->
+      hsep
+        [ parensNest
+            ( hsep
+                [ parensNest (pretty term)
+                , "::"
+                , braces (pretty ty)
+                ]
+            )
+        , "::"
+        , pretty annoType
+        ]
 
 ex1 :: Abs.Exp
 ex1 = "\\ (x :: forall b. Int). (\\ z. z) x"

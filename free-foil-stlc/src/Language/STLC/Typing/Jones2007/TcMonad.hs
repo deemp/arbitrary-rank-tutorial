@@ -46,8 +46,9 @@ where
 import Control.Exception (throw)
 import Control.Exception.Base (Exception)
 import Control.Monad (when)
-import Data.IORef
-import Data.List (partition, (\\))
+import Data.Foldable (fold)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.List (intersperse, partition, (\\))
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
@@ -88,13 +89,16 @@ die d = do
   throw $ DieException "Exception!"
 
 debug :: (HasCallStack, IDebug) => Doc a -> Doc b -> IO ()
-debug msg d = when ?debug do
-  putDoc ("[" <> msg <> "]")
+debug label d = when ?debug do
+  putDoc ("[" <> label <> "]")
   putStrLn "\n"
   putDoc d
   putStrLn "\n"
   putStrLn (prettyCallStack callStack)
   putStrLn "\n"
+
+debug' :: (IDebug) => Doc a2 -> [Doc ann] -> IO ()
+debug' label msg = debug label (fold (intersperse " |\n" msg))
 
 -- TODO use somewhere
 check :: Bool -> Doc ann -> TcM ()
@@ -411,7 +415,9 @@ quantify tvs ty | all isMetaTv tvs = do
   -- 'bind' is just a cunning way of doing the substitution
   -- TODO is it correct to use these vars in ForAll?
   vars <- mapM bind (tvs `zip` newBinders)
-  debug "quantify" (pretty ty)
+  debug'
+    "quantify"
+    [pretty ty]
   ty' <- zonkType ty
   pure (Type'ForAll vars ty')
  where
@@ -473,7 +479,17 @@ zonkType (Type'ForAll ns ty) = do
   ty' <- zonkType ty
   pure (Type'ForAll ns ty')
 zonkType (Type'Fun arg res) = do
-  debug "zonkType" (pretty arg <+> "|" <+> pretty res <+> "|" <+> pretty (show arg) <+> "|" <+> pretty (show res))
+  debug'
+    "zonkType"
+    [ "arg (pretty):"
+    , pretty arg
+    , "res (pretty):"
+    , pretty res
+    , "arg:"
+    , pretty (show arg)
+    , "res"
+    , pretty (show res)
+    ]
   arg' <- zonkType arg
   res' <- zonkType res
   pure (Type'Fun arg' res')
