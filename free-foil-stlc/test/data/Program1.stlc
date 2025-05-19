@@ -1,3 +1,9 @@
-let add = (\x. \y. x) :: forall a. a -> a -> a in
-let id  = (\x. x) :: forall a. a -> a in
-add id id
+let
+  applyShow =
+    (\x. \y. x y)
+      :: forall a. (forall b. b -> String) -> a -> String
+in
+let
+  show = \x. "Hello"
+in
+applyShow show
