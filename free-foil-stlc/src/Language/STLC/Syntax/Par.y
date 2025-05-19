@@ -26,7 +26,6 @@ module Language.STLC.Syntax.Par
   , pTypeVariable
   , pType4
   , pListTypeVariable
-  , pType5
   , pType
   ) where
 
@@ -56,7 +55,6 @@ import qualified Data.Text
 %name pTypeVariable_internal TypeVariable
 %name pType4_internal Type4
 %name pListTypeVariable_internal ListTypeVariable
-%name pType5_internal Type5
 %name pType_internal Type
 -- no lexer declaration
 %monad { Err } { (>>=) } { return }
@@ -73,6 +71,7 @@ import qualified Data.Text
   'in'            { PT _ (TS _ 9)            }
   'let'           { PT _ (TS _ 10)           }
   L_integ         { PT _ (TI _)              }
+  L_quoted        { PT _ (TL _)              }
   L_NameLowerCase { PT _ (T_NameLowerCase _) }
   L_NameUpperCase { PT _ (T_NameUpperCase _) }
 
@@ -80,6 +79,9 @@ import qualified Data.Text
 
 Integer :: { (Language.STLC.Syntax.Abs.BNFC'Position, Integer) }
 Integer  : L_integ  { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (read (Data.Text.unpack (tokenText $1))) :: Integer) }
+
+String  :: { (Language.STLC.Syntax.Abs.BNFC'Position, String) }
+String   : L_quoted { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (Data.Text.unpack ((\(PT _ (TL s)) -> s) $1))) }
 
 NameLowerCase :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.NameLowerCase) }
 NameLowerCase  : L_NameLowerCase { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.NameLowerCase (tokenText $1)) }
@@ -102,6 +104,7 @@ Exp1
 Exp2 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp2
   : Integer { (fst $1, Language.STLC.Syntax.Abs.ExpInt (fst $1) (snd $1)) }
+  | String { (fst $1, Language.STLC.Syntax.Abs.ExpString (fst $1) (snd $1)) }
 
 Exp3 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp3
@@ -156,10 +159,11 @@ Type2
 
 Type3 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type3
-  : Type4 '->' Type3 { (fst $1, Language.STLC.Syntax.Abs.TypeFunc (fst $1) (snd $1) (snd $3)) }
+  : Type3 '->' Type3 { (fst $1, Language.STLC.Syntax.Abs.TypeFunc (fst $1) (snd $1) (snd $3)) }
   | Type1 { (fst $1, (snd $1)) }
   | Type2 { (fst $1, (snd $1)) }
-  | Type5 { (fst $1, (snd $1)) }
+  | Type4 { (fst $1, (snd $1)) }
+  | '(' Type3 ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
 
 TypeVariable :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.TypeVariable) }
 TypeVariable
@@ -168,16 +172,11 @@ TypeVariable
 Type4 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type4
   : 'forall' ListTypeVariable '.' Type3 { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.TypeForall (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
-  | Type3 { (fst $1, (snd $1)) }
 
 ListTypeVariable :: { (Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.TypeVariable]) }
 ListTypeVariable
   : {- empty -} { (Language.STLC.Syntax.Abs.BNFC'NoPosition, []) }
   | TypeVariable ListTypeVariable { (fst $1, (:) (snd $1) (snd $2)) }
-
-Type5 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
-Type5
-  : '(' Type3 ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.TypeParen (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2)) }
 
 Type :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type
@@ -185,7 +184,6 @@ Type
   | Type2 { (fst $1, (snd $1)) }
   | Type3 { (fst $1, (snd $1)) }
   | Type4 { (fst $1, (snd $1)) }
-  | Type5 { (fst $1, (snd $1)) }
 
 {
 
@@ -257,9 +255,6 @@ pType4 = fmap snd . pType4_internal
 
 pListTypeVariable :: [Token] -> Err [Language.STLC.Syntax.Abs.TypeVariable]
 pListTypeVariable = fmap snd . pListTypeVariable_internal
-
-pType5 :: [Token] -> Err Language.STLC.Syntax.Abs.Type
-pType5 = fmap snd . pType5_internal
 
 pType :: [Token] -> Err Language.STLC.Syntax.Abs.Type
 pType = fmap snd . pType_internal

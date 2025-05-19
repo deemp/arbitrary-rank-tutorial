@@ -154,6 +154,7 @@ instance Print (Language.STLC.Syntax.Abs.Exp' a) where
   prt i = \case
     Language.STLC.Syntax.Abs.ExpVar _ var -> prPrec i 1 (concatD [prt 0 var])
     Language.STLC.Syntax.Abs.ExpInt _ n -> prPrec i 2 (concatD [prt 0 n])
+    Language.STLC.Syntax.Abs.ExpString _ str -> prPrec i 2 (concatD [printString str])
     Language.STLC.Syntax.Abs.ExpAbs _ var exp -> prPrec i 3 (concatD [doc (showString "\\"), prt 0 var, doc (showString "."), prt 0 exp])
     Language.STLC.Syntax.Abs.ExpAbsAnno _ var type_ exp -> prPrec i 4 (concatD [doc (showString "\\"), doc (showString "("), prt 0 var, doc (showString "::"), prt 0 type_, doc (showString ")"), doc (showString "."), prt 0 exp])
     Language.STLC.Syntax.Abs.ExpApp _ exp1 exp2 -> prPrec i 5 (concatD [prt 11 exp1, prt 10 exp2])
@@ -164,9 +165,8 @@ instance Print (Language.STLC.Syntax.Abs.Type' a) where
   prt i = \case
     Language.STLC.Syntax.Abs.TypeConcrete _ nameuppercase -> prPrec i 1 (concatD [prt 0 nameuppercase])
     Language.STLC.Syntax.Abs.TypeVariable _ namelowercase -> prPrec i 2 (concatD [prt 0 namelowercase])
-    Language.STLC.Syntax.Abs.TypeFunc _ type_1 type_2 -> prPrec i 3 (concatD [prt 4 type_1, doc (showString "->"), prt 3 type_2])
+    Language.STLC.Syntax.Abs.TypeFunc _ type_1 type_2 -> prPrec i 3 (concatD [prt 3 type_1, doc (showString "->"), prt 3 type_2])
     Language.STLC.Syntax.Abs.TypeForall _ typevariables type_ -> prPrec i 4 (concatD [doc (showString "forall"), prt 0 typevariables, doc (showString "."), prt 3 type_])
-    Language.STLC.Syntax.Abs.TypeParen _ type_ -> prPrec i 5 (concatD [doc (showString "("), prt 3 type_, doc (showString ")")])
 
 instance Print (Language.STLC.Syntax.Abs.TypeVariable' a) where
   prt i = \case

@@ -12,6 +12,7 @@ Var. Var ::= NameLowerCase ;
 
 ExpVar.        Exp1 ::= Var ;
 ExpInt.        Exp2 ::= Integer ;
+ExpString.     Exp2 ::= String ;
 ExpAbs.        Exp3 ::= "\\" Var "." Exp ;
 ExpAbsAnno.    Exp4 ::= "\\" "(" Var "::" Type ")" "." Exp ;
 ExpApp.        Exp5 ::= Exp11 Exp10 ;
@@ -40,30 +41,31 @@ _. Exp11 ::= "(" Exp ")" ;
 TypeConcrete. Type1 ::= NameUpperCase ;
 -- TODO use TypeVariable instead of NameLowerCase
 TypeVariable. Type2 ::= NameLowerCase ;
-TypeFunc.     Type3 ::= Type4 "->" Type3 ;
+TypeFunc.     Type3 ::= Type3 "->" Type3 ;
 
 _. Type3 ::= Type1 ;
 _. Type3 ::= Type2 ;
-_. Type3 ::= Type5 ;
+_. Type3 ::= Type4 ;
+
 
 -- sigma
 -- TODO sigma in parens
 
 TypeVariableName. TypeVariable ::= NameLowerCase;
 
-TypeForall.       Type4 ::= "forall" [TypeVariable] "." Type3 ;
+TypeForall.       Type4 ::= "forall" [TypeVariable] "." Type3;
 
 -- https://stackoverflow.com/a/66437525
 separator TypeVariable " " ;
 
-_. Type4 ::= Type3 ;
+_. Type3 ::= "(" Type3 ")" ;
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L861
-TypeParen. Type5 ::= "(" Type3 ")";
+-- TypeParen. Type5 ::= "(" Type3 ")";
 
 -- type
 _. Type ::= Type1 ;
 _. Type ::= Type2 ;
 _. Type ::= Type3 ;
 _. Type ::= Type4 ;
-_. Type ::= Type5 ;
+-- _. Type ::= Type5 ;

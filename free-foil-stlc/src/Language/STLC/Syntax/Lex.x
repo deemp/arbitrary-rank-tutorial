@@ -55,6 +55,10 @@ $c [$u # [\t \n \r \  \! \' \( \) \, \. \: \; \? \[ \] \{ \| \} \⟦ \⟧]] *
 $l $i*
     { tok (eitherResIdent TV) }
 
+-- String
+\" ([$u # [\" \\ \n]] | (\\ (\" | \\ | \' | n | t | r | f)))* \"
+    { tok (TL . unescapeInitTail) }
+
 -- Integer
 $d+
     { tok TI }
