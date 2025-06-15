@@ -333,13 +333,20 @@ tcRho (SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
 
 annotateTc :: Sigma -> SynTerm CompTc -> SynTerm CompTc
 annotateTc s = \case
-  SynTerm'Var anno v -> SynTerm'Var anno v
-  SynTerm'Lit anno l -> SynTerm'Lit anno l
-  SynTerm'App AnnoTc{annoSrcLoc} arg res -> SynTerm'App AnnoTc{annoSrcLoc, annoType = Check s} arg res
-  SynTerm'Lam AnnoTc{annoSrcLoc} var body -> SynTerm'Lam AnnoTc{annoSrcLoc, annoType = Check s} var body
-  SynTerm'ALam AnnoTc{annoSrcLoc} var ty body -> SynTerm'ALam AnnoTc{annoSrcLoc, annoType = Check s} var ty body
-  SynTerm'Let AnnoTc{annoSrcLoc} var val term -> SynTerm'Let AnnoTc{annoSrcLoc, annoType = Check s} var val term
-  SynTerm'Ann AnnoTc{annoSrcLoc} body ty -> SynTerm'Ann AnnoTc{annoSrcLoc, annoType = Check s} body ty
+  SynTerm'Var anno v ->
+    SynTerm'Var anno v
+  SynTerm'Lit anno l ->
+    SynTerm'Lit anno l
+  SynTerm'App AnnoTc{annoSrcLoc} arg res ->
+    SynTerm'App AnnoTc{annoSrcLoc, annoType = Check s} arg res
+  SynTerm'Lam AnnoTc{annoSrcLoc} var body ->
+    SynTerm'Lam AnnoTc{annoSrcLoc, annoType = Check s} var body
+  SynTerm'ALam AnnoTc{annoSrcLoc} var ty body ->
+    SynTerm'ALam AnnoTc{annoSrcLoc, annoType = Check s} var ty body
+  SynTerm'Let AnnoTc{annoSrcLoc} var val term ->
+    SynTerm'Let AnnoTc{annoSrcLoc, annoType = Check s} var val term
+  SynTerm'Ann AnnoTc{annoSrcLoc} body ty ->
+    SynTerm'Ann AnnoTc{annoSrcLoc, annoType = Check s} body ty
 
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
 inferSigma e =
