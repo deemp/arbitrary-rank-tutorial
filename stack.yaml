@@ -2,11 +2,11 @@
 # https://docs.haskellstack.org/en/stable/configure/yaml/project/#resolver
 resolver: ghc-9.10.1
 packages:
-  - free-foil-stlc
+  - tutorial
   - free-foil-exercises
 notify-if-nix-on-path: false
 # TODO move to Nix
 # E.g., create an alias for stack build where the flag is set
 flags:
-  free-foil-stlc:
+  arbitrary-rank-tutorial:
     nix: true
