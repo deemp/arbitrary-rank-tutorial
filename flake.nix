@@ -24,8 +24,8 @@
       url = "github:nix-community/cache-nix-action";
       flake = false;
     };
-    query-driven-free-foil = {
-      url = "github:deemp/query-driven-free-foil";
+    arbitrary-rank-tutorial = {
+      url = "github:deemp/arbitrary-rank-tutorial";
       flake = false;
     };
     call-flake.url = "github:divnix/call-flake";
@@ -72,7 +72,7 @@
               lib.fileset.toSource {
                 root = ./.;
                 fileset = lib.fileset.unions [
-                  ./free-foil-stlc
+                  ./tutorial
                   ./free-foil-exercises
                   ./scope-graphs-modular-stlc
                   ./cabal.project
@@ -98,6 +98,12 @@
 
                   free-foil = prev.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
                   with-utf8 = prev.with-utf8_1_1_0_0;
+                  bluefin =
+                    packageFromHackage "bluefin" "0.0.15.0"
+                      "sha256-ahmxmrvXyK77dX6qPDflrQusyoZTas+oMgj41im8KQA=";
+                  bluefin-internal =
+                    packageFromHackage "bluefin-internal" "0.0.15.0"
+                      "sha256-grclXTRDkDJ5+oSZb37Vbd2wXgcP43yuAnzpJV9J+ng=";
 
                   # build tools
 
@@ -131,7 +137,7 @@
               {
                 # local packages
 
-                free-foil-stlc = default // {
+                arbitrary-rank-tutorial = default // {
                   extraBuildTools = with devTools; [
                     alex
                     happy
@@ -216,7 +222,8 @@
                   x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
                 ) haskellProjectsOutputs.devShell.nativeBuildInputs
               );
-
+              
+              # TODO for a single ghc?
               inherit (haskellPackages) haskell-language-server;
             };
 
@@ -244,11 +251,12 @@
             settings = {
               global.excludes = [
                 "**.{gitignore,png,pdf,cabal,project,cf,bib}"
-                "free-foil-stlc/src/Language/STLC/Syntax/*"
+                "tutorial/src/Language/STLC/Syntax/*"
               ];
             };
           };
 
+          # https://github.com/NixOS/nixpkgs/blob/a9e072721c7d9c7e6c7276c40b9f7dc879525ebc/doc/languages-frameworks/haskell.section.md?plain=1#L469
           mkIncremental' =
             packagePrev: packageCur:
             let
@@ -274,7 +282,7 @@
                 # to not construct a chain of packages
                 # where incremental packages depend on incremental packages
                 # from previous flake revisions
-                (inputs.call-flake inputs.query-driven-free-foil.outPath)
+                (inputs.call-flake inputs.arbitrary-rank-tutorial.outPath)
                 .packages.${system}."${packageName}-increment-base";
               packageCur = haskellProjectsOutputs.finalPackages.${packageName};
             in
@@ -282,9 +290,12 @@
 
           # TODO generateOptparseApplicativeCompletions
           packages = mkShellApps {
-            # TODO update the query-driven-free-foil flake input sometimes
-            free-foil-stlc = mkIncremental "free-foil-stlc";
-            free-foil-stlc-increment-base = haskellProjectsOutputs.finalPackages.free-foil-stlc;
+            # TODO update the arbitrary-rank-tutorial flake input sometimes
+            # 
+            # TODO use incremental
+            # arbitrary-rank-tutorial = mkIncremental "arbitrary-rank-tutorial";
+            arbitrary-rank-tutorial = haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
+            arbitrary-rank-tutorial-increment-base = haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
 
             scope-graphs-modular-stlc = mkIncremental "scope-graphs-modular-stlc";
             scope-graphs-modular-stlc-increment-base =
@@ -298,7 +309,7 @@
                   inputs.treefmt-nix
                 ];
                 derivations = [
-                  self'.packages.free-foil-stlc
+                  self'.packages.arbitrary-rank-tutorial
                   self'.packages.scope-graphs-modular-stlc
                   self'.devShells.ci-build
                 ];
@@ -315,12 +326,16 @@
                 devTools.alex
               ];
               text = "
-                rm -f dist-newstyle/build/*/ghc-*/free-foil-stlc-*/cache/config
-                cabal build --only-configure free-foil-stlc
+                rm -f dist-newstyle/build/*/ghc-*/arbitrary-rank-tutorial-*/cache/config
+                cabal build --only-configure arbitrary-rank-tutorial
               ";
-              meta.description = "Force configure the free-foil-stlc package.";
+              meta.description = "Force configure the arbitrary-rank-tutorial package.";
             };
+            # TODO support cleaning stack and cabal cache
           };
+
+          # TODO 
+          # move saveFromGC and copy mkShellApplications to deemp:devshells
 
           devshells = {
             default = {
@@ -336,7 +351,7 @@
                   {
                     prefix = "nix run .#";
                     packages = {
-                      inherit (self'.packages) free-foil-stlc cabalConfigureFreeFoilStlc;
+                      inherit (self'.packages) arbitrary-rank-tutorial cabalConfigureFreeFoilStlc;
                     };
                   }
                   {
@@ -353,7 +368,7 @@
                   {
                     expose = true;
                     packages = {
-                      inherit (self'.packages) free-foil-stlc;
+                      inherit (self'.packages) arbitrary-rank-tutorial;
                     };
                   }
                 ];
@@ -389,6 +404,10 @@
             packages
             devShells
             ;
+          legacyPackages = {
+            inherit (config.haskellProjects.default) basePackages;
+            inherit devTools;
+          };
         };
     };
 

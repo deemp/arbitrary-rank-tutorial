@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "arbitrary-rank-tutorial": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1747154313,
+        "narHash": "sha256-pD89SgROMEjMoqPX0cgul3cDjne7TbSCe/SY0dIsweA=",
+        "owner": "deemp",
+        "repo": "arbitrary-rank-tutorial",
+        "rev": "2e9d3d85db3744fb8100bf50814d79d64ce2f399",
+        "type": "github"
+      },
+      "original": {
+        "owner": "deemp",
+        "repo": "arbitrary-rank-tutorial",
+        "type": "github"
+      }
+    },
     "bnfc": {
       "flake": false,
       "locked": {
@@ -163,24 +179,9 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/072a6db25e947df2f31aab9eccd0ab75d5b2da11.tar.gz"
       }
     },
-    "query-driven-free-foil": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1743530101,
-        "narHash": "sha256-PfY/BJvzcA+JSIFc0NmNvpD7YUQS0Qq/pM6X9v20m2c=",
-        "owner": "deemp",
-        "repo": "query-driven-free-foil",
-        "rev": "da4115e1034fbe2574f6cbe725b89624c8bf9caf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "deemp",
-        "repo": "query-driven-free-foil",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
+        "arbitrary-rank-tutorial": "arbitrary-rank-tutorial",
         "bnfc": "bnfc",
         "cache-nix-action": "cache-nix-action",
         "call-flake": "call-flake",
@@ -189,7 +190,6 @@
         "free-foil": "free-foil",
         "haskell-flake": "haskell-flake",
         "nixpkgs": "nixpkgs",
-        "query-driven-free-foil": "query-driven-free-foil",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix"
       }
