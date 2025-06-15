@@ -1,4 +1,4 @@
 packages:
-    ./free-foil-stlc
+    ./tutorial
     ./free-foil-exercises
     ./scope-graphs-modular-stlc
