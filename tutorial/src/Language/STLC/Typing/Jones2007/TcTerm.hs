@@ -92,9 +92,9 @@ zonkFinallyTerm = \case
   SynTerm'Lit ann lit -> do
     pure $ SynTerm'Lit ann lit
   SynTerm'App anno fun arg -> do
+    anno' <- zonkFinallyAnno anno
     fun' <- zonkFinallyTerm fun
     arg' <- zonkFinallyTerm arg
-    anno' <- zonkFinallyAnno anno
     pure $ SynTerm'App anno' fun' arg'
   SynTerm'Lam anno var ty -> do
     anno' <- zonkFinallyAnno anno
