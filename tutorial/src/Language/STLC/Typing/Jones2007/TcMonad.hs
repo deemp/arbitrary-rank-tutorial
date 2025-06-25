@@ -581,7 +581,10 @@ unifyVar thing tv ty | isMetaTv tv = do
             , eq_lhs = tv
             , eq_rhs = ty
             }
-      constraints' = constraints{wc_simple = Bag [constraint]}
+      constraints' =
+        constraints
+          { wc_simple = Bag [constraint] <> constraints.wc_simple
+          }
   writeTcRef ?constraints constraints'
   mb_ty1 <- readTv tv
   case mb_ty1 of
