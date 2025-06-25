@@ -962,6 +962,108 @@ instance Pretty (SynType CompRn) where
     SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
 
+instance (Pretty a) => Pretty (Expected a) where
+  pretty (Infer _) = "?"
+  pretty (Check a) = pretty a
+
+instance Pretty TcTermVar where
+  pretty TcTermVar{varName, varType} =
+    hsep
+      [ pretty varName
+      , "::"
+      , braces (pretty varType)
+      ]
+
+instance Pretty (SynType CompTc) where
+  pretty = \case
+    SynType'Var _ var -> pretty var
+    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
+    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
+    SynType'Paren _ ty -> parens (pretty ty)
+    SynType'Concrete _ ty -> pretty ty
+
+instance Pretty (SynTerm CompTc) where
+  pretty = \case
+    SynTerm'Var _ var -> pretty var
+    SynTerm'Lit _ val -> pretty val
+    SynTerm'App AnnoTc{annoType} term1 term2 ->
+      hsep
+        [ parensNest (parensNest (pretty term1) <> line <> indent 2 (pretty term2))
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'Lam AnnoTc{annoType} var term ->
+      hsep
+        [ parensNest
+            ( "\\"
+                <> pretty var
+                <> "."
+                <> line
+                <> indent 2 (parensNest (pretty term))
+            )
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'ALam AnnoTc{annoType} TcTermVar{varName, varType} ty term ->
+      hsep
+        [ parens
+            ( line
+                <> "\\"
+                <> parens
+                  ( hsep
+                      [ pretty varName
+                      , "::"
+                      , braces (pretty ty)
+                      , "::"
+                      , pretty varType
+                      ]
+                  )
+                <> "."
+                <+> pretty term
+                <> line
+            )
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'Let AnnoTc{annoType} TcTermVar{varName, varType} term1 term2 ->
+      hsep
+        [ parensNest
+            ( vsep
+                [ "let"
+                , indent
+                    2
+                    ( vsep
+                        [ pretty varName <+> "="
+                        , indent
+                            2
+                            ( hsep
+                                [ parensNest (pretty term1)
+                                , "::"
+                                , pretty varType
+                                ]
+                            )
+                        ]
+                    )
+                , "in"
+                , indent 2 (pretty term2)
+                ]
+            )
+        , "::"
+        , pretty annoType
+        ]
+    SynTerm'Ann AnnoTc{annoType} term ty ->
+      hsep
+        [ parensNest
+            ( hsep
+                [ parensNest (pretty term)
+                , "::"
+                , braces (pretty ty)
+                ]
+            )
+        , "::"
+        , pretty annoType
+        ]
+
 instance Pretty (Type CompZn) where
   pretty = \case
     Type'Var var -> pretty var
