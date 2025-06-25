@@ -1,46 +1,58 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Language.STLC.Typing.Jones2007.ConstraintTypes where
 
 import GHC.Base (NonEmpty)
-import Language.STLC.Typing.Jones2007.BasicTypes (
-  SkolemInfoAnon,
-  TcLevel,
-  TcTyVar,
-  TcType,
- )
+import Language.STLC.Typing.Jones2007.Bag (Bag)
+import Language.STLC.Typing.Jones2007.BasicTypes (CompRn, CompTc, RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType, Type)
+import Prettyprinter (Pretty (..))
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L123
+
+-- | The "context" of an error message, e.g. "In the expression <...>",
+-- "In the pattern <...>", or "In the equations for closed type family <...>".
+data ErrCtxtMsg
 
 -- | Local typechecker environment for a constraint.
 --
 -- Used to restore the environment of a constraint
--- when reporting errors, see `setCtLocM`.
---
--- See also 'TcLclCtxt'.
+-- when reporting errors.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L227
 data CtLocEnv = CtLocEnv
+  { ctl_loc :: !RealSrcSpan
+  -- TODO add more data
+  }
 
--- TODO add some data
+-- | Some thing which has a type.
+--
+-- This datatype is used when we want to report to the user
+-- that something has an unexpected type.
+data TypedThing
+  = HsTypeRnThing (Type CompRn)
+  | HsExprRnThing (SynTerm CompRn)
+  | HsExprTcThing (SynTerm CompTc)
 
--- { ctl_ctxt :: ![ErrCtxt]
--- , ctl_loc :: !RealSrcSpan
--- , ctl_bndrs :: !TcBinderStack
--- , ctl_tclvl :: !TcLevel
--- , ctl_in_gen_code :: !Bool
--- , ctl_rdr :: !LocalRdrEnv
--- }
+instance Pretty TypedThing where
+  pretty = \case
+    HsTypeRnThing ty -> pretty ty
+    HsExprRnThing ex -> pretty ex
+    HsExprTcThing ex -> pretty ex
 
 -- | Constraint origin.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L491
 data CtOrigin
-  = -- | A given constraint from a user-written type signature. The
-    -- 'SkolemInfo' inside gives more information.
-    GivenOrigin SkolemInfoAnon
-  | -- | An application of some kind
+  = -- | An application of some kind
     AppOrigin
   | -- | An annotation
     AnnOrigin
+  | TypeEqOrigin
+      { uo_actual :: TcType
+      , uo_expected :: TcType
+      , uo_thing :: Maybe TypedThing
+      -- ^ The thing that has type "actual"
+      }
 
 -- | Constraint location information.
 --
@@ -50,26 +62,11 @@ data CtOrigin
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L123
 data CtLoc = CtLoc
   { ctl_origin :: CtOrigin
-  , ctl_env :: CtLocEnv
+  , -- TODO remove Maybe
+    ctl_env :: Maybe CtLocEnv
   -- ^ Everything we need to know about
   -- the context this Ct arose in.
   }
-
--- GHC uses a tree-like structure for the `Bag`.
--- A list will be enough in our case.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/Bag.hs#L48
-newtype Bag a = Bag [a]
-
--- Constraint evidence
---
--- We don't have given constraints
--- because we don't have constraints on types
--- (the <constraints> part in <constraints> => <type>)
--- https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/constraint_kind.html
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2166
-data CtEvidence
-  = CtWanted WantedCtEvidence
 
 -- | Evidence for a Wanted constraint
 --
@@ -83,8 +80,18 @@ data CtEvidence
 data WantedCtEvidence
   = WantedCt
   { ctev_loc :: CtLoc
-  -- ^ See Note [Wanteds rewrite Wanteds]
   }
+
+-- Constraint evidence
+--
+-- We don't have given constraints
+-- because we don't have constraints on types
+-- (the <constraints> part in <constraints> => <type>)
+-- https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/constraint_kind.html
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2166
+data CtEvidence
+  = CtWanted WantedCtEvidence
 
 -- TODO store how a constrain appeared
 -- For equality, store previous constraints
@@ -109,13 +116,29 @@ data ImplicStatus
   | -- | Neither of the above; might go either way
     IC_Unsolved
 
+-- Don't need origin because we don't mention
+-- the implication in errors.
+-- Rather, we mention type variables
+-- introduced in the implication.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L1408
 data Implication = Implic
   { ic_tclvl :: TcLevel
+  -- ^ TcLevel of unification variables
+  -- allocated /inside/ this implication
   , ic_skols :: NonEmpty TcTyVar
+  -- ^ Introduced skolems; always skolem TcTyVars
+  -- Their level numbers should be precisely ic_tclvl
+  -- Their SkolemInfo should be precisely ic_info (almost)
+  --       See Note [Implication invariants]
+  , ic_env :: CtLocEnv
+  -- ^ Records the context at the time of creation.
+  --
+  -- This provides all the information needed about
+  -- the context to report the source of errors linked
+  -- to this implication.
   , ic_wanted :: WantedConstraints
-  , -- TODO perhaps we only need origin?
-    ic_env :: CtLocEnv
+  -- ^ The wanteds
   , ic_status :: ImplicStatus
   }
 
@@ -123,7 +146,12 @@ data Implication = Implic
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L198
 data Ct
   = CEqCan EqCt
-  | CNonCanonical CtEvidence
+  | -- | A non-canonical constraint
+    --
+    -- See Note [Canonicalization]
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver/Solve.hs#L1033
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L2057
+    CNonCanonical CtEvidence
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L164
 type Cts = Bag Ct
