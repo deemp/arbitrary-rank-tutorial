@@ -69,8 +69,9 @@ import Prettyprinter.Render.Text
 type IVarEnv = (?varEnv :: Map.Map Name Sigma)
 type ITcLevel = (?tcLevel :: TcLevel)
 type IDebug = (?debug :: Bool)
+type IConstraints = (?constraints :: IORef WantedConstraints)
 
-type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug)
+type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug, IConstraints)
 
 -- TcM in GHC is a ReaderT (Env a) IO b.
 -- It can be replaced with ImplicitParams
