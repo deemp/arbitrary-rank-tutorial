@@ -212,13 +212,13 @@ convertSynTy = \case
 tcRho :: SynTerm CompRn -> Expected Rho -> TcM (SynTerm CompTc)
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
-tcRho (SynTerm'Lit _ lit) exp_ty = do
+tcRho t@(SynTerm'Lit _ lit) exp_ty = do
   let ty =
         case lit of
           SynLit'Num{} -> TypeConcrete'Int
           SynLit'Bool{} -> TypeConcrete'Bool
           SynLit'Str{} -> TypeConcrete'String
-  instSigma (Type'Concrete ty) exp_ty
+  instSigma (Just (HsExprRnThing t)) (Type'Concrete ty) exp_ty
   -- TODO what to return?
   -- TODO should we use the annotation field
   -- to store the inferred type?
@@ -226,7 +226,7 @@ tcRho (SynTerm'Lit _ lit) exp_ty = do
     SynTerm'Lit
       ty
       lit
-tcRho (SynTerm'Var _ varName) exp_ty = do
+tcRho t@(SynTerm'Var _ varName) exp_ty = do
   v_sigma <- lookupVar varName
   debug'
     "var"
@@ -238,23 +238,23 @@ tcRho (SynTerm'Var _ varName) exp_ty = do
         Infer _ -> "Infer"
         Check t -> "Check" <> pretty (show t)
     ]
-  instSigma v_sigma exp_ty
+  instSigma (Just (HsExprRnThing t)) v_sigma exp_ty
   pure $
     SynTerm'Var
       ()
       TcTermVar{varName, varType = exp_ty}
-tcRho (SynTerm'App annoSrcLoc fun arg) exp_ty = do
+tcRho t@(SynTerm'App annoSrcLoc fun arg) exp_ty = do
   (fun', fun_ty) <- inferRho fun
-  (arg_ty, res_ty) <- unifyFun fun_ty
+  (arg_ty, res_ty) <- unifyFun (Just (HsExprRnThing fun)) fun_ty
   arg' <- checkSigma arg arg_ty
-  instSigma res_ty exp_ty
+  instSigma (Just (HsExprRnThing t)) res_ty exp_ty
   pure $
     SynTerm'App
       AnnoTc{annoSrcLoc, annoType = exp_ty}
       fun'
       arg'
-tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
-  (var_ty, body_ty) <- unifyFun exp_ty
+tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
+  (var_ty, body_ty) <- unifyFun (Just (HsExprRnThing t)) exp_ty
   debug'
     "lam"
     [ pretty varName
@@ -276,10 +276,11 @@ tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
       AnnoTc{annoSrcLoc, annoType = modeTy}
       TcTermVar{varName, varType = Check var_ty}
       body'
-tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
-  (arg_ty, body_ty) <- unifyFun exp_ty
+tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
+  (arg_ty, body_ty) <- unifyFun (Just (HsExprRnThing t)) exp_ty
   (var_ty_syn, var_ty') <- convertSynTy var_ty
-  subsCheck arg_ty var_ty'
+  -- TODO what should be passed?
+  subsCheck Nothing arg_ty var_ty'
   body' <- extendVarEnv varName var_ty' (checkRho body body_ty)
   pure $
     SynTerm'ALam
@@ -308,7 +309,7 @@ tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
       TcTermVar{varName, varType = Check var_ty}
       rhs'
       body'
-tcRho (SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
+tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
   (ann_ty_syn, ann_ty') <- convertSynTy ann_ty
   debug'
     "tcRho Ann"
@@ -320,7 +321,7 @@ tcRho (SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
     , pretty ann_ty'
     ]
   body' <- checkSigma body ann_ty'
-  instSigma ann_ty' exp_ty
+  instSigma (Just (HsExprRnThing t)) ann_ty' exp_ty
   pure $
     SynTerm'Ann
       AnnoTc{annoSrcLoc, annoType = exp_ty}
@@ -402,14 +403,14 @@ checkSigma expr sigma =
 --      Subsumption checking            --
 ------------------------------------------
 
-subsCheck :: Sigma -> Sigma -> TcM ()
+subsCheck :: Maybe TypedThing -> Sigma -> Sigma -> TcM ()
 -- (subsCheck args off exp) checks that
 --     'off' is at least as polymorphic as 'args -> exp'
 
 -- Rule DEEP-SKOL
-subsCheck sigma1 sigma2 = do
+subsCheck thing sigma1 sigma2 = do
   (skol_tvs, rho2) <- skolemise sigma2
-  subsCheckRho sigma1 rho2
+  subsCheckRho thing sigma1 rho2
   esc_tvs <- getFreeTyVars [sigma1, sigma2]
   -- TODO levels?
   let bad_tvs = filter (`elem` esc_tvs) skol_tvs
@@ -423,35 +424,39 @@ subsCheck sigma1 sigma2 = do
         ]
     )
 
-subsCheckRho :: Sigma -> Rho -> TcM ()
+subsCheckRho :: Maybe TypedThing -> Sigma -> Rho -> TcM ()
 -- Invariant: the second argument is in weak-prenex form
 
 -- Rule SPEC
-subsCheckRho sigma1@(Type'ForAll _ _) rho2 = do
+subsCheckRho thing sigma1@(Type'ForAll _ _) rho2 = do
   rho1 <- instantiate sigma1
-  subsCheckRho rho1 rho2
+  subsCheckRho thing rho1 rho2
 -- Rule FUN
-subsCheckRho rho1 (Type'Fun a2 r2) = do
-  (a1, r1) <- unifyFun rho1
-  subsCheckFun a1 r1 a2 r2
+subsCheckRho thing rho1 (Type'Fun a2 r2) = do
+  (a1, r1) <- unifyFun thing rho1
+  -- `unifyFun` already called unify with `thing`
+  subsCheckFun Nothing a1 r1 a2 r2
 -- Rule FUN
-subsCheckRho (Type'Fun a1 r1) rho2 = do
-  (a2, r2) <- unifyFun rho2
-  subsCheckFun a1 r1 a2 r2
+subsCheckRho thing (Type'Fun a1 r1) rho2 = do
+  (a2, r2) <- unifyFun thing rho2
+  -- `unifyFun` already called unify with `thing`
+  subsCheckFun Nothing a1 r1 a2 r2
 -- Rule MONO
-subsCheckRho tau1 tau2 =
+subsCheckRho thing tau1 tau2 =
   -- Revert to ordinary unification
-  unify tau1 tau2
+  unify thing tau1 tau2
 
-subsCheckFun :: Sigma -> Rho -> Sigma -> Rho -> TcM ()
-subsCheckFun a1 r1 a2 r2 = do
-  subsCheck a2 a1
-  subsCheckRho r1 r2
+subsCheckFun :: Maybe TypedThing -> Sigma -> Rho -> Sigma -> Rho -> TcM ()
+subsCheckFun _thing a1 r1 a2 r2 = do
+  -- TODO argument order
+  -- unify with _thing must be called somewhere before
+  subsCheck Nothing a2 a1
+  subsCheckRho Nothing r1 r2
 
-instSigma :: Sigma -> Expected Rho -> TcM ()
+instSigma :: Maybe TypedThing -> Sigma -> Expected Rho -> TcM ()
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
-instSigma t1 (Check t2) = subsCheckRho t1 t2
-instSigma t1 (Infer r) = do
+instSigma thing t1 (Check t2) = subsCheckRho thing t1 t2
+instSigma _thing t1 (Infer r) = do
   t1' <- instantiate t1
   writeTcRef r t1'

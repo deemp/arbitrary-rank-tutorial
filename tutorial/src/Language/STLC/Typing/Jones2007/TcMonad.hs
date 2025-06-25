@@ -518,9 +518,13 @@ badType :: Tau -> Bool
 badType (Type'Var TcTyVar{varDetails = BoundTv{}}) = True
 badType _ = False
 
--- Extends the substitution by side effect (p. 43)
-unify :: Tau -> Tau -> TcM ()
-unify ty1 ty2
+-- | Extends the substitution by side effect (p. 43)
+--
+-- It's similar to `unifyType` in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2011
+unify :: Maybe TypedThing -> Tau -> Tau -> TcM ()
+unify thing ty1 ty2
   | badType ty1 || badType ty2 -- Compiler error
     =
       do
@@ -528,44 +532,74 @@ unify ty1 ty2
         die
           ( "Panic! Unexpected types in unification:"
               <+> vcat [pretty ty1, pretty ty2]
+              <+> "in"
+              <+> pretty thing
           )
 unify
+  _thing
   (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}})
   (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}})
-    | tv1 == tv2 =
-        pure ()
-unify (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) ty = unifyVar tv ty
-unify ty (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) = unifyVar tv ty
+    | tv1 == tv2 = pure ()
+unify thing (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) ty =
+  unifyVar thing tv ty
+unify thing ty (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) =
+  unifyVar thing tv ty
 -- TODO is equality defined correctly?
-unify (Type'Var tv1@TcTyVar{}) (Type'Var tv2@TcTyVar{}) | tv1 == tv2 = pure ()
-unify (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
-  unify arg1 arg2
-  unify res1 res2
-unify (Type'Concrete tc1) (Type'Concrete tc2) | tc1 == tc2 = pure ()
-unify ty1 ty2 = die ("Cannot unify types:" <+> vcat [pretty ty1, pretty ty2])
+unify _thing (Type'Var tv1@TcTyVar{}) (Type'Var tv2@TcTyVar{})
+  | tv1 == tv2 = pure ()
+unify thing (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
+  unify thing arg1 arg2
+  unify thing res1 res2
+unify _thing (Type'Concrete tc1) (Type'Concrete tc2)
+  | tc1 == tc2 = pure ()
+unify _thing ty1 ty2 =
+  die ("Cannot unify types:\n" <+> vcat [pretty ty1, pretty ty2])
 
 -----------------------------------------
-unifyVar :: TcTyVar -> Tau -> TcM ()
+unifyVar :: Maybe TypedThing -> TcTyVar -> Tau -> TcM ()
 -- Invariant: tv1 is a flexible type variable
 -- Check whether tv1 is bound
-unifyVar tv1 ty2 | isMetaTv tv1 = do
-  mb_ty1 <- readTv tv1
+unifyVar thing tv ty | isMetaTv tv = do
+  constraints <- readTcRef ?constraints
+  let constraint =
+        CEqCan
+          EqCt
+            { eq_ev =
+                CtWanted
+                  WantedCt
+                    { ctev_loc =
+                        CtLoc
+                          { ctl_origin =
+                              TypeEqOrigin
+                                { uo_actual = Type'Var tv
+                                , uo_expected = ty
+                                , uo_thing = thing
+                                }
+                          , ctl_env = Nothing
+                          }
+                    }
+            , eq_lhs = tv
+            , eq_rhs = ty
+            }
+      constraints' = constraints{wc_simple = Bag [constraint]}
+  writeTcRef ?constraints constraints'
+  mb_ty1 <- readTv tv
   case mb_ty1 of
-    Just ty1 -> unify ty1 ty2
-    Nothing -> unifyUnboundVar tv1 ty2
-unifyVar _ _ = pure ()
+    Just ty1 -> unify thing ty1 ty
+    Nothing -> unifyUnboundVar thing tv ty
+unifyVar _ _ _ = pure ()
 
-unifyUnboundVar :: TcTyVar -> Tau -> TcM ()
+unifyUnboundVar :: Maybe TypedThing -> TcTyVar -> Tau -> TcM ()
 -- Invariant: the flexible type variable tv1 is not bound
-unifyUnboundVar tv1 ty2@((Type'Var tv2@TcTyVar{varDetails = MetaTv{}})) =
+unifyUnboundVar thing tv1 ty2@((Type'Var tv2@TcTyVar{varDetails = MetaTv{}})) =
   do
     -- We know that tv1 /= tv2 (else the
     -- top case in unify would catch it)
     mb_ty2 <- readTv tv2
     case mb_ty2 of
-      Just ty2' -> unify (Type'Var tv1) ty2'
+      Just ty2' -> unify thing (Type'Var tv1) ty2'
       Nothing -> writeTv tv1 ty2
-unifyUnboundVar tv1 ty2 =
+unifyUnboundVar _thing tv1 ty2 =
   do
     tvs2 <- getMetaTyVars [ty2]
     if tv1 `elem` tvs2
@@ -575,15 +609,15 @@ unifyUnboundVar tv1 ty2 =
         writeTv tv1 ty2
 
 -----------------------------------------
-unifyFun :: Rho -> TcM (Sigma, Rho)
---      (arg,res) <- unifyFunTy fun
+
+unifyFun :: Maybe TypedThing -> Rho -> TcM (Sigma, Rho)
 -- unifies 'fun' with '(arg -> res)'
-unifyFun (Type'Fun arg res) = pure (arg, res)
-unifyFun tau = do
+unifyFun _thing (Type'Fun arg res) = pure (arg, res)
+unifyFun thing tau = do
   -- TODO use better names?
   arg_ty <- Type'Var <$> newMetaTyVar' "a"
   res_ty <- Type'Var <$> newMetaTyVar' "b"
-  unify tau (Type'Fun arg_ty res_ty)
+  unify thing tau (Type'Fun arg_ty res_ty)
   pure (arg_ty, res_ty)
 
 -----------------------------------------
