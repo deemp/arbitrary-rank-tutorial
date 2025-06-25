@@ -13,6 +13,7 @@ import Data.List ((\\))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Language.STLC.Typing.Jones2007.BasicTypes
+import Language.STLC.Typing.Jones2007.ConstraintTypes (TypedThing (..))
 import Language.STLC.Typing.Jones2007.TcMonad
 import Prettyprinter
 
