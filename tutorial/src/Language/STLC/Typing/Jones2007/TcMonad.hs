@@ -277,20 +277,6 @@ writeTv (TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) ty =
 writeTv _ _ = pure ()
 
 -- ---------------------------------
--- --      Preparation
--- ---------------------------------
-
--- prepareSynTermTc :: SynTerm CompRn -> SynTerm CompTc
--- prepareSynTermTc = \case
---   SynTerm'Var _ _ -> _
---   SynTerm'Lit _ _ -> _
---   SynTerm'App _ _ _ -> _
---   SynTerm'Lam _ _ _ -> _
---   SynTerm'ALam _ _ _ _ -> _
---   SynTerm'Let _ _ _ _ -> _
---   SynTerm'Ann _ _ _ -> _
-
--- ---------------------------------
 -- --      Substitution
 -- ---------------------------------
 
