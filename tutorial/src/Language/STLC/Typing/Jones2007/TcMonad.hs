@@ -56,7 +56,9 @@ import Data.Text (pack)
 import Data.Traversable (forM)
 import GHC.Records (HasField)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
+import Language.STLC.Typing.Jones2007.Bag (Bag (..))
 import Language.STLC.Typing.Jones2007.BasicTypes
+import Language.STLC.Typing.Jones2007.ConstraintTypes (Ct (..), CtEvidence (..), CtLoc (..), CtOrigin (..), EqCt (..), TypedThing, WantedConstraints (..), WantedCtEvidence (..))
 import Prettyprinter
 import Prettyprinter.Render.Text
 
