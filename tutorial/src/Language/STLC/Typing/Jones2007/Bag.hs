@@ -9,6 +9,9 @@ module Language.STLC.Typing.Jones2007.Bag where
 newtype Bag a = Bag {bag :: [a]}
   deriving newtype (Functor, Semigroup)
 
+emptyBag :: Bag a
+emptyBag = Bag []
+
 unitBag :: a -> Bag a
 unitBag x = Bag [x]
 
