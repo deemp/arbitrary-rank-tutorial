@@ -1,16 +1,21 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Language.STLC.Typing.Jones2007.ConstraintTypes where
 
-import GHC.Base (NonEmpty)
+import GHC.Generics (Generic)
 import Language.STLC.Typing.Jones2007.Bag (Bag)
 import Language.STLC.Typing.Jones2007.BasicTypes (CompRn, CompTc, RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType, Type)
+import Language.STLC.Typing.Jones2007.Pretty (genericPretty)
 import Prettyprinter (Pretty (..))
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L123
 
 -- | The "context" of an error message, e.g. "In the expression <...>",
 -- "In the pattern <...>", or "In the equations for closed type family <...>".
+--
+-- TODO remove?
 data ErrCtxtMsg
 
 -- | Local typechecker environment for a constraint.
@@ -21,8 +26,9 @@ data ErrCtxtMsg
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L227
 data CtLocEnv = CtLocEnv
   { ctl_loc :: !RealSrcSpan
-  -- TODO add more data
+  -- TODO add more data?
   }
+  deriving stock (Generic)
 
 -- | Some thing which has a type.
 --
@@ -33,26 +39,17 @@ data TypedThing
   | HsExprRnThing (SynTerm CompRn)
   | HsExprTcThing (SynTerm CompTc)
 
-instance Pretty TypedThing where
-  pretty = \case
-    HsTypeRnThing ty -> pretty ty
-    HsExprRnThing ex -> pretty ex
-    HsExprTcThing ex -> pretty ex
-
 -- | Constraint origin.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L491
 data CtOrigin
-  = -- | An application of some kind
-    AppOrigin
-  | -- | An annotation
-    AnnOrigin
-  | TypeEqOrigin
-      { uo_actual :: TcType
-      , uo_expected :: TcType
-      , uo_thing :: Maybe TypedThing
-      -- ^ The thing that has type "actual"
-      }
+  = TypeEqOrigin
+  { uo_actual :: TcType
+  , uo_expected :: TcType
+  , uo_thing :: Maybe TypedThing
+  -- ^ The thing that has type "actual"
+  }
+  deriving stock (Generic)
 
 -- | Constraint location information.
 --
@@ -67,6 +64,7 @@ data CtLoc = CtLoc
   -- ^ Everything we need to know about
   -- the context this Ct arose in.
   }
+  deriving stock (Generic)
 
 -- | Evidence for a Wanted constraint
 --
@@ -81,6 +79,7 @@ data WantedCtEvidence
   = WantedCt
   { ctev_loc :: CtLoc
   }
+  deriving stock (Generic)
 
 -- Constraint evidence
 --
@@ -90,8 +89,10 @@ data WantedCtEvidence
 -- https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/constraint_kind.html
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2166
-data CtEvidence
-  = CtWanted WantedCtEvidence
+data CtEvidence = CtWanted
+  { ct_ev_wanted :: WantedCtEvidence
+  }
+  deriving stock (Generic)
 
 -- TODO store how a constrain appeared
 -- For equality, store previous constraints
@@ -105,6 +106,7 @@ data EqCt = EqCt
   , eq_lhs :: TcTyVar
   , eq_rhs :: TcType
   }
+  deriving stock (Generic)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L1479
 data ImplicStatus
@@ -115,6 +117,7 @@ data ImplicStatus
     IC_Insoluble
   | -- | Neither of the above; might go either way
     IC_Unsolved
+  deriving stock (Show)
 
 -- Don't need origin because we don't mention
 -- the implication in errors.
@@ -126,12 +129,13 @@ data Implication = Implic
   { ic_tclvl :: TcLevel
   -- ^ TcLevel of unification variables
   -- allocated /inside/ this implication
-  , ic_skols :: NonEmpty TcTyVar
+  , ic_skols :: [TcTyVar]
   -- ^ Introduced skolems; always skolem TcTyVars
   -- Their level numbers should be precisely ic_tclvl
   -- Their SkolemInfo should be precisely ic_info (almost)
   --       See Note [Implication invariants]
-  , ic_env :: CtLocEnv
+  -- TODO remove Maybe
+  , ic_env :: Maybe CtLocEnv
   -- ^ Records the context at the time of creation.
   --
   -- This provides all the information needed about
@@ -141,17 +145,21 @@ data Implication = Implic
   -- ^ The wanteds
   , ic_status :: ImplicStatus
   }
+  deriving stock (Generic)
 
--- We only have equality constraints.
+-- Out of simple constraints (see `WantedConstraints.wc_simple`), we only have equality constraints.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L198
-data Ct
-  = CEqCan EqCt
-  | -- | A non-canonical constraint
-    --
-    -- See Note [Canonicalization]
-    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver/Solve.hs#L1033
-    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L2057
-    CNonCanonical CtEvidence
+data Ct = CEqCan
+  { ct_eq_can :: EqCt
+  --  ^ A canonical equality constraint.
+  --
+  -- See Note [Canonicalization]
+  --
+  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver/Solve.hs#L1033
+  --
+  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L2057
+  }
+  deriving stock (Generic)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L164
 type Cts = Bag Ct
@@ -163,3 +171,41 @@ data WantedConstraints = WantedCts
   { wc_simple :: Cts
   , wc_impl :: Bag Implication
   }
+  deriving stock (Generic)
+
+instance Pretty TypedThing where
+  pretty thing =
+    case thing of
+      HsTypeRnThing ty -> pretty ty
+      HsExprRnThing ex -> pretty ex
+      HsExprTcThing ex -> pretty ex
+
+instance Pretty CtOrigin where
+  pretty = genericPretty
+
+instance Pretty CtLoc where
+  pretty = genericPretty
+
+instance Pretty CtLocEnv where
+  pretty = genericPretty
+
+instance Pretty WantedCtEvidence where
+  pretty = genericPretty
+
+instance Pretty CtEvidence where
+  pretty = genericPretty
+
+instance Pretty EqCt where
+  pretty = genericPretty
+
+instance Pretty Ct where
+  pretty = genericPretty
+
+instance Pretty ImplicStatus where
+  pretty status = pretty (show status)
+
+instance Pretty Implication where
+  pretty = genericPretty
+
+instance Pretty WantedConstraints where
+  pretty = genericPretty
