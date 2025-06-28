@@ -275,11 +275,6 @@ readTv (TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) = do
     Indirect ty -> Just ty
 readTv _ = pure Nothing
 
-writeTv :: TcTyVarMeta -> Tau -> TcM ()
-writeTv (TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) ty =
-  writeTcRef ref (Indirect ty)
-writeTv _ _ = pure ()
-
 -- ---------------------------------
 -- --      Substitution
 -- ---------------------------------
