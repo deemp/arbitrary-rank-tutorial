@@ -309,7 +309,7 @@ tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
       var_ty_syn
       body'
 tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
-  (rhs', var_ty) <- inferSigma rhs
+  (rhs', var_ty) <- inferRho rhs
   body' <- extendVarEnv varName var_ty (tcRho body exp_ty)
   pure $
     SynTerm'Let
