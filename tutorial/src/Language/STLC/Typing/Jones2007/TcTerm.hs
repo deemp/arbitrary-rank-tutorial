@@ -457,7 +457,7 @@ subsCheckFun _thing a1 r1 a2 r2 = do
 instSigma :: Maybe TypedThing -> Sigma -> Expected Rho -> TcM ()
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
-instSigma thing t1 (Check t2) = subsCheckRho thing t1 t2
-instSigma _thing t1 (Infer r) = do
-  t1' <- instantiate t1
-  writeTcRef r t1'
+instSigma thing ty1 (Check rho) = subsCheckRho thing ty1 rho
+instSigma _thing sigma (Infer rho_ref) = do
+  rho <- instantiate sigma
+  writeTcRef rho_ref rho
