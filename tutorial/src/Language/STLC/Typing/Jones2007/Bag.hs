@@ -1,7 +1,11 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Language.STLC.Typing.Jones2007.Bag where
+
+import Data.List (intersperse)
+import Prettyprinter (Pretty (pretty), indent, vsep)
 
 -- GHC uses a tree-like structure for the `Bag`.
 -- A list will be enough in our case.
@@ -20,3 +24,13 @@ unionBags b1 b2 = b1 <> b2
 
 consBag :: a -> Bag a -> Bag a
 consBag el b = unitBag el `unionBags` b
+
+instance (Pretty a) => Pretty (Bag a) where
+  pretty (Bag []) = "Bag []"
+  pretty (Bag xs) =
+    vsep
+      [ "Bag"
+      , "["
+      , indent 2 (vsep (intersperse "," (pretty <$> xs)))
+      , "]"
+      ]
