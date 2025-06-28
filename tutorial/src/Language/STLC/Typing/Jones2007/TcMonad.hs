@@ -493,6 +493,9 @@ badType _ = False
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2011
 unify :: Maybe TypedThing -> Tau -> Tau -> TcM ()
+-- Invariant:
+-- The first type is "expected",
+-- the second one is "actual"
 unify thing ty1 ty2
   | badType ty1 || badType ty2 -- Compiler error
     =
@@ -510,75 +513,71 @@ unify
   (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}})
     | tv1 == tv2 = pure ()
 unify thing (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) ty =
-  unifyVar thing tv ty
+  unifyVar thing tv ty False
 unify thing ty (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) =
-  unifyVar thing tv ty
+  -- We have to let unifyVar know that we swapped "expected" and "actual"
+  unifyVar thing tv ty True
 -- TODO is equality defined correctly?
 unify _thing (Type'Var tv1@TcTyVar{}) (Type'Var tv2@TcTyVar{})
   | tv1 == tv2 = pure ()
-unify thing (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
-  unify thing arg1 arg2
-  unify thing res1 res2
+unify _thing (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
+  -- TODO should we inspect thing?
+  unify Nothing arg1 arg2
+  unify Nothing res1 res2
 unify _thing (Type'Concrete tc1) (Type'Concrete tc2)
   | tc1 == tc2 = pure ()
 unify _thing ty1 ty2 =
-  die ("Cannot unify types:\n" <+> vcat [pretty ty1, pretty ty2])
+  die
+    ( vsep
+        [ "Cannot unify types:\n"
+        , pretty ty1
+        , pretty ty2
+        , "in"
+        , pretty _thing
+        ]
+    )
+
+mkCEqCan :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> Ct
+mkCEqCan thing tv ty swapped =
+  CEqCan
+    EqCt
+      { eq_ev =
+          CtWanted
+            WantedCt
+              { ctev_loc =
+                  CtLoc
+                    { ctl_origin =
+                        TypeEqOrigin
+                          { uo_actual = if swapped then ty else Type'Var tv
+                          , uo_expected = if swapped then Type'Var tv else ty
+                          , uo_thing = thing
+                          }
+                    , ctl_env = Nothing
+                    }
+              }
+      , eq_lhs = tv
+      , eq_rhs = ty
+      }
+
+emitCEqCan :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> TcM ()
+emitCEqCan thing tv ty swapped = do
+  constraints <- readTcRef ?constraints
+  let constraint = mkCEqCan thing tv ty swapped
+      constraints' = constraints{wc_simple = Bag [constraint] <> constraints.wc_simple}
+  -- debug "unifyVar" [pretty constraint]
+  writeTcRef ?constraints constraints'
 
 -----------------------------------------
-unifyVar :: Maybe TypedThing -> TcTyVar -> Tau -> TcM ()
+unifyVar :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> TcM ()
 -- Invariant: tv1 is a flexible type variable
 -- Check whether tv1 is bound
-unifyVar thing tv ty | isMetaTv tv = do
-  constraints <- readTcRef ?constraints
-  let constraint =
-        CEqCan
-          EqCt
-            { eq_ev =
-                CtWanted
-                  WantedCt
-                    { ctev_loc =
-                        CtLoc
-                          { ctl_origin =
-                              TypeEqOrigin
-                                { uo_actual = Type'Var tv
-                                , uo_expected = ty
-                                , uo_thing = thing
-                                }
-                          , ctl_env = Nothing
-                          }
-                    }
-            , eq_lhs = tv
-            , eq_rhs = ty
-            }
-      constraints' =
-        constraints
-          { wc_simple = Bag [constraint] <> constraints.wc_simple
-          }
-  writeTcRef ?constraints constraints'
-  mb_ty1 <- readTv tv
-  case mb_ty1 of
-    Just ty1 -> unify thing ty1 ty
-    Nothing -> unifyUnboundVar thing tv ty
-unifyVar _thing _tv _ty = pure ()
-
-unifyUnboundVar :: Maybe TypedThing -> TcTyVar -> Tau -> TcM ()
--- Invariant: the flexible type variable tv1 is not bound
-unifyUnboundVar thing tv1 ty2@((Type'Var tv2@TcTyVar{varDetails = MetaTv{}})) =
-  do
-    -- We know that tv1 /= tv2 (else the
-    -- top case in unify would catch it)
-    mb_ty2 <- readTv tv2
-    case mb_ty2 of
-      Just ty2' -> unify thing (Type'Var tv1) ty2'
-      Nothing -> writeTv tv1 ty2
-unifyUnboundVar _thing tv1 ty2 =
-  do
-    tvs2 <- getMetaTyVars [ty2]
-    if tv1 `elem` tvs2
-      then
-        occursCheckErr tv1 ty2
-      else
-        writeTv tv1 ty2
+unifyVar thing tv ty swapped | isMetaTv tv = do
+  emitCEqCan thing tv ty swapped
+-- mb_ty1 <- readTv tv
+-- case mb_ty1 of
+--   Just ty1 -> unify thing ty1 ty
+--   Nothing -> unifyUnboundVar thing tv ty
+unifyVar _thing _tv _ty _ = pure ()
 
 -----------------------------------------
 
