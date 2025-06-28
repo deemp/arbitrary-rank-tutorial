@@ -34,10 +34,7 @@ data CtLocEnv = CtLocEnv
 --
 -- This datatype is used when we want to report to the user
 -- that something has an unexpected type.
-data TypedThing
-  = HsTypeRnThing (Type CompRn)
-  | HsExprRnThing (SynTerm CompRn)
-  | HsExprTcThing (SynTerm CompTc)
+data TypedThing = HsExprRnThing (SynTerm CompRn)
 
 -- | Constraint origin.
 --
@@ -174,11 +171,7 @@ data WantedConstraints = WantedCts
   deriving stock (Generic)
 
 instance Pretty TypedThing where
-  pretty thing =
-    case thing of
-      HsTypeRnThing ty -> pretty ty
-      HsExprRnThing ex -> pretty ex
-      HsExprTcThing ex -> pretty ex
+  pretty (HsExprRnThing ex) = pretty ex
 
 instance Pretty CtOrigin where
   pretty = genericPretty
