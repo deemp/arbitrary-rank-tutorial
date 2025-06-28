@@ -135,8 +135,8 @@ writeTcRef r v = lift (writeIORef r v)
 ------------------------------------------------- -
 
 extendVarEnv :: Name -> Sigma -> TcM a -> TcM a
-extendVarEnv var ty m =
-  let ?varEnv = Map.insert var ty ?varEnv in m
+extendVarEnv var ty tcAction =
+  let ?varEnv = Map.insert var ty ?varEnv in tcAction
 
 getEnv :: TcM (Map.Map Name Sigma)
 getEnv = pure ?varEnv
