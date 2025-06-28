@@ -209,6 +209,12 @@ convertSynTy = \case
     concreteType <- parseTypeConcrete lit.nameOcc.occNameFS
     pure $ (SynType'Concrete srcLoc Concrete{concreteName = lit, concreteType}, Type'Concrete concreteType)
 
+-- TODO should we provide typed thing during inference?
+mkTypedThingIfCheck :: SynTerm CompRn -> Expected a -> Maybe TypedThing
+mkTypedThingIfCheck thing = \case
+  Infer _ -> Nothing
+  Check _ -> Just (HsExprRnThing thing)
+
 -- TODO return reconstructed SynTerm CompTc
 tcRho :: SynTerm CompRn -> Expected Rho -> TcM (SynTerm CompTc)
 -- Invariant: if the second argument is (Check rho),
@@ -219,7 +225,7 @@ tcRho t@(SynTerm'Lit _ lit) exp_ty = do
           SynLit'Num{} -> TypeConcrete'Int
           SynLit'Bool{} -> TypeConcrete'Bool
           SynLit'Str{} -> TypeConcrete'String
-  instSigma (Just (HsExprRnThing t)) (Type'Concrete ty) exp_ty
+  instSigma (mkTypedThingIfCheck t exp_ty) (Type'Concrete ty) exp_ty
   -- TODO what to return?
   -- TODO should we use the annotation field
   -- to store the inferred type?
@@ -239,28 +245,30 @@ tcRho t@(SynTerm'Var _ varName) exp_ty = do
         Infer _ -> "Infer"
         Check t -> "Check" <> pretty (show t)
     ]
-  instSigma (Just (HsExprRnThing t)) v_sigma exp_ty
+  instSigma (mkTypedThingIfCheck t exp_ty) v_sigma exp_ty
   pure $
     SynTerm'Var
       ()
       TcTermVar{varName, varType = exp_ty}
 tcRho t@(SynTerm'App annoSrcLoc fun arg) exp_ty = do
   (fun', fun_ty) <- inferRho fun
-  (arg_ty, res_ty) <- unifyFun (Just (HsExprRnThing fun)) fun_ty
+  -- TODO should we pass Just here?
+  (arg_ty, res_ty) <- unifyFun Nothing fun_ty
   arg' <- checkSigma arg arg_ty
-  instSigma (Just (HsExprRnThing t)) res_ty exp_ty
+  instSigma (mkTypedThingIfCheck t exp_ty) res_ty exp_ty
   pure $
     SynTerm'App
       AnnoTc{annoSrcLoc, annoType = exp_ty}
       fun'
       arg'
 tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
-  (var_ty, body_ty) <- unifyFun (Just (HsExprRnThing t)) exp_ty
-  debug'
-    "lam"
+  (var_ty, body_ty) <- unifyFun (mkTypedThingIfCheck t modeTy) exp_ty
+  debug
+    "tcRho SynTerm'Lam"
     [ pretty varName
     , pretty body
-    , pretty exp_ty <+> pretty (var_ty, body_ty)
+    , pretty exp_ty
+    , pretty (var_ty, body_ty)
     ]
   body' <- extendVarEnv varName var_ty (checkRho body body_ty)
   pure $
@@ -278,7 +286,7 @@ tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
       TcTermVar{varName, varType = Check var_ty}
       body'
 tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
-  (arg_ty, body_ty) <- unifyFun (Just (HsExprRnThing t)) exp_ty
+  (arg_ty, body_ty) <- unifyFun (mkTypedThingIfCheck t modeTy) exp_ty
   (var_ty_syn, var_ty') <- convertSynTy var_ty
   -- TODO what should be passed?
   subsCheck Nothing arg_ty var_ty'
@@ -322,7 +330,7 @@ tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
     , pretty ann_ty'
     ]
   body' <- checkSigma body ann_ty'
-  instSigma (Just (HsExprRnThing t)) ann_ty' exp_ty
+  instSigma (mkTypedThingIfCheck t exp_ty) ann_ty' exp_ty
   pure $
     SynTerm'Ann
       AnnoTc{annoSrcLoc, annoType = exp_ty}
