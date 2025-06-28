@@ -579,7 +579,7 @@ unifyVar thing tv ty | isMetaTv tv = do
   case mb_ty1 of
     Just ty1 -> unify thing ty1 ty
     Nothing -> unifyUnboundVar thing tv ty
-unifyVar _ _ _ = pure ()
+unifyVar _thing _tv _ty = pure ()
 
 unifyUnboundVar :: Maybe TypedThing -> TcTyVar -> Tau -> TcM ()
 -- Invariant: the flexible type variable tv1 is not bound
