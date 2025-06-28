@@ -357,17 +357,6 @@ instance (Show (XVar' p)) => Show (Type p) where
     Type'Fun arg res -> "(" <> show arg <> ")" <> "->" <> "(" <> show res <> ")"
     Type'Concrete ty -> show ty
 
-instance Pretty (Type CompRn)
-
-instance Pretty (Type CompTc) where
-  pretty = \case
-    Type'Var var -> pretty var
-    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
-    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
-    Type'Concrete ty -> pretty ty
-
-instance Pretty (TypeConcrete)
-
 -- TODO separate Type from TcType
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L260
@@ -442,18 +431,6 @@ data SkolemInfoAnon
     UnifyForAllSkol -- We are unifying two for-all types
       TcType -- The instantiated type *inside* the forall
 
--- TODO implement
-instance Show SkolemInfoAnon where
-  show = \case
-    SigSkol _ _ _ -> "SigSkol"
-    SigTypeSkol _ -> "SigTypeSkol"
-    ForAllSkol _ -> "ForAllSkol"
-    InferSkol _ -> "InferSkol"
-    UnifyForAllSkol _ -> "UnifyForAllSkol"
-
--- TODO implement
-instance Pretty SkolemInfoAnon
-
 -- | 'SkolemInfo' stores the origin of a skolem type variable,
 -- so that we can display this information to the user in case of a type error.
 --
@@ -476,14 +453,15 @@ type instance XVar' CompZn = ZnTyVar
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
 data MetaDetails
-  = Flexi -- Flexi type variables unify to become Indirects
-  -- Means that the type variable is unfilled
-  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
+  = -- | Flexi type variables unify to become Indirects
+    -- Means that the type variable is unfilled
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
+    Flexi
   | Indirect TcType
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
 newtype TcLevel = TcLevel Int
-  deriving newtype (Show)
+  deriving newtype (Show, Eq, Ord, Num)
 
 -- | What restrictions are on this metavariable around unification?
 -- These are checked in GHC.Tc.Utils.Unify.checkTopShape
@@ -503,6 +481,9 @@ data MetaInfo
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
   = -- Always bound by an enclosing ForAll. No well-formed Type ever has a free BoundTv. (p.42)
+
+    -- TODO -- A tyvar binder is never a unification variable (TauTv),
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1797
 
     -- | Deep skolemisation doesn't affect argument sigmas, only result ones (p. 24).
     -- We don't have deep instantiation (p. 28).
@@ -544,13 +525,6 @@ data Name = Name
   -- , nameSort :: NameSort
   -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L148
   }
-  deriving stock (Show)
-
-instance Eq Name where
-  n1 == n2 = n1.nameUnique == n2.nameUnique
-
-instance Ord Name where
-  n1 <= n2 = n1.nameUnique <= n2.nameUnique
 
 -- TODO use a single Var type and select varDetails depending on the phase?
 -- E.g., In CompRn, varDetails is Void
@@ -611,57 +585,6 @@ data ZnTermVar
     , varType :: Type CompZn
     }
 
--- instance (HasField "varName" b Name) => Eq b where
---   var1 == var2 = var1.varName == var2.varName
-
-instance Eq RnVar where
-  var1 == var2 = var1.varName == var2.varName
-
-instance Eq TcTyVar where
-  var1 == var2 = var1.varName == var2.varName
-
-instance Eq ZnTyVar where
-  var1 == var2 = var1.varName == var2.varName
-
-instance Ord RnVar where
-  var1 <= var2 = var1.varName <= var2.varName
-
-instance Ord TcTyVar where
-  var1 <= var2 = var1.varName <= var2.varName
-
-instance Ord ZnTyVar where
-  var1 <= var2 = var1.varName <= var2.varName
-
--- TODO implement
-instance Show RnVar where
-  show RnVar{varName} = show varName
-
-instance Show TcTyVar where
-  show TcTyVar{varName, varDetails} =
-    show varName <> "[" <> show varDetails.tcLevel <> ", " <> getTcTyVarKind varDetails <> "]"
-
-getTcTyVarKind :: (IsString a) => TcTyVarDetails -> a
-getTcTyVarKind = \case
-  BoundTv{} -> "Bound"
-  SkolemTv{} -> "Skolem"
-  MetaTv{} -> "Meta"
-
-instance Show ZnTyVar where
-  show ZnTyVar{varName} = show varName
-
--- TODO implement
-instance Pretty RnVar where
-  pretty RnVar{varName} = pretty varName
-
-instance Pretty TcTyVar where
-  pretty TcTyVar{varName, varDetails} =
-    pretty varName
-      <> brackets
-        ( pretty (show varDetails.tcLevel)
-            <> ","
-            <+> getTcTyVarKind varDetails
-        )
-
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
 newtype ModuleName = ModuleName Text deriving newtype (Show, Eq)
 
@@ -670,6 +593,8 @@ newtype ModuleName = ModuleName Text deriving newtype (Show, Eq)
 
 ---------------- Terms ---------------------
 
+-- TODO might need TcLevel
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L418
 data Expected a = Infer (IORef a) | Check a
 
 data AnnoTc = AnnoTc
@@ -930,7 +855,101 @@ instance ConvertAbsToBT Abs.Type where
       pure $ SynType'ForAll (RealSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
 
--- Abs.TypeParen pos ty -> SynType'Paren (RealSrcSpan pos) <$> convertAbsToBT ty
+instance Eq Name where
+  n1 == n2 = n1.nameUnique == n2.nameUnique
+
+instance Ord Name where
+  n1 <= n2 = n1.nameUnique <= n2.nameUnique
+
+instance Eq RnVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Eq TcTyVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Eq ZnTyVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Ord RnVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
+instance Ord TcTyVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
+instance Ord ZnTyVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
+instance Pretty RealSrcSpan where
+  pretty
+    RealSrcSpan'
+      { srcSpanFile
+      , srcSpanSLine
+      , srcSpanSCol
+      -- TODO other fields
+      } = brackets (pretty srcSpanFile <> ":" <> pretty srcSpanSLine <> ":" <> pretty srcSpanSCol)
+
+instance Pretty (Type CompRn)
+
+instance Pretty (Type CompTc) where
+  pretty = \case
+    Type'Var var -> pretty var
+    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
+    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
+    Type'Concrete ty -> pretty ty
+
+instance Pretty (TypeConcrete)
+
+-- TODO implement
+instance Show SkolemInfoAnon where
+  show = \case
+    SigSkol _ _ _ -> "SigSkol"
+    SigTypeSkol _ -> "SigTypeSkol"
+    ForAllSkol _ -> "ForAllSkol"
+    InferSkol _ -> "InferSkol"
+    UnifyForAllSkol _ -> "UnifyForAllSkol"
+
+-- TODO implement
+instance Pretty SkolemInfoAnon
+
+instance Show Name where
+  show Name{nameOcc, nameUnique, nameLoc} =
+    T.unpack nameOcc.occNameFS <> "[" <> "ID " <> show nameUnique <> ", " <> show nameLoc <> "]"
+
+-- TODO implement
+instance Show RnVar where
+  show RnVar{varName} = show varName
+
+instance Show TcTyVar where
+  show TcTyVar{varName = Name{nameOcc, nameUnique, nameLoc}, varDetails} =
+    T.unpack nameOcc.occNameFS
+      <> "["
+      <> ("L " <> show varDetails.tcLevel <> ", ")
+      <> (getTcTyVarKind varDetails <> ", ")
+      <> ("ID " <> show nameUnique <> ", ")
+      <> show nameLoc
+      <> "]"
+
+getTcTyVarKind :: (IsString a) => TcTyVarDetails -> a
+getTcTyVarKind = \case
+  BoundTv{} -> "Bound"
+  SkolemTv{} -> "Skolem"
+  MetaTv{} -> "Meta"
+
+instance Show ZnTyVar where
+  show ZnTyVar{varName} = show varName
+
+-- TODO implement
+instance Pretty RnVar where
+  pretty RnVar{varName} = pretty varName
+
+instance Pretty TcTyVar where
+  pretty TcTyVar{varName, varDetails} =
+    pretty varName
+      <> brackets
+        ( pretty (show varDetails.tcLevel)
+            <> ","
+            <+> getTcTyVarKind varDetails
+        )
 
 instance Pretty SynLit where
   pretty = \case
@@ -948,6 +967,9 @@ instance Pretty (SynTerm CompRn) where
     SynTerm'Let _ name term1 term2 -> "let" <+> pretty name <+> "=" <+> pretty term1 <+> "in" <+> pretty term2
     SynTerm'Ann _ term ty -> parens (parens (pretty term) <+> "::" <+> pretty ty)
 
+instance Pretty TcLevel where
+  pretty (TcLevel lvl) = "L " <> pretty lvl
+
 instance Pretty Name where
   pretty name =
     case name.nameOcc.occNameSpace of
@@ -963,8 +985,8 @@ instance Pretty (SynType CompRn) where
     SynType'Concrete _ ty -> pretty ty
 
 instance (Pretty a) => Pretty (Expected a) where
-  pretty (Infer _) = "?"
-  pretty (Check a) = pretty a
+  pretty (Infer _) = "[Infer]"
+  pretty (Check a) = "[Check]: " <> pretty a
 
 instance Pretty TcTermVar where
   pretty TcTermVar{varName, varType} =
@@ -988,18 +1010,18 @@ instance Pretty (SynTerm CompTc) where
     SynTerm'Lit _ val -> pretty val
     SynTerm'App AnnoTc{annoType} term1 term2 ->
       hsep
-        [ parensNest (parensNest (pretty term1) <> line <> indent 2 (pretty term2))
+        [ parensIndent (parensIndent (pretty term1) <> line <> indent 2 (pretty term2))
         , "::"
         , pretty annoType
         ]
     SynTerm'Lam AnnoTc{annoType} var term ->
       hsep
-        [ parensNest
+        [ parensIndent
             ( "\\"
                 <> pretty var
                 <> "."
                 <> line
-                <> indent 2 (parensNest (pretty term))
+                <> indent 2 (parensIndent (pretty term))
             )
         , "::"
         , pretty annoType
@@ -1027,7 +1049,7 @@ instance Pretty (SynTerm CompTc) where
         ]
     SynTerm'Let AnnoTc{annoType} TcTermVar{varName, varType} term1 term2 ->
       hsep
-        [ parensNest
+        [ parensIndent
             ( vsep
                 [ "let"
                 , indent
@@ -1037,7 +1059,7 @@ instance Pretty (SynTerm CompTc) where
                         , indent
                             2
                             ( hsep
-                                [ parensNest (pretty term1)
+                                [ parensIndent (pretty term1)
                                 , "::"
                                 , pretty varType
                                 ]
@@ -1053,9 +1075,9 @@ instance Pretty (SynTerm CompTc) where
         ]
     SynTerm'Ann AnnoTc{annoType} term ty ->
       hsep
-        [ parensNest
+        [ parensIndent
             ( hsep
-                [ parensNest (pretty term)
+                [ parensIndent (pretty term)
                 , "::"
                 , braces (pretty ty)
                 ]
@@ -1095,8 +1117,8 @@ instance Pretty (SynType CompZn) where
     SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
 
-parensNest :: Doc ann -> Doc ann
-parensNest x = parens (line <> indent 2 x <> line)
+parensIndent :: Doc ann -> Doc ann
+parensIndent x = parens (line <> indent 2 x <> line)
 
 instance Pretty (SynTerm CompZn) where
   pretty = \case
@@ -1104,19 +1126,18 @@ instance Pretty (SynTerm CompZn) where
     SynTerm'Lit _ val -> pretty val
     SynTerm'App AnnoZn{annoType} term1 term2 ->
       hsep
-        [ parensNest (parensNest (pretty term1) <> line <> indent 2 (pretty term2))
+        [ parensIndent (parensIndent (pretty term1) <> line <> indent 2 (pretty term2))
         , "::"
         , pretty annoType
         ]
     SynTerm'Lam AnnoZn{annoType} var term ->
       hsep
-        [ parensNest
+        [ parensIndent
             ( "\\"
                 <> pretty var
                 <> "."
                 <> line
-                <> indent 2 (parensNest (pretty term))
-                
+                <> indent 2 (parensIndent (pretty term))
             )
         , "::"
         , pretty annoType
@@ -1144,7 +1165,7 @@ instance Pretty (SynTerm CompZn) where
         ]
     SynTerm'Let AnnoZn{annoType} ZnTermVar{varName, varType} term1 term2 ->
       hsep
-        [ parensNest
+        [ parensIndent
             ( vsep
                 [ "let"
                 , indent
@@ -1154,7 +1175,7 @@ instance Pretty (SynTerm CompZn) where
                         , indent
                             2
                             ( hsep
-                                [ parensNest (pretty term1)
+                                [ parensIndent (pretty term1)
                                 , "::"
                                 , pretty varType
                                 ]
@@ -1170,9 +1191,9 @@ instance Pretty (SynTerm CompZn) where
         ]
     SynTerm'Ann AnnoZn{annoType} term ty ->
       hsep
-        [ parensNest
+        [ parensIndent
             ( hsep
-                [ parensNest (pretty term)
+                [ parensIndent (pretty term)
                 , "::"
                 , braces (pretty ty)
                 ]
@@ -1194,7 +1215,7 @@ ex2 = do
   pretty <$> convertAbsToBT ex1
 
 -- >>> ex2
--- \x_1 :: forall b_2. Int. (\z_3. z_3) x_1
+-- \(x_1 :: forall b_2. Int). (\z_3. z_3) x_1
 
 -- -----------------------------------
 -- --      Types                   --
