@@ -86,22 +86,25 @@ instance Exception DieException
 -- instead of failTc
 die :: (HasCallStack) => Doc ann -> IO a -- Fail unconditionally
 die d = do
-  putStrLn (prettyCallStack callStack)
-  putDoc d
-  putStrLn ""
-  throw $ DieException "Exception!"
+  putDoc
+    ( vsep
+        [ pretty (prettyCallStack callStack)
+        , d
+        , ""
+        ]
+    )
+  throw $ DieException "This is the end :("
 
-debug :: (HasCallStack, IDebug) => Doc a -> Doc b -> IO ()
-debug label d = when ?debug do
-  putDoc ("[" <> label <> "]")
-  putStrLn "\n"
-  putDoc d
-  putStrLn "\n"
-  putStrLn (prettyCallStack callStack)
-  putStrLn "\n"
-
-debug' :: (IDebug) => Doc a2 -> [Doc ann] -> IO ()
-debug' label msg = debug label (fold (intersperse " |\n" msg))
+debug :: (IDebug) => Doc a -> [Doc a] -> IO ()
+debug label xs = when ?debug do
+  putDoc
+    ( vsep
+        [ "[" <> label <> "]"
+        , (foldMap (\x -> "$ " <> x <> line) xs)
+        , pretty (prettyCallStack callStack)
+        , ""
+        ]
+    )
 
 -- TODO use somewhere
 check :: Bool -> Doc ann -> TcM ()
