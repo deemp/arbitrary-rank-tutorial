@@ -282,10 +282,8 @@ readTv _ = pure Nothing
 type Env = Map.Map TcBoundVar TcType
 
 substTy :: [TcBoundVar] -> [TcTypeMeta] -> TcType -> TcM TcType
--- Replace the specified quantified type variables by
--- given meta type variables
--- No worries about capture, because the two kinds of type
--- variable are distinct
+-- Replace the specified quantified type variables by given meta type variables
+-- No worries about capture, because the two kinds of type variable are distinct
 substTy tvs tys ty = subst_ty (Map.fromList (tvs `zip` tys)) ty
 
 subst_ty :: Env -> TcType -> TcM TcType
@@ -293,6 +291,10 @@ subst_ty env (Type'Fun arg res) =
   Type'Fun <$> (subst_ty env arg) <*> (subst_ty env res)
 subst_ty env (Type'Var n@TcTyVar{varDetails = BoundTv{}}) =
   pure $ fromMaybe (Type'Var n) (Map.lookup n env)
+subst_ty _ (Type'Var n@TcTyVar{varDetails = MetaTv{}}) =
+  -- Just like in the paper
+  pure $ Type'Var n
+-- TODO should we panic if skolem?
 subst_ty _ (Type'Var n@TcTyVar{}) =
   die ("Expected a bound type variable, but got: " <> pretty n)
 subst_ty _ (Type'Concrete tc) =
@@ -301,7 +303,7 @@ subst_ty env (Type'ForAll ns rho) = do
   let ns' = Set.fromList ns
       -- TODO works correctly?
       env' = Map.withoutKeys env ns'
-  -- It's not really skolemisation
+  -- It's not skolemisation
   -- so I think we can leave these variables as they are now
   Type'ForAll ns <$> (subst_ty env' rho)
 
