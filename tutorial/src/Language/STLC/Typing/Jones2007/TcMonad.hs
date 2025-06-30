@@ -70,30 +70,119 @@ type IVarEnv = (?varEnv :: Map.Map Name Sigma)
 type ITcLevel = (?tcLevel :: TcLevel)
 type IDebug = (?debug :: Bool)
 type IConstraints = (?constraints :: IORef WantedConstraints)
+type ITcError = (?tcError :: IORef (Maybe TcError))
 
-type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug, IConstraints)
+type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug, IConstraints, ITcError)
 
 -- TcM in GHC is a ReaderT (Env a) IO b.
 -- It can be replaced with ImplicitParams
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types.hs#L271
 type TcM a = (ITcEnv, HasCallStack) => IO a
 
-newtype DieException = DieException String deriving newtype (Show)
+data TcError
+  = TcError'UndefinedVariable {varName :: Name}
+  | TcError'UnboundVariable {var :: TcTyVar}
+  | TcError'UnexpectedType {expected :: TcType, actual :: TcType, thing :: Maybe TypedThing}
+  | TcError'OccursCheck {tv :: TcTyVar, ty :: TcType}
+  | TcError'UnifyingBoundTypes {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
+  | TcError'ExpectedFlexiVariables {tvs :: [TcTyVar]}
+  | TcError'UnknownConcreteType {name :: Name}
+  | TcError'ExpectedAllMetavariables {tvs :: [TcTyVar]}
+  | TcError'CannotUnify {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
+  | TcError'CouldNotParse {err :: String}
 
-instance Exception DieException
+instance Pretty TcError where
+  pretty = \case
+    TcError'UndefinedVariable{varName} ->
+      vsep'
+        [ "Not in scope:"
+        , pretty varName
+        ]
+    TcError'UnboundVariable{var} ->
+      vsep'
+        [ "Expected a bound variable, but got:"
+        , pretty var
+        ]
+    TcError'UnexpectedType{expected, actual, thing} ->
+      vsep'
+        [ "Expected type:"
+        , pretty expected
+        , ""
+        , "but got type:"
+        , pretty actual
+        , ""
+        , "in expression:"
+        , pretty thing
+        ]
+    TcError'OccursCheck{tv, ty} ->
+      vsep'
+        [ "Occurs check failed!"
+        , "Type variable:"
+        , pretty tv
+        , ""
+        , "occurs in the type:"
+        , pretty ty
+        ]
+    TcError'UnifyingBoundTypes{ty1, ty2, thing} ->
+      vsep'
+        [ "Trying to unify type:"
+        , pretty ty1
+        , ""
+        , "with type:"
+        , pretty ty2
+        , ""
+        , "in expression:"
+        , pretty thing
+        ]
+    TcError'ExpectedFlexiVariables{tvs} ->
+      vsep'
+        [ "Expected all variables to be Flexi, but these are not:"
+        , pretty tvs
+        ]
+    TcError'UnknownConcreteType{name} ->
+      vsep'
+        [ "Unknown concrete type:"
+        , pretty name
+        ]
+    TcError'ExpectedAllMetavariables{tvs} ->
+      vsep'
+        [ "Expected all variables to be metavariables, but got:"
+        , pretty tvs
+        ]
+    TcError'CannotUnify{ty1, ty2, thing} ->
+      vsep'
+        [ "Cannot unify type:"
+        , pretty ty1
+        , ""
+        , "with type:"
+        , pretty ty2
+        , ""
+        , "in expression:"
+        , pretty thing
+        ]
+    TcError'CouldNotParse{err} ->
+      pretty err
+   where
+    vsep' xs = vsep (xs <> [line])
+
+instance Show TcError where
+  show = show . pretty
+
+instance Exception TcError
+
+withTcError :: TcError -> TcM a -> TcM a
+withTcError err tcAction = do
+  writeIORef ?tcError (Just err)
+  tcAction
 
 -- TODO
 -- instead of failTc
-die :: (HasCallStack) => Doc ann -> IO a -- Fail unconditionally
-die d = do
-  putDoc
-    ( vsep
-        [ pretty (prettyCallStack callStack)
-        , d
-        , ""
-        ]
-    )
-  throw $ DieException "This is the end :("
+die :: TcError -> TcM a -- Fail unconditionally
+die tcErrorSuggested = do
+  tcErrorExisting <- readIORef ?tcError
+  case tcErrorExisting of
+    Nothing -> throw tcErrorSuggested
+    Just err -> throw err
 
 debug :: (IDebug) => Doc a -> [Doc a] -> IO ()
 debug label xs = when ?debug do
@@ -107,7 +196,7 @@ debug label xs = when ?debug do
     )
 
 -- TODO use somewhere
-check :: Bool -> Doc ann -> TcM ()
+check :: Bool -> TcError -> TcM ()
 check True _ = pure ()
 check False d = die d
 
@@ -145,7 +234,7 @@ lookupVar :: Name -> TcM Sigma -- May fail
 lookupVar n =
   case Map.lookup n ?varEnv of
     Just ty -> pure ty
-    Nothing -> die ("Not in scope:" <+> dquotes (pretty n))
+    Nothing -> die (TcError'UndefinedVariable n)
 
 -- TODO don't use `pretty` or use it on a newtype
 -- to better control the output format
@@ -261,7 +350,8 @@ newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv{}} = do
       -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L343
       skolemInfo = SkolemInfo tv.varName.nameUnique infoAnon
   pure $ newSkolemTyVar' skolemInfo name
-newSkolemTyVar _ x = die ("Expected a bound variable, but got: " <> pretty x)
+newSkolemTyVar _ x =
+  die (TcError'UnboundVariable x)
 
 -- `metaTyVarRef` panics if a tv doesn't have a ref
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L1317
@@ -296,7 +386,7 @@ subst_ty _ (Type'Var n@TcTyVar{varDetails = MetaTv{}}) =
   pure $ Type'Var n
 -- TODO should we panic if skolem?
 subst_ty _ (Type'Var n@TcTyVar{}) =
-  die ("Expected a bound type variable, but got: " <> pretty n)
+  die (TcError'UnboundVariable n)
 subst_ty _ (Type'Concrete tc) =
   pure $ Type'Concrete tc
 subst_ty env (Type'ForAll ns rho) = do
@@ -399,7 +489,8 @@ quantify tvs ty | all isMetaTv tvs = do
   -- TODO remove this check?
   tvs' <- forM tvs (\x -> (x,) <$> isFlexiTv x) >>= pure . partition snd
   case tvs' of
-    (_, x : xs) -> die ("Expected all variables to be Flexi, but these are not: " <> pretty (x : xs))
+    (_, x : xs) ->
+      die (TcError'ExpectedFlexiVariables (fst <$> (x : xs)))
     _ -> pure ()
   -- 'bind' is just a cunning way of doing the substitution
   -- TODO is it correct to use these vars in ForAll?
@@ -429,7 +520,8 @@ quantify tvs ty | all isMetaTv tvs = do
             }
     writeTv tv (Type'Var var)
     pure var
-quantify tvs _ = die $ "Expected all type variables to be metavariables, but got: " <> pretty tvs
+quantify tvs _ =
+  die (TcError'ExpectedAllMetavariables tvs)
 
 ------------------------------------------
 --      Getting the free tyvars         --
@@ -500,13 +592,12 @@ unify thing ty1 ty2
   | badType ty1 || badType ty2 -- Compiler error
     =
       do
-        print ?varEnv
-        die
-          ( "Panic! Unexpected types in unification:"
-              <+> vcat [pretty ty1, pretty ty2]
-              <+> "in"
-              <+> pretty thing
-          )
+        debug
+          "unify bound types"
+          [ -- TODO specify pretty instance for the variable environment
+            pretty (show ?varEnv)
+          ]
+        die (TcError'UnifyingBoundTypes ty1 ty2 thing)
 unify
   _thing
   (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}})
@@ -526,16 +617,8 @@ unify _thing (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
   unify Nothing res1 res2
 unify _thing (Type'Concrete tc1) (Type'Concrete tc2)
   | tc1 == tc2 = pure ()
-unify _thing ty1 ty2 =
-  die
-    ( vsep
-        [ "Cannot unify types:\n"
-        , pretty ty1
-        , pretty ty2
-        , "in"
-        , pretty _thing
-        ]
-    )
+unify thing ty1 ty2 =
+  die (TcError'CannotUnify{ty1 = ty1, ty2 = ty2, thing})
 
 mkCEqCan :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> Ct
 mkCEqCan thing tv ty swapped =
@@ -595,9 +678,4 @@ unifyFun thing tau = do
 occursCheckErr :: TcTyVar -> Tau -> TcM ()
 -- Raise an occurs-check error
 occursCheckErr tv ty =
-  die
-    ( "Occurs check for"
-        <+> dquotes (pretty tv)
-        <+> "in:"
-        <+> pretty ty
-    )
+  die (TcError'OccursCheck tv ty)

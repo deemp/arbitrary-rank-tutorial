@@ -26,8 +26,18 @@ import Prettyprinter
 -- TODO report many independent errors, not fail on the first error
 typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
 typecheck e = do
-  (e'tc, _) <- inferSigma e
-  zonkFinallyTerm e'tc
+  res <-
+    catch
+      (Right <$> inferSigma e)
+      ( \(err :: TcError) -> do
+          pure (Left err)
+      )
+  case res of
+    Right (e'tc, _) ->
+      zonkFinallyTerm e'tc
+    Left err -> do
+      putDoc (pretty err)
+      error "This is the end :("
 
 zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
 zonkFinallySynType = \case
@@ -178,12 +188,15 @@ inferRho expr =
 -- TODO separate Type and TcTyVar
 -- Maybe make Type a TTG
 
-parseTypeConcrete :: Text -> TcM TypeConcrete
-parseTypeConcrete name
-  | name == T.pack (show TypeConcrete'Bool) = pure TypeConcrete'Bool
-  | name == T.pack (show TypeConcrete'String) = pure TypeConcrete'String
-  | name == T.pack (show TypeConcrete'Int) = pure TypeConcrete'Int
-  | otherwise = die ("Unknown concrete type: " <> pretty name)
+-- TODO optimize
+parseTypeConcrete :: Name -> TcM TypeConcrete
+parseTypeConcrete name = do
+  let name' = T.unpack name.nameOcc.occNameFS
+  if
+    | name' == show TypeConcrete'Bool -> pure TypeConcrete'Bool
+    | name' == show TypeConcrete'String -> pure TypeConcrete'String
+    | name' == show TypeConcrete'Int -> pure TypeConcrete'Int
+    | otherwise -> die TcError'UnknownConcreteType{name}
 
 -- TODO Levels
 convertSynTy :: SynType CompRn -> TcM (SynType CompTc, TcType)
@@ -465,7 +478,12 @@ subsCheckFun _thing a1 r1 a2 r2 = do
 instSigma :: Maybe TypedThing -> Sigma -> Expected Rho -> TcM ()
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
+instSigma thing tyActual (Check tyExpected) = do
 instSigma thing ty1 (Check rho) = subsCheckRho thing ty1 rho
 instSigma _thing sigma (Infer rho_ref) = do
+  withTcError TcError'UnexpectedType{thing, expected = tyExpected, actual = tyActual} $
+    subsCheckRho thing tyActual tyExpected
+instSigma thing sigma (Infer tyExpected) = do
   rho <- instantiate sigma
   writeTcRef rho_ref rho
+  writeTcRef tyExpected rho

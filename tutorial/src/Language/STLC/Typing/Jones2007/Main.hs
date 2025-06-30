@@ -132,22 +132,25 @@ parseInputText input = do
   let
     parsed = parseWith pProgram input
   case parsed of
-    Left err -> die (pretty err)
+    -- TODO throw better and handle where necessary
+    Left err -> error err
     Right prog -> convertProgram prog
 
 t3 :: IO (Doc ann)
 t3 = do
   uniqueSupply <- newIORef 0
+  tcError <- newIORef Nothing
   let
     ?uniqueSupply = uniqueSupply
     ?tcLevel = BT.TcLevel 0
     ?varEnv = Map.empty
     ?scope = Map.empty
-    ?debug = False
+    ?debug = True
+    ?tcError = tcError
    in
     do
       exp <- parseFile "test/data/Program1.stlc"
-      debug "t3" (pretty exp)
+      debug "t3" [pretty exp]
       pretty <$> typecheck exp
 
 parseInput :: (BT.IConvertRename) => Either String Text -> IO (BT.SynTerm BT.CompRn)
