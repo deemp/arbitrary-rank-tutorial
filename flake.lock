@@ -19,11 +19,11 @@
     "bnfc": {
       "flake": false,
       "locked": {
-        "lastModified": 1740386985,
-        "narHash": "sha256-X9BBjcT0d3s+srIL12DyCc63No+ksnrnMnurqQkgjf4=",
+        "lastModified": 1751471285,
+        "narHash": "sha256-kkPbNtES/4AdsYh8eLErFQ00WirDUwSG979qrVWtygo=",
         "owner": "deemp",
         "repo": "bnfc",
-        "rev": "29e6cf7cba2b42f1b9eb9bbf6b27173dd4a01830",
+        "rev": "b9b50082b5b6cb2643c09df62ea73c9ea3fd3d79",
         "type": "github"
       },
       "original": {
