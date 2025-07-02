@@ -17,6 +17,7 @@ import qualified Prelude as C
   ( Eq, Ord, Show, Read
   , Functor, Foldable, Traversable
   , Int, Maybe(..)
+  , fmap, fst, snd
   )
 import qualified Data.String
 
@@ -62,15 +63,29 @@ newtype NameLowerCase = NameLowerCase Data.Text.Text
 newtype NameUpperCase = NameUpperCase Data.Text.Text
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Data, C.Typeable, C.Generic, Data.String.IsString)
 
--- | Start position (line, column) of something.
+-- | Position range ((startLine, startColumn), (endLine, endColumn)) of something.
 
-type BNFC'Position = C.Maybe (C.Int, C.Int)
+type BNFC'Position = C.Maybe ((C.Int, C.Int), (C.Int, C.Int))
 
 pattern BNFC'NoPosition :: BNFC'Position
 pattern BNFC'NoPosition = C.Nothing
 
-pattern BNFC'Position :: C.Int -> C.Int -> BNFC'Position
-pattern BNFC'Position line col = C.Just (line, col)
+pattern BNFC'Position :: (C.Int, C.Int) -> (C.Int, C.Int) -> BNFC'Position
+pattern BNFC'Position start end = C.Just (start, end)
+
+{-# COMPLETE BNFC'Position, BNFC'NoPosition #-}
+
+startLineColBNFC'Position :: BNFC'Position -> C.Maybe (C.Int, C.Int)
+startLineColBNFC'Position = C.fmap C.fst
+
+endLineColBNFC'Position :: BNFC'Position -> C.Maybe (C.Int, C.Int)
+endLineColBNFC'Position = C.fmap C.snd
+
+spanBNFC'Position :: BNFC'Position -> BNFC'Position -> BNFC'Position
+spanBNFC'Position ( BNFC'Position start _end ) ( BNFC'Position _start end ) = BNFC'Position start end
+spanBNFC'Position ( BNFC'Position start end ) _ = BNFC'Position start end
+spanBNFC'Position _ ( BNFC'Position start end ) = BNFC'Position start end
+spanBNFC'Position BNFC'NoPosition BNFC'NoPosition = BNFC'NoPosition
 
 -- | Get the start position of something.
 

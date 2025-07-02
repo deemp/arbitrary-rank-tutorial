@@ -8861,8 +8861,8 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
 #endif
 {-# LINE 66 "Lex.x" #-}
 -- | Create a token with position.
-tok :: (Data.Text.Text -> Tok) -> (Posn -> Data.Text.Text -> Token)
-tok f p = PT p . f
+tok :: (Data.Text.Text -> Tok) -> (Posn -> Int -> Data.Text.Text -> Token)
+tok f p l = PT p l . f
 
 -- | Token without position.
 data Tok
@@ -8896,7 +8896,7 @@ instance Ord TokSymbol where compare = compare `on` tsID
 
 -- | Token with position.
 data Token
-  = PT  Posn Tok
+  = PT  Posn Int Tok
   | Err Posn
   deriving (Eq, Show, Ord)
 
@@ -8911,33 +8911,49 @@ tokenPos []    = "end of file"
 
 -- | Get the position of a token.
 tokenPosn :: Token -> Posn
-tokenPosn (PT p _) = p
-tokenPosn (Err p)  = p
+tokenPosn (PT posn _len _tok) = posn
+tokenPosn (Err posn)  = posn
 
--- | Get line and column of a token.
+-- | Get the length of a token.
+tokenLen :: Token -> Int
+tokenLen (PT _posn len _tok) = len
+tokenLen (Err _)  = 0
+
+-- | Get start line and column of a token.
 tokenLineCol :: Token -> (Int, Int)
 tokenLineCol = posLineCol . tokenPosn
+
+-- | Get end line and column of a token.
+tokenLineColEnd :: Token -> (Int, Int)
+tokenLineColEnd t = (l, c + n)
+  where
+    (l, c) = tokenLineCol t
+    n = tokenLen t
+
+-- | Get line and column for both start and end of a token.
+tokenSpan :: Token -> ((Int, Int), (Int, Int))
+tokenSpan t = (tokenLineCol t, tokenLineColEnd t)
 
 -- | Get line and column of a position.
 posLineCol :: Posn -> (Int, Int)
 posLineCol (Pn _ l c) = (l,c)
 
 -- | Convert a token into "position token" form.
-mkPosToken :: Token -> ((Int, Int), Data.Text.Text)
-mkPosToken t = (tokenLineCol t, tokenText t)
+mkPosToken :: Token -> (((Int, Int), Int), Data.Text.Text)
+mkPosToken t = ((tokenLineCol t, tokenLen t), tokenText t)
 
 -- | Convert a token to its text.
 tokenText :: Token -> Data.Text.Text
 tokenText t = case t of
-  PT _ (TS s _) -> s
-  PT _ (TL s)   -> Data.Text.pack (show s)
-  PT _ (TI s)   -> s
-  PT _ (TV s)   -> s
-  PT _ (TD s)   -> s
-  PT _ (TC s)   -> s
+  PT _ _ (TS s _) -> s
+  PT _ _ (TL s)   -> Data.Text.pack (show s)
+  PT _ _ (TI s)   -> s
+  PT _ _ (TV s)   -> s
+  PT _ _ (TD s)   -> s
+  PT _ _ (TC s)   -> s
   Err _         -> Data.Text.pack "#error"
-  PT _ (T_NameLowerCase s) -> s
-  PT _ (T_NameUpperCase s) -> s
+  PT _ _ (T_NameLowerCase s) -> s
+  PT _ _ (T_NameUpperCase s) -> s
 
 -- | Convert a token to a string.
 prToken :: Token -> String
@@ -9018,7 +9034,7 @@ tokens str = go (alexStartPos, '\n', [], str)
                 AlexEOF                   -> []
                 AlexError (pos, _, _, _)  -> [Err pos]
                 AlexSkip  inp' len        -> go inp'
-                AlexToken inp' len act    -> act pos (Data.Text.take len str) : (go inp')
+                AlexToken inp' len act    -> act pos len (Data.Text.take len str) : (go inp')
 
 alexGetByte :: AlexInput -> Maybe (Byte,AlexInput)
 alexGetByte (p, c, (b:bs), s) = Just (b, (p, c, bs, s))

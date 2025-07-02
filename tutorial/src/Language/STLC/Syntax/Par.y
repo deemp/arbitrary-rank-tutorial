@@ -60,130 +60,130 @@ import qualified Data.Text
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 %token
-  '('             { PT _ (TS _ 1)            }
-  ')'             { PT _ (TS _ 2)            }
-  '->'            { PT _ (TS _ 3)            }
-  '.'             { PT _ (TS _ 4)            }
-  '::'            { PT _ (TS _ 5)            }
-  '='             { PT _ (TS _ 6)            }
-  '\\'            { PT _ (TS _ 7)            }
-  'forall'        { PT _ (TS _ 8)            }
-  'in'            { PT _ (TS _ 9)            }
-  'let'           { PT _ (TS _ 10)           }
-  L_integ         { PT _ (TI _)              }
-  L_quoted        { PT _ (TL _)              }
-  L_NameLowerCase { PT _ (T_NameLowerCase _) }
-  L_NameUpperCase { PT _ (T_NameUpperCase _) }
+  '('             { PT _ _ (TS _ 1)            }
+  ')'             { PT _ _ (TS _ 2)            }
+  '->'            { PT _ _ (TS _ 3)            }
+  '.'             { PT _ _ (TS _ 4)            }
+  '::'            { PT _ _ (TS _ 5)            }
+  '='             { PT _ _ (TS _ 6)            }
+  '\\'            { PT _ _ (TS _ 7)            }
+  'forall'        { PT _ _ (TS _ 8)            }
+  'in'            { PT _ _ (TS _ 9)            }
+  'let'           { PT _ _ (TS _ 10)           }
+  L_integ         { PT _ _ (TI _)              }
+  L_quoted        { PT _ _ (TL _)              }
+  L_NameLowerCase { PT _ _ (T_NameLowerCase _) }
+  L_NameUpperCase { PT _ _ (T_NameUpperCase _) }
 
 %%
 
 Integer :: { (Language.STLC.Syntax.Abs.BNFC'Position, Integer) }
-Integer  : L_integ  { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (read (Data.Text.unpack (tokenText $1))) :: Integer) }
+Integer  : L_integ  { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1), (read (Data.Text.unpack (tokenText $1))) :: Integer) }
 
 String  :: { (Language.STLC.Syntax.Abs.BNFC'Position, String) }
-String   : L_quoted { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (Data.Text.unpack ((\(PT _ (TL s)) -> s) $1))) }
+String   : L_quoted { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1), (Data.Text.unpack ((\(PT _ _ (TL s)) -> s) $1))) }
 
 NameLowerCase :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.NameLowerCase) }
-NameLowerCase  : L_NameLowerCase { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.NameLowerCase (tokenText $1)) }
+NameLowerCase  : L_NameLowerCase { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1), Language.STLC.Syntax.Abs.NameLowerCase (tokenText $1)) }
 
 NameUpperCase :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.NameUpperCase) }
-NameUpperCase  : L_NameUpperCase { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.NameUpperCase (tokenText $1)) }
+NameUpperCase  : L_NameUpperCase { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1), Language.STLC.Syntax.Abs.NameUpperCase (tokenText $1)) }
 
 Program :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Program) }
 Program
-  : Exp { (fst $1, Language.STLC.Syntax.Abs.Program (fst $1) (snd $1)) }
+  : Exp { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.Program (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Var :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Var) }
 Var
-  : NameLowerCase { (fst $1, Language.STLC.Syntax.Abs.Var (fst $1) (snd $1)) }
+  : NameLowerCase { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.Var (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Exp1 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp1
-  : Var { (fst $1, Language.STLC.Syntax.Abs.ExpVar (fst $1) (snd $1)) }
+  : Var { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpVar (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Exp2 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp2
-  : Integer { (fst $1, Language.STLC.Syntax.Abs.ExpInt (fst $1) (snd $1)) }
-  | String { (fst $1, Language.STLC.Syntax.Abs.ExpString (fst $1) (snd $1)) }
+  : Integer { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpInt (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
+  | String { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpString (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Exp3 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp3
-  : '\\' Var '.' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpAbs (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
+  : '\\' Var '.' Exp { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $4), Language.STLC.Syntax.Abs.ExpAbs (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $4)) (snd $2) (snd $4)) }
 
 Exp4 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp4
-  : '\\' '(' Var '::' Type ')' '.' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpAbsAnno (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $8)) }
+  : '\\' '(' Var '::' Type ')' '.' Exp { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $8), Language.STLC.Syntax.Abs.ExpAbsAnno (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $8)) (snd $3) (snd $5) (snd $8)) }
 
 Exp5 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp5
-  : Exp11 Exp10 { (fst $1, Language.STLC.Syntax.Abs.ExpApp (fst $1) (snd $1) (snd $2)) }
+  : Exp11 Exp10 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $2), Language.STLC.Syntax.Abs.ExpApp (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $2)) (snd $1) (snd $2)) }
 
 Exp6 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp6
-  : 'let' Var '=' Exp 'in' Exp { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.ExpLet (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4) (snd $6)) }
+  : 'let' Var '=' Exp 'in' Exp { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $6), Language.STLC.Syntax.Abs.ExpLet (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $6)) (snd $2) (snd $4) (snd $6)) }
 
 Exp7 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp7
-  : Exp '::' Type { (fst $1, Language.STLC.Syntax.Abs.ExpAnno (fst $1) (snd $1) (snd $3)) }
+  : Exp '::' Type { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $3), Language.STLC.Syntax.Abs.ExpAnno (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $3)) (snd $1) (snd $3)) }
 
 Exp :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp
-  : Exp1 { (fst $1, (snd $1)) }
-  | Exp2 { (fst $1, (snd $1)) }
-  | Exp3 { (fst $1, (snd $1)) }
-  | Exp4 { (fst $1, (snd $1)) }
-  | Exp5 { (fst $1, (snd $1)) }
-  | Exp6 { (fst $1, (snd $1)) }
-  | Exp7 { (fst $1, (snd $1)) }
-  | '(' Exp ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
+  : Exp1 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp2 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp3 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp4 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp5 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp6 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp7 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | '(' Exp ')' { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $3)), (snd $2)) }
 
 Exp10 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp10
-  : Exp1 { (fst $1, (snd $1)) }
-  | Exp2 { (fst $1, (snd $1)) }
-  | '(' Exp ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
+  : Exp1 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp2 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | '(' Exp ')' { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $3)), (snd $2)) }
 
 Exp11 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp11
-  : Exp1 { (fst $1, (snd $1)) }
-  | Exp5 { (fst $1, (snd $1)) }
-  | '(' Exp ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
+  : Exp1 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Exp5 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | '(' Exp ')' { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $3)), (snd $2)) }
 
 Type1 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type1
-  : NameUpperCase { (fst $1, Language.STLC.Syntax.Abs.TypeConcrete (fst $1) (snd $1)) }
+  : NameUpperCase { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.TypeConcrete (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Type2 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type2
-  : NameLowerCase { (fst $1, Language.STLC.Syntax.Abs.TypeVariable (fst $1) (snd $1)) }
+  : NameLowerCase { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.TypeVariable (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Type3 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type3
-  : Type3 '->' Type3 { (fst $1, Language.STLC.Syntax.Abs.TypeFunc (fst $1) (snd $1) (snd $3)) }
-  | Type1 { (fst $1, (snd $1)) }
-  | Type2 { (fst $1, (snd $1)) }
-  | Type4 { (fst $1, (snd $1)) }
-  | '(' Type3 ')' { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
+  : Type3 '->' Type3 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $3), Language.STLC.Syntax.Abs.TypeFunc (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $3)) (snd $1) (snd $3)) }
+  | Type1 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Type2 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Type4 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | '(' Type3 ')' { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $3)), (snd $2)) }
 
 TypeVariable :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.TypeVariable) }
 TypeVariable
-  : NameLowerCase { (fst $1, Language.STLC.Syntax.Abs.TypeVariableName (fst $1) (snd $1)) }
+  : NameLowerCase { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.TypeVariableName (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Type4 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type4
-  : 'forall' ListTypeVariable '.' Type3 { (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1), Language.STLC.Syntax.Abs.TypeForall (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4)) }
+  : 'forall' ListTypeVariable '.' Type3 { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $4), Language.STLC.Syntax.Abs.TypeForall (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (fst $4)) (snd $2) (snd $4)) }
 
 ListTypeVariable :: { (Language.STLC.Syntax.Abs.BNFC'Position, [Language.STLC.Syntax.Abs.TypeVariable]) }
 ListTypeVariable
   : {- empty -} { (Language.STLC.Syntax.Abs.BNFC'NoPosition, []) }
-  | TypeVariable ListTypeVariable { (fst $1, (:) (snd $1) (snd $2)) }
+  | TypeVariable ListTypeVariable { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $2), (:) (snd $1) (snd $2)) }
 
 Type :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Type) }
 Type
-  : Type1 { (fst $1, (snd $1)) }
-  | Type2 { (fst $1, (snd $1)) }
-  | Type3 { (fst $1, (snd $1)) }
-  | Type4 { (fst $1, (snd $1)) }
+  : Type1 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Type2 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Type3 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
+  | Type4 { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), (snd $1)) }
 
 {
 

@@ -155,63 +155,63 @@ happy_n_starts = 19 :: Happy_Prelude.Int
 happyReduce_19 = happySpecReduce_1  0# happyReduction_19
 happyReduction_19 (HappyTerminal happy_var_1)
          =  HappyAbsSyn23
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (read (Data.Text.unpack (tokenText happy_var_1))) :: Integer)
+                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), (read (Data.Text.unpack (tokenText happy_var_1))) :: Integer)
         )
 happyReduction_19 _  = notHappyAtAll 
 
 happyReduce_20 = happySpecReduce_1  1# happyReduction_20
 happyReduction_20 (HappyTerminal happy_var_1)
          =  HappyAbsSyn24
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (Data.Text.unpack ((\(PT _ (TL s)) -> s) happy_var_1)))
+                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), (Data.Text.unpack ((\(PT _ _ (TL s)) -> s) happy_var_1)))
         )
 happyReduction_20 _  = notHappyAtAll 
 
 happyReduce_21 = happySpecReduce_1  2# happyReduction_21
 happyReduction_21 (HappyTerminal happy_var_1)
          =  HappyAbsSyn25
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.NameLowerCase (tokenText happy_var_1))
+                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), Language.STLC.Syntax.Abs.NameLowerCase (tokenText happy_var_1))
         )
 happyReduction_21 _  = notHappyAtAll 
 
 happyReduce_22 = happySpecReduce_1  3# happyReduction_22
 happyReduction_22 (HappyTerminal happy_var_1)
          =  HappyAbsSyn26
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.NameUpperCase (tokenText happy_var_1))
+                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), Language.STLC.Syntax.Abs.NameUpperCase (tokenText happy_var_1))
         )
 happyReduction_22 _  = notHappyAtAll 
 
 happyReduce_23 = happySpecReduce_1  4# happyReduction_23
 happyReduction_23 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn27
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.Program (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.Program (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_23 _  = notHappyAtAll 
 
 happyReduce_24 = happySpecReduce_1  5# happyReduction_24
 happyReduction_24 (HappyAbsSyn25  happy_var_1)
          =  HappyAbsSyn28
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.Var (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.Var (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_24 _  = notHappyAtAll 
 
 happyReduce_25 = happySpecReduce_1  6# happyReduction_25
 happyReduction_25 (HappyAbsSyn28  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpVar (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.ExpVar (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_25 _  = notHappyAtAll 
 
 happyReduce_26 = happySpecReduce_1  7# happyReduction_26
 happyReduction_26 (HappyAbsSyn23  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpInt (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.ExpInt (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_26 _  = notHappyAtAll 
 
 happyReduce_27 = happySpecReduce_1  7# happyReduction_27
 happyReduction_27 (HappyAbsSyn24  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpString (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.ExpString (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_27 _  = notHappyAtAll 
 
@@ -222,7 +222,7 @@ happyReduction_28 ((HappyAbsSyn29  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn29
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ExpAbs (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4), Language.STLC.Syntax.Abs.ExpAbs (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_29 = happyReduce 8# 9# happyReduction_29
@@ -236,14 +236,14 @@ happyReduction_29 ((HappyAbsSyn29  happy_var_8) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn29
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ExpAbsAnno (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_3) (snd happy_var_5) (snd happy_var_8))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_8), Language.STLC.Syntax.Abs.ExpAbsAnno (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_8)) (snd happy_var_3) (snd happy_var_5) (snd happy_var_8))
         ) `HappyStk` happyRest
 
 happyReduce_30 = happySpecReduce_2  10# happyReduction_30
 happyReduction_30 (HappyAbsSyn29  happy_var_2)
         (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpApp (fst happy_var_1) (snd happy_var_1) (snd happy_var_2))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2), Language.STLC.Syntax.Abs.ExpApp (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2)) (snd happy_var_1) (snd happy_var_2))
         )
 happyReduction_30 _ _  = notHappyAtAll 
 
@@ -256,7 +256,7 @@ happyReduction_31 ((HappyAbsSyn29  happy_var_6) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn29
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.ExpLet (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4) (snd happy_var_6))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_6), Language.STLC.Syntax.Abs.ExpLet (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_6)) (snd happy_var_2) (snd happy_var_4) (snd happy_var_6))
         ) `HappyStk` happyRest
 
 happyReduce_32 = happySpecReduce_3  12# happyReduction_32
@@ -264,125 +264,125 @@ happyReduction_32 (HappyAbsSyn39  happy_var_3)
         _
         (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.ExpAnno (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3), Language.STLC.Syntax.Abs.ExpAnno (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3)) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_32 _ _ _  = notHappyAtAll 
 
 happyReduce_33 = happySpecReduce_1  13# happyReduction_33
 happyReduction_33 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_33 _  = notHappyAtAll 
 
 happyReduce_34 = happySpecReduce_1  13# happyReduction_34
 happyReduction_34 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_34 _  = notHappyAtAll 
 
 happyReduce_35 = happySpecReduce_1  13# happyReduction_35
 happyReduction_35 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_35 _  = notHappyAtAll 
 
 happyReduce_36 = happySpecReduce_1  13# happyReduction_36
 happyReduction_36 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_36 _  = notHappyAtAll 
 
 happyReduce_37 = happySpecReduce_1  13# happyReduction_37
 happyReduction_37 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_37 _  = notHappyAtAll 
 
 happyReduce_38 = happySpecReduce_1  13# happyReduction_38
 happyReduction_38 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_38 _  = notHappyAtAll 
 
 happyReduce_39 = happySpecReduce_1  13# happyReduction_39
 happyReduction_39 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_39 _  = notHappyAtAll 
 
 happyReduce_40 = happySpecReduce_3  13# happyReduction_40
-happyReduction_40 _
+happyReduction_40 (HappyTerminal happy_var_3)
         (HappyAbsSyn29  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn29
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_40 _ _ _  = notHappyAtAll 
 
 happyReduce_41 = happySpecReduce_1  14# happyReduction_41
 happyReduction_41 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_41 _  = notHappyAtAll 
 
 happyReduce_42 = happySpecReduce_1  14# happyReduction_42
 happyReduction_42 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_42 _  = notHappyAtAll 
 
 happyReduce_43 = happySpecReduce_3  14# happyReduction_43
-happyReduction_43 _
+happyReduction_43 (HappyTerminal happy_var_3)
         (HappyAbsSyn29  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn29
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_43 _ _ _  = notHappyAtAll 
 
 happyReduce_44 = happySpecReduce_1  15# happyReduction_44
 happyReduction_44 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_44 _  = notHappyAtAll 
 
 happyReduce_45 = happySpecReduce_1  15# happyReduction_45
 happyReduction_45 (HappyAbsSyn29  happy_var_1)
          =  HappyAbsSyn29
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_45 _  = notHappyAtAll 
 
 happyReduce_46 = happySpecReduce_3  15# happyReduction_46
-happyReduction_46 _
+happyReduction_46 (HappyTerminal happy_var_3)
         (HappyAbsSyn29  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn29
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_46 _ _ _  = notHappyAtAll 
 
 happyReduce_47 = happySpecReduce_1  16# happyReduction_47
 happyReduction_47 (HappyAbsSyn26  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.TypeConcrete (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.TypeConcrete (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_47 _  = notHappyAtAll 
 
 happyReduce_48 = happySpecReduce_1  17# happyReduction_48
 happyReduction_48 (HappyAbsSyn25  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.TypeVariable (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.TypeVariable (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_48 _  = notHappyAtAll 
 
@@ -391,44 +391,44 @@ happyReduction_49 (HappyAbsSyn39  happy_var_3)
         _
         (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.TypeFunc (fst happy_var_1) (snd happy_var_1) (snd happy_var_3))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3), Language.STLC.Syntax.Abs.TypeFunc (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3)) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_49 _ _ _  = notHappyAtAll 
 
 happyReduce_50 = happySpecReduce_1  18# happyReduction_50
 happyReduction_50 (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_50 _  = notHappyAtAll 
 
 happyReduce_51 = happySpecReduce_1  18# happyReduction_51
 happyReduction_51 (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_51 _  = notHappyAtAll 
 
 happyReduce_52 = happySpecReduce_1  18# happyReduction_52
 happyReduction_52 (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_52 _  = notHappyAtAll 
 
 happyReduce_53 = happySpecReduce_3  18# happyReduction_53
-happyReduction_53 _
+happyReduction_53 (HappyTerminal happy_var_3)
         (HappyAbsSyn39  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn39
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), (snd happy_var_2))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_53 _ _ _  = notHappyAtAll 
 
 happyReduce_54 = happySpecReduce_1  19# happyReduction_54
 happyReduction_54 (HappyAbsSyn25  happy_var_1)
          =  HappyAbsSyn42
-                 ((fst happy_var_1, Language.STLC.Syntax.Abs.TypeVariableName (fst happy_var_1) (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.STLC.Syntax.Abs.TypeVariableName (Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_54 _  = notHappyAtAll 
 
@@ -439,7 +439,7 @@ happyReduction_55 ((HappyAbsSyn39  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn39
-                 ((uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1), Language.STLC.Syntax.Abs.TypeForall (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenLineCol happy_var_1)) (snd happy_var_2) (snd happy_var_4))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4), Language.STLC.Syntax.Abs.TypeForall (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_56 = happySpecReduce_0  21# happyReduction_56
@@ -451,53 +451,53 @@ happyReduce_57 = happySpecReduce_2  21# happyReduction_57
 happyReduction_57 (HappyAbsSyn44  happy_var_2)
         (HappyAbsSyn42  happy_var_1)
          =  HappyAbsSyn44
-                 ((fst happy_var_1, (:) (snd happy_var_1) (snd happy_var_2))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2), (:) (snd happy_var_1) (snd happy_var_2))
         )
 happyReduction_57 _ _  = notHappyAtAll 
 
 happyReduce_58 = happySpecReduce_1  22# happyReduction_58
 happyReduction_58 (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_58 _  = notHappyAtAll 
 
 happyReduce_59 = happySpecReduce_1  22# happyReduction_59
 happyReduction_59 (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_59 _  = notHappyAtAll 
 
 happyReduce_60 = happySpecReduce_1  22# happyReduction_60
 happyReduction_60 (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_60 _  = notHappyAtAll 
 
 happyReduce_61 = happySpecReduce_1  22# happyReduction_61
 happyReduction_61 (HappyAbsSyn39  happy_var_1)
          =  HappyAbsSyn39
-                 ((fst happy_var_1, (snd happy_var_1))
+                 ((Language.STLC.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_61 _  = notHappyAtAll 
 
 happyTerminalToTok term = case term of {
-        PT _ (TS _ 1) -> 2#;
-        PT _ (TS _ 2) -> 3#;
-        PT _ (TS _ 3) -> 4#;
-        PT _ (TS _ 4) -> 5#;
-        PT _ (TS _ 5) -> 6#;
-        PT _ (TS _ 6) -> 7#;
-        PT _ (TS _ 7) -> 8#;
-        PT _ (TS _ 8) -> 9#;
-        PT _ (TS _ 9) -> 10#;
-        PT _ (TS _ 10) -> 11#;
-        PT _ (TI _) -> 12#;
-        PT _ (TL _) -> 13#;
-        PT _ (T_NameLowerCase _) -> 14#;
-        PT _ (T_NameUpperCase _) -> 15#;
+        PT _ _ (TS _ 1) -> 2#;
+        PT _ _ (TS _ 2) -> 3#;
+        PT _ _ (TS _ 3) -> 4#;
+        PT _ _ (TS _ 4) -> 5#;
+        PT _ _ (TS _ 5) -> 6#;
+        PT _ _ (TS _ 6) -> 7#;
+        PT _ _ (TS _ 7) -> 8#;
+        PT _ _ (TS _ 8) -> 9#;
+        PT _ _ (TS _ 9) -> 10#;
+        PT _ _ (TS _ 10) -> 11#;
+        PT _ _ (TI _) -> 12#;
+        PT _ _ (TL _) -> 13#;
+        PT _ _ (T_NameLowerCase _) -> 14#;
+        PT _ _ (T_NameUpperCase _) -> 15#;
         _ -> -1#;
         }
 {-# NOINLINE happyTerminalToTok #-}
