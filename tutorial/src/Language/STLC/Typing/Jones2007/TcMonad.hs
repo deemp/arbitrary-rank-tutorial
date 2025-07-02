@@ -91,6 +91,20 @@ data TcError
   | TcError'CannotUnify {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
   | TcError'CouldNotParse {err :: String}
 
+getThingStart :: TypedThing -> SrcSpan
+getThingStart (HsExprRnThing thing) =
+  case thing of
+    SynTerm'Var _ var -> var.nameLoc
+    SynTerm'Lit anno _ -> anno
+    SynTerm'App anno _ _ -> anno
+    SynTerm'Lam anno _ _ -> anno
+    SynTerm'ALam anno _ _ _ -> anno
+    SynTerm'Let anno _ _ _ -> anno
+    SynTerm'Ann anno _ _ -> anno
+
+prettyDefinedAt :: TypedThing -> Doc ann
+prettyDefinedAt thing = "Defined at" <+> pretty (getThingStart thing)
+
 instance Pretty TcError where
   pretty = \case
     TcError'UndefinedVariable{varName} ->
@@ -110,9 +124,7 @@ instance Pretty TcError where
         , ""
         , "but got type:"
         , pretty actual
-        , ""
-        , "in expression:"
-        , pretty thing
+        , prettyThingLocation thing
         ]
     TcError'OccursCheck{tv, ty} ->
       vsep'
@@ -130,9 +142,7 @@ instance Pretty TcError where
         , ""
         , "with type:"
         , pretty ty2
-        , ""
-        , "in expression:"
-        , pretty thing
+        , prettyThingLocation thing
         ]
     TcError'ExpectedFlexiVariables{tvs} ->
       vsep'
@@ -156,14 +166,24 @@ instance Pretty TcError where
         , ""
         , "with type:"
         , pretty ty2
-        , ""
-        , "in expression:"
-        , pretty thing
+        , prettyThingLocation thing
         ]
     TcError'CouldNotParse{err} ->
       pretty err
    where
     vsep' xs = vsep (xs <> [line])
+    
+    prettyThingLocation :: Maybe TypedThing -> Doc ann
+    prettyThingLocation = \case
+      Nothing -> mempty
+      Just thing ->
+        vsep
+          [ ""
+          , "in expression:"
+          , pretty thing
+          , ""
+          , prettyDefinedAt thing
+          ]
 
 instance Show TcError where
   show = show . pretty
