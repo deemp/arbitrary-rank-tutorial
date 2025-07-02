@@ -45,7 +45,9 @@ import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
+import GHC.Stack (HasCallStack)
 import Language.STLC.Common ()
+import Language.STLC.Syntax.Abs (BNFC'Position)
 import Language.STLC.Syntax.Abs qualified as Abs
 import Prettyprinter
 import Prelude hiding ((<>))
@@ -322,9 +324,8 @@ data RealSrcSpan
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L392
 data SrcSpan
   = -- TODO Replace with RealSrcSpan
-    RealSrcSpan !Abs.BNFC'Position
+    RealSrcSpan RealSrcSpan
   | UnhelpfulSpan UnhelpfulSpanReason
-  deriving stock (Show)
 
 -- | The key type representing kinds in the compiler.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
@@ -708,10 +709,12 @@ type IUniqueSupply = (?uniqueSupply :: IORef Int)
 -- Map names to ids
 type IScope = (?scope :: Map NameFs Int)
 
+type ICurrentFilePath = (?currentFilePath :: FastString)
+
 -- TODO add index because the parse type isn't enough to differentiate
 -- TODO add built-in types to the scope
 -- TODO Should we have a separate scope for terms and types?
-type IConvertRename = (IUniqueSupply, IScope)
+type IConvertRename = (IUniqueSupply, IScope, ICurrentFilePath)
 
 newUnique :: (IUniqueSupply) => IO Int
 newUnique = do
@@ -744,6 +747,20 @@ class ConvertAbsToBT a where
   type To a
   convertAbsToBT :: (IConvertRename) => a -> (To a)
 
+convertPositionToSrcSpan :: (ICurrentFilePath) => BNFC'Position -> SrcSpan
+convertPositionToSrcSpan = \case
+  Just ((srcSpanSLine, srcSpanSCol), (srcSpanELine, srcSpanECol)) ->
+    RealSrcSpan
+      RealSrcSpan'
+        { srcSpanFile = ?currentFilePath
+        , srcSpanSLine
+        , srcSpanSCol
+        , srcSpanELine
+        , srcSpanECol
+        }
+  Nothing ->
+    UnhelpfulSpan UnhelpfulNoLocationInfo
+
 instance ConvertAbsToBT Abs.Exp where
   type To Abs.Exp = IO (SynTerm CompRn)
   convertAbsToBT :: (IConvertRename) => Abs.Exp -> To Abs.Exp
@@ -752,33 +769,33 @@ instance ConvertAbsToBT Abs.Exp where
       var' <- convertAbsToBT var False
       pure $ SynTerm'Var () var'
     Abs.ExpInt pos val ->
-      pure $ SynTerm'Lit (RealSrcSpan pos) (SynLit'Num val)
+      pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Num val)
     Abs.ExpString pos val ->
-      pure $ SynTerm'Lit (RealSrcSpan pos) (SynLit'Str (T.pack val))
+      pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Str (T.pack val))
     Abs.ExpApp pos term1 term2 -> do
       term1' <- convertAbsToBT term1
       term2' <- convertAbsToBT term2
-      pure $ SynTerm'App (RealSrcSpan pos) term1' term2'
+      pure $ SynTerm'App (convertPositionToSrcSpan pos) term1' term2'
     Abs.ExpAbs pos var term -> do
       var' <- convertAbsToBT var True
       term' <- withNameInScope var' (convertAbsToBT term)
-      pure $ SynTerm'Lam (RealSrcSpan pos) var' term'
+      pure $ SynTerm'Lam (convertPositionToSrcSpan pos) var' term'
     Abs.ExpAbsAnno pos var ty term -> do
       var' <- convertAbsToBT var True
       ty' <- convertAbsToBT ty
       term' <- withNameInScope var' (convertAbsToBT term)
-      pure $ SynTerm'ALam (RealSrcSpan pos) var' ty' term'
+      pure $ SynTerm'ALam (convertPositionToSrcSpan pos) var' ty' term'
     Abs.ExpLet pos var term1 term2 -> do
       var' <- convertAbsToBT var True
       -- TODO should the let-expression be recursive
       -- and the var be brought into scope of the assigned term?
       term1' <- convertAbsToBT term1
       term2' <- withNameInScope var' (convertAbsToBT term2)
-      pure $ SynTerm'Let (RealSrcSpan pos) var' term1' term2'
+      pure $ SynTerm'Let (convertPositionToSrcSpan pos) var' term1' term2'
     Abs.ExpAnno pos term ty -> do
       term' <- convertAbsToBT term
       ty' <- convertAbsToBT ty
-      pure $ SynTerm'Ann (RealSrcSpan pos) term' ty'
+      pure $ SynTerm'Ann (convertPositionToSrcSpan pos) term' ty'
 
 -- TODO create unique only for new binders
 -- TODO what to do with free variables? Report error?
@@ -795,7 +812,7 @@ instance ConvertAbsToBT Abs.Var where
               , occNameFS = name
               }
         , nameUnique
-        , nameLoc = RealSrcSpan pos
+        , nameLoc = (convertPositionToSrcSpan pos)
         }
 
 instance ConvertAbsToBT Abs.TypeVariable where
@@ -810,7 +827,7 @@ instance ConvertAbsToBT Abs.TypeVariable where
               , occNameFS = name
               }
         , nameUnique
-        , nameLoc = RealSrcSpan pos
+        , nameLoc = (convertPositionToSrcSpan pos)
         }
 
 instance ConvertAbsToBT Abs.Type where
@@ -830,7 +847,7 @@ instance ConvertAbsToBT Abs.Type where
                   , occNameFS = name
                   }
             , nameUnique
-            , nameLoc = RealSrcSpan pos
+            , nameLoc = (convertPositionToSrcSpan pos)
             }
     Abs.TypeVariable pos (Abs.NameLowerCase name) -> do
       nameUnique <- getUnique name
@@ -844,7 +861,7 @@ instance ConvertAbsToBT Abs.Type where
                     , occNameFS = name
                     }
               , nameUnique
-              , nameLoc = RealSrcSpan pos
+              , nameLoc = (convertPositionToSrcSpan pos)
               }
           )
     Abs.TypeForall pos tys ty -> do
@@ -852,8 +869,8 @@ instance ConvertAbsToBT Abs.Type where
       -- No variables bound at
       tys' <- forM tys (\x -> convertAbsToBT x)
       ty' <- withNamesInScope tys' (convertAbsToBT ty)
-      pure $ SynType'ForAll (RealSrcSpan pos) tys' ty'
-    Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (RealSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
+      pure $ SynType'ForAll (convertPositionToSrcSpan pos) tys' ty'
+    Abs.TypeFunc pos ty1 ty2 -> SynType'Fun (convertPositionToSrcSpan pos) <$> (convertAbsToBT ty1) <*> (convertAbsToBT ty2)
 
 instance Eq Name where
   n1 == n2 = n1.nameUnique == n2.nameUnique
@@ -886,7 +903,7 @@ instance Pretty RealSrcSpan where
       , srcSpanSLine
       , srcSpanSCol
       -- TODO other fields
-      } = brackets (pretty srcSpanFile <> ":" <> pretty srcSpanSLine <> ":" <> pretty srcSpanSCol)
+      } = pretty srcSpanFile <> ":" <> pretty srcSpanSLine <> ":" <> pretty srcSpanSCol
 
 instance Pretty (Type CompRn)
 
@@ -910,6 +927,20 @@ instance Show SkolemInfoAnon where
 
 -- TODO implement
 instance Pretty SkolemInfoAnon
+
+instance Pretty UnhelpfulSpanReason where
+  pretty = \case
+    UnhelpfulNoLocationInfo -> "No location"
+    UnhelpfulGenerated -> "Generated"
+    UnhelpfulOther reason -> pretty reason
+
+instance Pretty SrcSpan where
+  pretty = \case
+    RealSrcSpan sp -> pretty sp
+    UnhelpfulSpan reason -> "Unknown span:" <+> pretty reason
+
+instance Show SrcSpan where
+  show = show . pretty
 
 instance Show Name where
   show Name{nameOcc, nameUnique, nameLoc} =
@@ -1212,6 +1243,7 @@ ex2 = do
   let
     ?scope = Map.fromList (zip builtInTypes [0 ..])
     ?uniqueSupply = uniqueSupply
+    ?currentFilePath = "Unknown"
   pretty <$> convertAbsToBT ex1
 
 -- >>> ex2
