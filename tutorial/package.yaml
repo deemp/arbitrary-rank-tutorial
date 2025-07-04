@@ -1,11 +1,11 @@
-name: free-foil-stlc
-synopsis: "An implementation of simply typed lambda calculus using Free Foil"
+name: arbitrary-rank-tutorial
+synopsis: "A tutorial implementation of Arralac - a lambda calculus with arbitrary-rank polymorphism"
 version: 0.0.1
-github: "deemp/query-driven-free-foil"
+github: "deemp/arbitrary-rank-tutorial"
 license: BSD3
-author: "Danila Danko, Nickolay Kudasov, Nikita Strygin"
+author: "Danila Danko, Nickolay Kudasov"
 maintainer: "br4ch1st0chr0n3@gmail.com, nickolay.kudasov@gmail.com"
-copyright: "2024 Danila Danko, Nickolay Kudasov, Nikita Strygin"
+copyright: "2024 Danila Danko, Nickolay Kudasov"
 
 extra-source-files:
   - README.md
@@ -22,7 +22,10 @@ verbatim:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description: Please see the README on GitHub at <https://github.com/deemp/query-driven-free-foil#readme>
+description: |
+  Arralac: `Ar`bitrary-`ra`nk polymorphism + `la`mbda `c`alculus
+  
+  Please see the README on GitHub at <https://github.com/deemp/arbitrary-rank-tutorial#readme>
 
 # Running Setup.hs requires:
 # - [happy](https://github.com/haskell/happy)
@@ -56,14 +59,21 @@ custom-setup:
     - with-utf8
 
 dependencies:
+  - aeson
   - array >= 0.5.5.0
   - base >= 4.7 && < 5
   - bifunctors
   - containers
   - free-foil
   - kind-generics
-  - text
+  - lsp
+  - lsp-types
+  - mtl
+  - lens
   - prettyprinter
+  - co-log-core
+  - stm
+  - text
   - validation
 
 default-extensions:
@@ -90,7 +100,7 @@ library:
         - Language.STLC.Syntax.Skel
 
 executables:
-  free-foil-stlc:
+  arralac:
     main: Main.hs
     source-dirs: app
     ghc-options:
@@ -98,5 +108,5 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - free-foil-stlc
+      - arbitrary-rank-tutorial
       - with-utf8

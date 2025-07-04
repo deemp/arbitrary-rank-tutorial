@@ -4,15 +4,17 @@ cabal-version: 1.24
 --
 -- see: https://github.com/sol/hpack
 
-name:           free-foil-stlc
+name:           arbitrary-rank-tutorial
 version:        0.0.1
-synopsis:       An implementation of simply typed lambda calculus using Free Foil
-description:    Please see the README on GitHub at <https://github.com/deemp/query-driven-free-foil#readme>
-homepage:       https://github.com/deemp/query-driven-free-foil#readme
-bug-reports:    https://github.com/deemp/query-driven-free-foil/issues
-author:         Danila Danko, Nickolay Kudasov, Nikita Strygin
+synopsis:       A tutorial implementation of Arralac - a lambda calculus with arbitrary-rank polymorphism
+description:    Arralac: `Ar`bitrary-`ra`nk polymorphism + `la`mbda `c`alculus
+                .
+                Please see the README on GitHub at <https://github.com/deemp/arbitrary-rank-tutorial#readme>
+homepage:       https://github.com/deemp/arbitrary-rank-tutorial#readme
+bug-reports:    https://github.com/deemp/arbitrary-rank-tutorial/issues
+author:         Danila Danko, Nickolay Kudasov
 maintainer:     br4ch1st0chr0n3@gmail.com, nickolay.kudasov@gmail.com
-copyright:      2024 Danila Danko, Nickolay Kudasov, Nikita Strygin
+copyright:      2024 Danila Danko, Nickolay Kudasov
 license:        BSD3
 build-type:     Custom
 extra-source-files:
@@ -22,7 +24,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/deemp/query-driven-free-foil
+  location: https://github.com/deemp/arbitrary-rank-tutorial
 
 custom-setup
   setup-depends:
@@ -40,30 +42,41 @@ flag nix
 library
   exposed-modules:
       Language.STLC.Common
+      Language.STLC.LanguageServer.Main
       Language.STLC.Syntax.Abs
-      Language.STLC.Syntax.Layout
       Language.STLC.Syntax.Lex
       Language.STLC.Syntax.Par
       Language.STLC.Syntax.Print
+      Language.STLC.Typing.Jones2007.Bag
       Language.STLC.Typing.Jones2007.BasicTypes
+      Language.STLC.Typing.Jones2007.ConstraintTypes
       Language.STLC.Typing.Jones2007.Main
+      Language.STLC.Typing.Jones2007.Pretty
+      Language.STLC.Typing.Jones2007.Solver
       Language.STLC.Typing.Jones2007.TcMonad
       Language.STLC.Typing.Jones2007.TcTerm
   other-modules:
-      Paths_free_foil_stlc
+      Paths_arbitrary_rank_tutorial
   hs-source-dirs:
       src
   default-extensions:
       ImportQualifiedPost
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
-      array >=0.5.5.0
+      aeson
+    , array >=0.5.5.0
     , base >=4.7 && <5
     , bifunctors
+    , co-log-core
     , containers
     , free-foil
     , kind-generics
+    , lens
+    , lsp
+    , lsp-types
+    , mtl
     , prettyprinter
+    , stm
     , text
     , validation
   default-language: Haskell2010
@@ -74,24 +87,31 @@ library
     build-tool-depends:
         BNFC:bnfc
 
-executable free-foil-stlc
+executable arralac
   main-is: Main.hs
   other-modules:
-      Paths_free_foil_stlc
+      Paths_arbitrary_rank_tutorial
   hs-source-dirs:
       app
   default-extensions:
       ImportQualifiedPost
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      array >=0.5.5.0
+      aeson
+    , arbitrary-rank-tutorial
+    , array >=0.5.5.0
     , base >=4.7 && <5
     , bifunctors
+    , co-log-core
     , containers
     , free-foil
-    , free-foil-stlc
     , kind-generics
+    , lens
+    , lsp
+    , lsp-types
+    , mtl
     , prettyprinter
+    , stm
     , text
     , validation
     , with-utf8
