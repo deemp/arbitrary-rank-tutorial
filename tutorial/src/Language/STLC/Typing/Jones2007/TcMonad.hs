@@ -4,6 +4,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE LambdaCase #-}
@@ -91,6 +92,11 @@ data TcError
   | TcError'CannotUnify {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
   | TcError'CouldNotParse {err :: String}
 
+-- Capture current callstack in GADT
+-- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
+data TcErrorWithCallStack where
+  TcErrorWithCallStack :: (HasCallStack) => TcError -> TcErrorWithCallStack
+
 getThingStart :: TypedThing -> SrcSpan
 getThingStart (HsExprRnThing thing) =
   case thing of
@@ -172,7 +178,7 @@ instance Pretty TcError where
       pretty err
    where
     vsep' xs = vsep (xs <> [line])
-    
+
     prettyThingLocation :: Maybe TypedThing -> Doc ann
     prettyThingLocation = \case
       Nothing -> mempty
@@ -185,24 +191,36 @@ instance Pretty TcError where
           , prettyDefinedAt thing
           ]
 
+instance Pretty TcErrorWithCallStack where
+  pretty :: TcErrorWithCallStack -> Doc ann
+  pretty (TcErrorWithCallStack err) =
+    vsep [pretty (prettyCallStack callStack), "", pretty err]
+
 instance Show TcError where
   show = show . pretty
 
+instance Show TcErrorWithCallStack where
+  show = show . pretty
+
 instance Exception TcError
+
+instance Exception TcErrorWithCallStack
 
 withTcError :: TcError -> TcM a -> TcM a
 withTcError err tcAction = do
   writeIORef ?tcError (Just err)
   tcAction
 
--- TODO
--- instead of failTc
 die :: TcError -> TcM a -- Fail unconditionally
 die tcErrorSuggested = do
   tcErrorExisting <- readIORef ?tcError
-  case tcErrorExisting of
-    Nothing -> throw tcErrorSuggested
-    Just err -> throw err
+  -- TODO Currently, a newer error can not overwrite an already set error.
+  -- Should we choose the error for each combination of errors (new, set)?
+  let error' =
+        case tcErrorExisting of
+          Nothing -> tcErrorSuggested
+          Just err -> err
+  throw (TcErrorWithCallStack error')
 
 debug :: (IDebug) => Doc a -> [Doc a] -> IO ()
 debug label xs = when ?debug do

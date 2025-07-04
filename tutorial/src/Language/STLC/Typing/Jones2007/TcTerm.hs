@@ -8,6 +8,7 @@
 
 module Language.STLC.Typing.Jones2007.TcTerm where
 
+import Control.Exception.Base (catch)
 import Control.Monad (forM)
 import Data.List ((\\))
 import Data.Text (Text)
@@ -15,7 +16,7 @@ import Data.Text qualified as T
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.ConstraintTypes (TypedThing (..))
 import Language.STLC.Typing.Jones2007.TcMonad
-import Prettyprinter
+import Prettyprinter (Pretty (..), (<+>))
 
 ------------------------------------------
 --      The top-level wrapper           --
@@ -24,20 +25,17 @@ import Prettyprinter
 -- TODO Too much boilerplate...
 
 -- TODO report many independent errors, not fail on the first error
-typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
+typecheck :: SynTerm CompRn -> TcM (Either TcErrorWithCallStack (SynTerm CompZn))
 typecheck e = do
   res <-
     catch
       (Right <$> inferSigma e)
-      ( \(err :: TcError) -> do
+      ( \(err :: TcErrorWithCallStack) -> do
           pure (Left err)
       )
-  case res of
-    Right (e'tc, _) ->
-      zonkFinallyTerm e'tc
-    Left err -> do
-      putDoc (pretty err)
-      error "This is the end :("
+  case fst <$> res of
+    Left err -> pure $ Left err
+    Right term -> Right <$> zonkFinallyTerm term
 
 zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
 zonkFinallySynType = \case
