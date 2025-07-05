@@ -90,7 +90,6 @@ data TcError
   | TcError'UnknownConcreteType {name :: Name}
   | TcError'ExpectedAllMetavariables {tvs :: [TcTyVar]}
   | TcError'CannotUnify {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
-  | TcError'CouldNotParse {err :: String}
 
 -- Capture current callstack in GADT
 -- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
@@ -174,8 +173,6 @@ instance Pretty TcError where
         , pretty ty2
         , prettyThingLocation thing
         ]
-    TcError'CouldNotParse{err} ->
-      pretty err
    where
     vsep' xs = vsep (xs <> [line])
 

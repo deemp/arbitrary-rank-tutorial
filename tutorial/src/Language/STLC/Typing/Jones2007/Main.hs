@@ -127,13 +127,21 @@ convertProgram (Abs.Program _ exp) = BT.convertAbsToBT exp
 --       [] -> Failure ["No variables bound at: " <> pretty ann]
 --       ts' -> BT.ForAll ann ((\(Abs.TypeVariableName ann1 (Abs.NameLowerCase x)) -> BT.BoundTv ann1 x) <$> ts') <$> convertType t1
 
-parseInputText :: (BT.IConvertRename) => Text -> IO (BT.SynTerm BT.CompRn)
+data ParseErrorWithCallStack where
+  ParseErrorWithCallStack :: (HasCallStack) => String -> ParseErrorWithCallStack
+
+instance Show ParseErrorWithCallStack where
+  show (ParseErrorWithCallStack err) = prettyCallStack callStack <> "\n\n" <> err
+
+instance Exception ParseErrorWithCallStack
+
+parseInputText :: Text -> RnM (BT.SynTerm BT.CompRn)
 parseInputText input = do
   let
     parsed = parseWith pProgram input
   case parsed of
     -- TODO throw better and handle where necessary
-    Left err -> error err
+    Left err -> throw (ParseErrorWithCallStack err)
     Right prog -> convertProgram prog
 
 t3 :: IO (Doc ann)
