@@ -49,9 +49,6 @@ zonkFinallySynType = \case
     arg' <- zonkFinallySynType arg
     res' <- zonkFinallySynType res
     pure $ SynType'Fun srcLoc arg' res'
-  SynType'Paren srcLoc body -> do
-    body' <- zonkFinallySynType body
-    pure $ SynType'Paren srcLoc body'
   SynType'Concrete anno lit -> do
     pure $ SynType'Concrete anno lit
 
@@ -98,8 +95,9 @@ zonkFinallyTerm = \case
   SynTerm'Var _ var -> do
     var' <- zonkFinallyTcTermVar var
     pure $ SynTerm'Var () var'
-  SynTerm'Lit ann lit -> do
-    pure $ SynTerm'Lit ann lit
+  SynTerm'Lit anno lit -> do
+    anno' <- zonkFinallyAnno anno
+    pure $ SynTerm'Lit anno' lit
   SynTerm'App anno fun arg -> do
     anno' <- zonkFinallyAnno anno
     fun' <- zonkFinallyTerm fun
@@ -213,9 +211,6 @@ convertSynTy = \case
     (res', res'ty) <- convertSynTy res
     pure $ (SynType'Fun srcLoc arg' res', Type'Fun arg'ty res'ty)
   -- TODO handle more correctly?
-  SynType'Paren srcLoc ty -> do
-    (ty', ty'ty) <- convertSynTy ty
-    pure $ (SynType'Paren srcLoc ty', ty'ty)
   SynType'Concrete srcLoc lit -> do
     concreteType <- parseTypeConcrete lit.nameOcc.occNameFS
     pure $ (SynType'Concrete srcLoc Concrete{concreteName = lit, concreteType}, Type'Concrete concreteType)
@@ -230,7 +225,7 @@ mkTypedThingIfCheck thing = \case
 tcRho :: SynTerm CompRn -> Expected Rho -> TcM (SynTerm CompTc)
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
-tcRho t@(SynTerm'Lit _ lit) exp_ty = do
+tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
   let ty =
         case lit of
           SynLit'Num{} -> TypeConcrete'Int
@@ -242,7 +237,7 @@ tcRho t@(SynTerm'Lit _ lit) exp_ty = do
   -- to store the inferred type?
   pure $
     SynTerm'Lit
-      ty
+      AnnoTc{annoSrcLoc, annoType = exp_ty}
       lit
 tcRho t@(SynTerm'Var _ varName) exp_ty = do
   v_sigma <- lookupVar varName

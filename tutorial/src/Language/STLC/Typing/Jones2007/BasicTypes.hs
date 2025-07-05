@@ -109,10 +109,6 @@ data SynType x
     --
     -- @a -> b@
     SynType'Fun (XSynType'Fun' x) (XSynType'Fun'Arg x) (XSynType'Fun'Res x)
-  | -- | Parentheses
-    --
-    -- @(a -> b)@
-    SynType'Paren (XSynType'Paren' x) (XSynType'Paren x)
   | -- | Concrete type
     --
     -- @String@
@@ -178,9 +174,6 @@ type family XSynType'ForAll'Body x
 type family XSynType'Fun' x
 type family XSynType'Fun'Arg x
 type family XSynType'Fun'Res x
-
-type family XSynType'Paren' x
-type family XSynType'Paren x
 
 type family XSynType'Concrete' x
 type family XSynType'Concrete x
@@ -640,9 +633,7 @@ type instance XSynTerm'AnnoCommon CompZn = AnnoZn
 type instance XSynTerm'Var' x = ()
 type instance XSynTerm'Var x = XSynTerm'VarCommon x
 
-type instance XSynTerm'Lit' CompRn = SrcSpan
-type instance XSynTerm'Lit' CompTc = TypeConcrete
-type instance XSynTerm'Lit' CompZn = TypeConcrete
+type instance XSynTerm'Lit' x = XSynTerm'AnnoCommon x
 type instance XSynTerm'Lit x = SynLit
 
 type instance XSynTerm'App' x = XSynTerm'AnnoCommon x
@@ -692,9 +683,6 @@ type instance XSynType'ForAll'Body x = SynType x
 type instance XSynType'Fun' x = SrcSpan
 type instance XSynType'Fun'Arg x = SynType x
 type instance XSynType'Fun'Res x = SynType x
-
-type instance XSynType'Paren' x = SrcSpan
-type instance XSynType'Paren x = SynType x
 
 -- TODO explain when to use annotations and when not to
 type instance XSynType'Concrete' x = ()
@@ -1012,7 +1000,6 @@ instance Pretty (SynType CompRn) where
     SynType'Var _ var -> pretty var
     SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
     SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
-    SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
 
 instance (Pretty a) => Pretty (Expected a) where
@@ -1032,7 +1019,6 @@ instance Pretty (SynType CompTc) where
     SynType'Var _ var -> pretty var
     SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
     SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
-    SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
 
 instance Pretty (SynTerm CompTc) where
@@ -1145,7 +1131,6 @@ instance Pretty (SynType CompZn) where
     SynType'Var _ var -> pretty var
     SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
     SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
-    SynType'Paren _ ty -> parens (pretty ty)
     SynType'Concrete _ ty -> pretty ty
 
 parensIndent :: Doc ann -> Doc ann
