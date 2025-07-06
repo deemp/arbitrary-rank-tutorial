@@ -698,7 +698,9 @@ type NameFs = FastString
 
 type IUniqueSupply = (?uniqueSupply :: IORef Int)
 
--- Map names to ids
+-- | Current scope.
+--
+-- Visible variable names and their ids.
 type IScope = (?scope :: Map NameFs Int)
 
 type ICurrentFilePath = (?currentFilePath :: FastString)
