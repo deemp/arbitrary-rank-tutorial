@@ -9,37 +9,21 @@
 module Language.STLC.LanguageServer.IntervalMap where
 
 import Data.IntervalMap.Generic.Strict qualified as IM
+import Language.LSP.Protocol.Types (Position (..), Range (..))
 import Language.STLC.Typing.Jones2007.BasicTypes (AnnoZn (..), CompZn, Concrete (..), Name (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnTermVar (..), ZnTyVar (..), ZnType)
 import Prettyprinter (Pretty (..))
 
-data SrcPosition = SrcPosition
-  { srcPositionLine :: {-# UNPACK #-} !Int
-  , srcPositionCol :: {-# UNPACK #-} !Int
-  }
-  deriving stock (Eq, Ord)
+newtype IMPosition
+  = IMPosition {imPosition :: Position}
+  deriving newtype (Eq, Ord)
 
-data IM'RealSrcSpan
-  = IM'RealSrcSpan
-  { imSrcSpanSLine :: {-# UNPACK #-} !Int
-  , imSrcSpanSCol :: {-# UNPACK #-} !Int
-  , imSrcSpanELine :: {-# UNPACK #-} !Int
-  , imSrcSpanECol :: {-# UNPACK #-} !Int
-  }
-  deriving (Eq, Show)
+newtype IMRange
+  = IMRange {imRange :: Range}
+  deriving newtype (Eq)
 
 data SpanInfo
   = SpanInfo'Name Name
-  | SpanInfo'SrcSpan SrcSpan
   | SpanInfo'ZnType ZnType
-
-instance Pretty SpanInfo where
-  pretty = \case
-    SpanInfo'Name name -> pretty name
-    SpanInfo'SrcSpan span' -> pretty span'
-    SpanInfo'ZnType ty -> pretty ty
-
-instance Show SpanInfo where
-  show = show . pretty
 
 goTermVar :: ZnTermVar -> [(SrcSpan, SpanInfo)]
 goTermVar var = [(var.varName.nameLoc, SpanInfo'ZnType var.varType)]
@@ -50,9 +34,11 @@ goTyVar var = [(var.varName.nameLoc, SpanInfo'Name var.varName)]
 goType :: SynType CompZn -> [(SrcSpan, SpanInfo)]
 goType = \case
   SynType'Var _ var -> goTyVar var
-  SynType'ForAll anno tvs body -> [(anno, SpanInfo'SrcSpan anno)] <> (concat $ goTyVar <$> tvs) <> goType body
-  SynType'Fun anno arg res -> [(anno, SpanInfo'SrcSpan anno)] <> goType arg <> goType res
   SynType'Concrete _ ty -> [(ty.concreteName.nameLoc, SpanInfo'Name ty.concreteName)]
+  -- HLS doesn't provide info on hover over "forall" and "->".
+  -- We don't provide this info either.
+  SynType'ForAll _ tvs body -> (concat $ goTyVar <$> tvs) <> goType body
+  SynType'Fun _ arg res -> goType arg <> goType res
 
 goTerm :: SynTerm CompZn -> [(SrcSpan, SpanInfo)]
 goTerm = \case
@@ -78,7 +64,7 @@ partitionWith f (x : xs) =
 -- All spans must belong to the same file
 -- because they're all produced
 -- from a single AST
-toIntervalMap :: SynTerm CompZn -> IM.IntervalMap IM'RealSrcSpan SpanInfo
+toIntervalMap :: SynTerm CompZn -> IM.IntervalMap IMRange SpanInfo
 toIntervalMap term = IM.fromList spanInfo
  where
   isRealSrcSpan = \case
@@ -92,96 +78,64 @@ toIntervalMap term = IM.fromList spanInfo
       , info
       ) ->
         Right
-          ( IM'RealSrcSpan
-              { imSrcSpanSLine = srcSpanSLine
-              , imSrcSpanSCol = srcSpanSCol
-              , imSrcSpanELine = srcSpanELine
-              , imSrcSpanECol = srcSpanECol
-              }
+          ( IMRange
+              Range
+                { _start =
+                    Position
+                      { _line = fromIntegral srcSpanSLine
+                      , _character = fromIntegral srcSpanSCol
+                      }
+                , _end =
+                    Position
+                      { _line = fromIntegral srcSpanELine
+                      , _character = fromIntegral srcSpanECol
+                      }
+                }
           , info
           )
     (UnhelpfulSpan span', info) -> Left (span', info)
   spanInfo = snd (partitionWith isRealSrcSpan (goTerm term))
 
-k :: SynTerm CompZn
-k = undefined
-
-t1 :: SrcPosition
-t1 = undefined
-
-toImRealSrcSpan :: SrcPosition -> IM'RealSrcSpan
-toImRealSrcSpan
-  SrcPosition
-    { srcPositionCol
-    , srcPositionLine
-    } =
-    IM'RealSrcSpan
-      { imSrcSpanSLine = srcPositionLine
-      , imSrcSpanSCol = srcPositionCol
-      , imSrcSpanELine = srcPositionLine
-      , imSrcSpanECol = srcPositionCol
-      }
-
-lookupAtSrcPosition :: SrcPosition -> IM.IntervalMap IM'RealSrcSpan a -> Maybe (IM'RealSrcSpan, a)
-lookupAtSrcPosition point m =
-  case res of
+lookupAtIMPosition :: IMPosition -> IM.IntervalMap IMRange a -> Maybe (IMRange, a)
+lookupAtIMPosition pos mp =
+  case mbRange of
     Nothing -> Nothing
-    Just (span', _) ->
-      if IM.inside point span'
-        then res
+    Just (range, _) ->
+      if IM.inside pos range
+        then mbRange
         else Nothing
  where
-  res = IM.lookupLE (toImRealSrcSpan point) m
+  pos' = pos.imPosition
+  range' = IMRange (Range{_start = pos', _end = pos'})
+  mbRange = IM.lookupLE range' mp
 
-instance Ord IM'RealSrcSpan where
-  x <= y =
-    x.imSrcSpanSLine < y.imSrcSpanSLine
-      || x.imSrcSpanSLine == y.imSrcSpanSLine
-        && x.imSrcSpanSCol < y.imSrcSpanSCol
-      || x.imSrcSpanSLine == y.imSrcSpanSLine
-        && x.imSrcSpanSCol == y.imSrcSpanSCol
-        && x.imSrcSpanELine > y.imSrcSpanELine
-      || x.imSrcSpanSLine == y.imSrcSpanSLine
-        && x.imSrcSpanSCol == y.imSrcSpanSCol
-        && x.imSrcSpanELine == y.imSrcSpanELine
-        && x.imSrcSpanECol >= y.imSrcSpanECol
+instance Ord IMRange where
+  IMRange x <= IMRange y =
+    x._start < y._start
+      || x._start == y._start && x._end >= y._end
 
-instance IM.Interval IM'RealSrcSpan SrcPosition where
-  lowerBound
-    IM'RealSrcSpan
-      { imSrcSpanSLine
-      , imSrcSpanSCol
-      } =
-      SrcPosition
-        { srcPositionLine = imSrcSpanSLine
-        , srcPositionCol = imSrcSpanSCol
-        }
-  upperBound
-    IM'RealSrcSpan
-      { imSrcSpanELine
-      , imSrcSpanECol
-      } =
-      SrcPosition
-        { srcPositionLine = imSrcSpanELine
-        , srcPositionCol = imSrcSpanECol
-        }
+instance IM.Interval IMRange IMPosition where
+  lowerBound (IMRange Range{_start}) = IMPosition _start
+  upperBound (IMRange Range{_end}) = IMPosition _end
   rightClosed _ = False
 
-instance Pretty SrcPosition where
-  pretty SrcPosition{srcPositionLine, srcPositionCol} =
-    pretty srcPositionLine <> ":" <> pretty srcPositionCol
+instance Pretty SpanInfo where
+  pretty = \case
+    SpanInfo'Name name -> pretty name
+    SpanInfo'ZnType ty -> pretty ty
 
-instance Show SrcPosition where
+instance Show SpanInfo where
   show = show . pretty
 
-instance Pretty IM'RealSrcSpan where
-  pretty
-    IM'RealSrcSpan
-      { imSrcSpanSLine
-      , imSrcSpanSCol
-      , imSrcSpanELine
-      , imSrcSpanECol
-      } =
-      (pretty imSrcSpanSLine <> ":" <> pretty imSrcSpanSCol)
-        <> "-"
-        <> (pretty imSrcSpanELine <> ":" <> pretty imSrcSpanECol)
+instance Pretty IMPosition where
+  pretty (IMPosition Position{_line, _character}) =
+    pretty (_line + 1) <> ":" <> pretty (_character + 1)
+
+instance Show IMPosition where
+  show = show . pretty
+
+instance Pretty IMRange where
+  pretty (IMRange Range{_start, _end}) =
+    (pretty (IMPosition _start))
+      <> "-"
+      <> (pretty (IMPosition _end))
