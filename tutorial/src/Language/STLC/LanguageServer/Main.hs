@@ -40,7 +40,7 @@ import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition 
 import Language.LSP.VFS (virtualFileText)
 import Language.STLC.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
 import Language.STLC.Typing.Jones2007.BasicTypes (FastString)
-import Language.STLC.Typing.Jones2007.Main (runTypechecker')
+import Language.STLC.Typing.Jones2007.TcTerm (runTypechecker')
 import Prettyprinter (Doc, Pretty (..), defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
 import UnliftIO (catch)

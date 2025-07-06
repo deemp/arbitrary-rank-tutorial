@@ -19,6 +19,8 @@ import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
 import Language.STLC.Typing.Jones2007.ConstraintTypes (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..))
 import Language.STLC.Typing.Jones2007.TcMonad
 import Prettyprinter (Pretty (..), (<+>))
+import GHC.Stack (HasCallStack)
+import Language.STLC.Typing.Pass.Renamed (parseInputText)
 
 ------------------------------------------
 --      The top-level wrapper           --
@@ -33,9 +35,8 @@ typecheck term =
     tcResult <- inferSigma term
     zonkFinallyTerm (fst tcResult)
 
-runTypechecker :: (IDebug) => FilePath -> SynTerm BT.CompRn -> IO (SynTerm BT.CompZn)
-runTypechecker filePath program = do
-  uniqueSupply <- newIORef 0
+runTypechecker :: (IDebug, IScope, IUniqueSupply, ICurrentFilePath) => SynTerm BT.CompRn -> IO (SynTerm BT.CompZn)
+runTypechecker program = do
   constraints <-
     newIORef
       WantedCts
@@ -44,14 +45,28 @@ runTypechecker filePath program = do
         }
   tcError <- newIORef Nothing
   let
-    ?uniqueSupply = uniqueSupply
     ?tcLevel = BT.TcLevel 0
     ?varEnv = Map.empty
-    ?scope = Map.empty
     ?constraints = constraints
     ?tcError = tcError
-    ?currentFilePath = T.pack filePath
+    ?debug = ?debug
+    ?scope = ?scope
+    ?uniqueSupply = ?uniqueSupply
+    ?currentFilePath = ?currentFilePath
   typecheck program
+  
+-- TODO use filepath from implicit params
+runTypechecker' :: (HasCallStack, BT.IDebug) => BT.FastString -> T.Text -> IO (SynTerm CompZn)
+runTypechecker' filePath content = do
+  uniqueSupply <- newIORef 0
+  let ?uniqueSupply = uniqueSupply
+      ?currentFilePath = filePath
+      ?scope = Map.empty
+      ?debug = ?debug
+      ?callStack = ?callStack
+  program <- parseInputText content
+  runTypechecker program
+
 
 zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
 zonkFinallySynType = \case
