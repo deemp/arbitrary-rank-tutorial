@@ -10,11 +10,13 @@ module Language.STLC.Typing.Jones2007.TcTerm where
 
 import Control.Exception.Base (catch)
 import Control.Monad (forM)
-import Data.List ((\\))
-import Data.Text (Text)
+import Data.Map qualified as Map
 import Data.Text qualified as T
+import GHC.IORef (newIORef)
+import Language.STLC.Typing.Jones2007.Bag (emptyBag, unitBag)
 import Language.STLC.Typing.Jones2007.BasicTypes
-import Language.STLC.Typing.Jones2007.ConstraintTypes (TypedThing (..))
+import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
+import Language.STLC.Typing.Jones2007.ConstraintTypes (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..))
 import Language.STLC.Typing.Jones2007.TcMonad
 import Prettyprinter (Pretty (..), (<+>))
 
@@ -25,17 +27,31 @@ import Prettyprinter (Pretty (..), (<+>))
 -- TODO Too much boilerplate...
 
 -- TODO report many independent errors, not fail on the first error
-typecheck :: SynTerm CompRn -> TcM (Either TcErrorWithCallStack (SynTerm CompZn))
-typecheck e = do
-  res <-
-    catch
-      (Right <$> inferSigma e)
-      ( \(err :: TcErrorWithCallStack) -> do
-          pure (Left err)
-      )
-  case fst <$> res of
-    Left err -> pure $ Left err
-    Right term -> Right <$> zonkFinallyTerm term
+typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
+typecheck term =
+  do
+    tcResult <- inferSigma term
+    zonkFinallyTerm (fst tcResult)
+
+runTypechecker :: (IDebug) => FilePath -> SynTerm BT.CompRn -> IO (SynTerm BT.CompZn)
+runTypechecker filePath program = do
+  uniqueSupply <- newIORef 0
+  constraints <-
+    newIORef
+      WantedCts
+        { wc_simple = emptyBag
+        , wc_impl = emptyBag
+        }
+  tcError <- newIORef Nothing
+  let
+    ?uniqueSupply = uniqueSupply
+    ?tcLevel = BT.TcLevel 0
+    ?varEnv = Map.empty
+    ?scope = Map.empty
+    ?constraints = constraints
+    ?tcError = tcError
+    ?currentFilePath = T.pack filePath
+  typecheck program
 
 zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
 zonkFinallySynType = \case
