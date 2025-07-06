@@ -44,12 +44,11 @@ where
 --   writeTcRef,
 -- )
 
-import Control.Exception (throw)
-import Control.Exception.Base (Exception)
+import Control.Exception (Exception, throw)
 import Control.Monad (when)
-import Data.Foldable (fold)
+import Data.Containers.ListUtils (nubOrd)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.List (intersperse, partition, (\\))
+import Data.List (nub, partition, (\\))
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
@@ -57,12 +56,12 @@ import Data.Text (pack)
 import Data.Traversable (forM)
 import GHC.Records (HasField)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
+import Language.STLC.Syntax.Abs qualified as Abs
 import Language.STLC.Typing.Jones2007.Bag (Bag (..))
 import Language.STLC.Typing.Jones2007.BasicTypes
-import Language.STLC.Typing.Jones2007.ConstraintTypes (Ct (..), CtEvidence (..), CtLoc (..), CtOrigin (..), EqCt (..), TypedThing, WantedConstraints (..), WantedCtEvidence (..))
+import Language.STLC.Typing.Pass.Renamed
 import Prettyprinter
 import Prettyprinter.Render.Text
-import Language.STLC.Typing.Pass.Renamed
 
 ------------------------------------------
 --      The monad itself                --
@@ -715,3 +714,70 @@ occursCheckErr :: TcTyVar -> Tau -> TcM ()
 -- Raise an occurs-check error
 occursCheckErr tv ty =
   die (TcError'OccursCheck tv ty)
+
+-- ---------------------------------
+-- --  Free and bound variables
+
+-- Get the MetaTvs from a type; no duplicates in result
+metaTvs :: [TcType] -> [TcTyVar]
+metaTvs tys = nubOrd (foldr (flip go) [] tys)
+ where
+  go :: [TcTyVar] -> TcType -> [TcTyVar]
+  go acc = \case
+    Type'Var var ->
+      case var of
+        TcTyVar{varDetails = MetaTv{}} -> var : acc
+        _ -> acc
+    Type'ForAll _ ty -> go acc ty
+    Type'Concrete _ -> acc
+    Type'Fun ty1 ty2 -> go (go acc ty1) ty2
+
+freeTyVars :: [TcType] -> [TcTyVar]
+-- Get the free TyVars from a type; no duplicates in result
+freeTyVars tys = nubOrd (foldr (go Set.empty) [] tys)
+ where
+  go ::
+    -- Bound type variables
+    Set.Set TcTyVar ->
+    -- Type to look at
+    TcType ->
+    -- Accumulates result
+    [TcTyVar] ->
+    [TcTyVar]
+  go bound v acc =
+    case v of
+      Type'Var var
+        -- Ignore occurrences of bound type variables
+        | Set.member var bound -> acc
+        | otherwise -> var : acc
+      Type'Concrete _ -> acc
+      Type'ForAll vars ty -> go (Set.fromList vars <> bound) ty acc
+      Type'Fun ty1 ty2 -> go bound ty1 (go bound ty2 acc)
+
+tyVarBndrs :: Rho -> [TcTyVar]
+-- Get all the binders used in ForAlls in the type, so that
+-- when quantifying an outer for-all we can avoid these inner ones
+tyVarBndrs ty = nub (bndrs ty)
+ where
+  bndrs = \case
+    Type'ForAll vars body -> vars <> bndrs body
+    -- (ForAll' tvs body) = tvs ++ bndrs body
+    Type'Fun arg res -> bndrs arg <> bndrs res
+    _ -> []
+
+ex1 :: Abs.Exp
+ex1 = "\\ (x :: forall b. Int). (\\ z. z) x"
+
+ex2 :: IO (Doc ann)
+ex2 = do
+  let builtInTypes = ["Int"]
+  uniqueSupply <- newIORef (length builtInTypes)
+  let
+    ?scope = Map.fromList (zip builtInTypes [0 ..])
+    ?uniqueSupply = uniqueSupply
+    ?currentFilePath = "Unknown"
+  pretty <$> convertAbsToBT ex1
+
+-- >>> ex2
+-- \(x_1 :: forall b_2. Int). (\z_3. z_3) x_1
+

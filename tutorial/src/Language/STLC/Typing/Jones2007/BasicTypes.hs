@@ -33,13 +33,10 @@ module Language.STLC.Typing.Jones2007.BasicTypes where
 -- This module defines the basic types used by the type checker
 -- Everything defined in here is exported
 
-import Data.Containers.ListUtils (nubOrd)
 import Data.Data (Data (..))
 import Data.Function ((&))
 import Data.IORef
-import Data.List (nub)
 import Data.Map (Map)
-import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -707,72 +704,6 @@ type IScope = (?scope :: Map NameFs Int)
 type ICurrentFilePath = (?currentFilePath :: FastString)
 
 type IDebug = (?debug :: Bool)
-
--- ex1 :: Abs.Exp
-ex1 = "\\ (x :: forall b. Int). (\\ z. z) x"
-
-ex2 :: IO (Doc ann)
-ex2 = do
-  let builtInTypes = ["Int"]
-  uniqueSupply <- newIORef (length builtInTypes)
-  let
-    ?scope = Map.fromList (zip builtInTypes [0 ..])
-    ?uniqueSupply = uniqueSupply
-    ?currentFilePath = "Unknown"
-  pretty <$> convertAbsToBT ex1
-
--- >>> ex2
--- \(x_1 :: forall b_2. Int). (\z_3. z_3) x_1
-
--- ---------------------------------
--- --  Free and bound variables
-
--- Get the MetaTvs from a type; no duplicates in result
-metaTvs :: [TcType] -> [TcTyVar]
-metaTvs tys = nubOrd (foldr (flip go) [] tys)
- where
-  go :: [TcTyVar] -> TcType -> [TcTyVar]
-  go acc = \case
-    Type'Var var ->
-      case var of
-        TcTyVar{varDetails = MetaTv{}} -> var : acc
-        _ -> acc
-    Type'ForAll _ ty -> go acc ty
-    Type'Concrete _ -> acc
-    Type'Fun ty1 ty2 -> go (go acc ty1) ty2
-
-freeTyVars :: [TcType] -> [TcTyVar]
--- Get the free TyVars from a type; no duplicates in result
-freeTyVars tys = nubOrd (foldr (go Set.empty) [] tys)
- where
-  go ::
-    -- Bound type variables
-    Set.Set TcTyVar ->
-    -- Type to look at
-    TcType ->
-    -- Accumulates result
-    [TcTyVar] ->
-    [TcTyVar]
-  go bound v acc =
-    case v of
-      Type'Var var
-        -- Ignore occurrences of bound type variables
-        | Set.member var bound -> acc
-        | otherwise -> var : acc
-      Type'Concrete _ -> acc
-      Type'ForAll vars ty -> go (Set.fromList vars <> bound) ty acc
-      Type'Fun ty1 ty2 -> go bound ty1 (go bound ty2 acc)
-
-tyVarBndrs :: Rho -> [TcTyVar]
--- Get all the binders used in ForAlls in the type, so that
--- when quantifying an outer for-all we can avoid these inner ones
-tyVarBndrs ty = nub (bndrs ty)
- where
-  bndrs = \case
-    Type'ForAll vars body -> vars <> bndrs body
-    -- (ForAll' tvs body) = tvs ++ bndrs body
-    Type'Fun arg res -> bndrs arg <> bndrs res
-    _ -> []
 
 instance Eq Name where
   n1 == n2 = n1.nameUnique == n2.nameUnique
