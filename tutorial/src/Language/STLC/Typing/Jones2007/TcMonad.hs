@@ -62,6 +62,7 @@ import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.ConstraintTypes (Ct (..), CtEvidence (..), CtLoc (..), CtOrigin (..), EqCt (..), TypedThing, WantedConstraints (..), WantedCtEvidence (..))
 import Prettyprinter
 import Prettyprinter.Render.Text
+import Language.STLC.Typing.Pass.Renamed
 
 ------------------------------------------
 --      The monad itself                --
