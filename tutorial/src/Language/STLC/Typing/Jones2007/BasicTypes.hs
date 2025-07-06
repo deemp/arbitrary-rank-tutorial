@@ -747,7 +747,7 @@ withNamesInScope names act =
 
 class ConvertAbsToBT a where
   type To a
-  convertAbsToBT :: (IConvertRename) => a -> (To a)
+  convertAbsToBT :: (HasCallStack, IConvertRename) => a -> (To a)
 
 convertPositionToSrcSpan :: (ICurrentFilePath) => BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
@@ -1096,11 +1096,11 @@ instance Show TcTyVar where
       <> "]"
 
 instance Pretty TcTermVar where
-  pretty TcTermVar{varName, varType} =
+  pretty var =
     hsep
-      [ pretty varName
+      [ pretty var.varName
       , "::"
-      , braces (pretty varType)
+      , braces (pretty var.varType)
       ]
 
 instance Pretty (Type CompTc) where
@@ -1124,13 +1124,13 @@ instance Pretty (SynTerm CompTc) where
   pretty = \case
     SynTerm'Var _ var -> pretty var
     SynTerm'Lit _ val -> pretty val
-    SynTerm'App AnnoTc{annoType} term1 term2 ->
+    SynTerm'App anno term1 term2 ->
       hsep
         [ parensIndent (parensIndent (pretty term1) <> line <> indent 2 (pretty term2))
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'Lam AnnoTc{annoType} var term ->
+    SynTerm'Lam anno var term ->
       hsep
         [ parensIndent
             ( "\\"
@@ -1140,20 +1140,20 @@ instance Pretty (SynTerm CompTc) where
                 <> indent 2 (parensIndent (pretty term))
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'ALam AnnoTc{annoType} TcTermVar{varName, varType} ty term ->
+    SynTerm'ALam anno var ty term ->
       hsep
         [ parens
             ( line
                 <> "\\"
                 <> parens
                   ( hsep
-                      [ pretty varName
+                      [ pretty var.varName
                       , "::"
                       , braces (pretty ty)
                       , "::"
-                      , pretty varType
+                      , pretty var.varType
                       ]
                   )
                 <> "."
@@ -1161,9 +1161,9 @@ instance Pretty (SynTerm CompTc) where
                 <> line
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'Let AnnoTc{annoType} TcTermVar{varName, varType} term1 term2 ->
+    SynTerm'Let anno var term1 term2 ->
       hsep
         [ parensIndent
             ( vsep
@@ -1171,13 +1171,13 @@ instance Pretty (SynTerm CompTc) where
                 , indent
                     2
                     ( vsep
-                        [ pretty varName <+> "="
+                        [ pretty var.varName <+> "="
                         , indent
                             2
                             ( hsep
                                 [ parensIndent (pretty term1)
                                 , "::"
-                                , pretty varType
+                                , pretty var.varType
                                 ]
                             )
                         ]
@@ -1187,9 +1187,9 @@ instance Pretty (SynTerm CompTc) where
                 ]
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'Ann AnnoTc{annoType} term ty ->
+    SynTerm'Ann anno term ty ->
       hsep
         [ parensIndent
             ( hsep
@@ -1199,7 +1199,7 @@ instance Pretty (SynTerm CompTc) where
                 ]
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
 
 -- =======================================
@@ -1246,13 +1246,13 @@ instance Pretty (SynTerm CompZn) where
   pretty = \case
     SynTerm'Var _ var -> pretty var
     SynTerm'Lit _ val -> pretty val
-    SynTerm'App AnnoZn{annoType} term1 term2 ->
+    SynTerm'App anno term1 term2 ->
       hsep
         [ parensIndent (parensIndent (pretty term1) <> line <> indent 2 (pretty term2))
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'Lam AnnoZn{annoType} var term ->
+    SynTerm'Lam anno var term ->
       hsep
         [ parensIndent
             ( "\\"
@@ -1262,20 +1262,20 @@ instance Pretty (SynTerm CompZn) where
                 <> indent 2 (parensIndent (pretty term))
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'ALam AnnoZn{annoType} ZnTermVar{varName, varType} ty term ->
+    SynTerm'ALam anno var ty term ->
       hsep
         [ parens
             ( line
                 <> "\\"
                 <> parens
                   ( hsep
-                      [ pretty varName
+                      [ pretty var.varName
                       , "::"
                       , braces (pretty ty)
                       , "::"
-                      , pretty varType
+                      , pretty var.varType
                       ]
                   )
                 <> "."
@@ -1283,9 +1283,9 @@ instance Pretty (SynTerm CompZn) where
                 <> line
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'Let AnnoZn{annoType} ZnTermVar{varName, varType} term1 term2 ->
+    SynTerm'Let anno var term1 term2 ->
       hsep
         [ parensIndent
             ( vsep
@@ -1293,13 +1293,13 @@ instance Pretty (SynTerm CompZn) where
                 , indent
                     2
                     ( vsep
-                        [ pretty varName <+> "="
+                        [ pretty var.varName <+> "="
                         , indent
                             2
                             ( hsep
                                 [ parensIndent (pretty term1)
                                 , "::"
-                                , pretty varType
+                                , pretty var.varType
                                 ]
                             )
                         ]
@@ -1309,9 +1309,9 @@ instance Pretty (SynTerm CompZn) where
                 ]
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
-    SynTerm'Ann AnnoZn{annoType} term ty ->
+    SynTerm'Ann anno term ty ->
       hsep
         [ parensIndent
             ( hsep
@@ -1321,5 +1321,5 @@ instance Pretty (SynTerm CompZn) where
                 ]
             )
         , "::"
-        , pretty annoType
+        , pretty anno.annoType
         ]
