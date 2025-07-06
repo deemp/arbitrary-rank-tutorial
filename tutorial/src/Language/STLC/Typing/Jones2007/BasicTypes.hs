@@ -334,6 +334,16 @@ type KindOrType = Type
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L163
 type TyVar = RnVar
 
+type Sigma = TcType
+type Rho = TcType -- No top-level ForAll
+type Tau = TcType -- No ForAlls anywhere
+
+data TypeConcrete
+  = TypeConcrete'Int
+  | TypeConcrete'Bool
+  | TypeConcrete'String
+  deriving stock (Eq)
+
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L124
 data Type p
   = -- | Vanilla type variable
@@ -362,8 +372,6 @@ instance (Show (XVar' p)) => Show (Type p) where
 -- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_158972
 -- + Separate TcType from Type
 -- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
-
--- TODO use CompZn
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 type TcType = Type CompTc
@@ -885,27 +893,6 @@ ex2 = do
 -- >>> ex2
 -- \(x_1 :: forall b_2. Int). (\z_3. z_3) x_1
 
--- -----------------------------------
--- --      Types                   --
--- -----------------------------------
-
-type Sigma = TcType
-type Rho = TcType -- No top-level ForAll
-type Tau = TcType -- No ForAlls anywhere
-
-data TypeConcrete
-  = TypeConcrete'Int
-  | TypeConcrete'Bool
-  | TypeConcrete'String
-  deriving stock (Eq)
-
--- ---------------------------------
--- --      Constructors
-
-(-->) :: Sigma -> Sigma -> Sigma
-arg --> res = Type'Fun arg res
-
-infixr 4 --> -- The arrow type constructor
 
 -- ---------------------------------
 -- --  Free and bound variables
@@ -963,24 +950,6 @@ instance Eq Name where
 instance Ord Name where
   n1 <= n2 = n1.nameUnique <= n2.nameUnique
 
-instance Eq RnVar where
-  var1 == var2 = var1.varName == var2.varName
-
-instance Eq TcTyVar where
-  var1 == var2 = var1.varName == var2.varName
-
-instance Eq ZnTyVar where
-  var1 == var2 = var1.varName == var2.varName
-
-instance Ord RnVar where
-  var1 <= var2 = var1.varName <= var2.varName
-
-instance Ord TcTyVar where
-  var1 <= var2 = var1.varName <= var2.varName
-
-instance Ord ZnTyVar where
-  var1 <= var2 = var1.varName <= var2.varName
-
 instance Pretty RealSrcSpan where
   pretty r =
     (pretty r.srcSpanFile <> ":")
@@ -1016,51 +985,67 @@ instance Pretty SrcSpan where
 instance Show SrcSpan where
   show = show . pretty
 
+instance Pretty Name where
+  pretty name =
+    case name.nameOcc.occNameSpace of
+      NameSpace'Type'Concrete -> pretty name.nameOcc.occNameFS
+      _ -> pretty name.nameOcc.occNameFS <> "_" <> pretty name.nameUnique
+
 instance Show Name where
-  show Name{nameOcc, nameUnique, nameLoc} =
-    T.unpack nameOcc.occNameFS <> "[" <> "ID " <> show nameUnique <> ", " <> show nameLoc <> "]"
-
--- TODO implement
-instance Show RnVar where
-  show RnVar{varName} = show varName
-
-instance Show TcTyVar where
-  show TcTyVar{varName = Name{nameOcc, nameUnique, nameLoc}, varDetails} =
-    T.unpack nameOcc.occNameFS
-      <> "["
-      <> ("L " <> show varDetails.tcLevel <> ", ")
-      <> (getTcTyVarKind varDetails <> ", ")
-      <> ("ID " <> show nameUnique <> ", ")
-      <> show nameLoc
-      <> "]"
-
-getTcTyVarKind :: (IsString a) => TcTyVarDetails -> a
-getTcTyVarKind = \case
-  BoundTv{} -> "Bound"
-  SkolemTv{} -> "Skolem"
-  MetaTv{} -> "Meta"
-
-instance Show ZnTyVar where
-  show ZnTyVar{varName} = show varName
-
--- TODO implement
-instance Pretty RnVar where
-  pretty RnVar{varName} = pretty varName
-
-instance Pretty TcTyVar where
-  pretty TcTyVar{varName, varDetails} =
-    pretty varName
-      <> brackets
-        ( pretty (show varDetails.tcLevel)
-            <> ","
-            <+> getTcTyVarKind varDetails
-        )
+  show n =
+    T.unpack n.nameOcc.occNameFS <> "[" <> "ID " <> show n.nameUnique <> ", " <> show n.nameLoc <> "]"
 
 instance Pretty SynLit where
   pretty = \case
     SynLit'Num val -> pretty val
     SynLit'Str val -> "\"" <> pretty val <> "\""
     SynLit'Bool val -> pretty val
+
+instance Pretty TypeConcrete where
+  pretty = \case
+    TypeConcrete'Int -> "Int"
+    TypeConcrete'Bool -> "Bool"
+    TypeConcrete'String -> "String"
+
+instance Show TypeConcrete where
+  show = show . pretty
+
+instance Pretty Concrete where
+  pretty c = pretty c.concreteType
+
+instance (Pretty a) => Pretty (Expected a) where
+  pretty (Infer _) = "[Infer]"
+  pretty (Check a) = "[Check]: " <> pretty a
+
+-- ========================================
+-- Instances for Rn (renaming stage) things
+-- ========================================
+
+instance Eq RnVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Ord RnVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
+instance Show RnVar where
+  show RnVar{varName} = show varName
+
+instance Pretty RnVar where
+  pretty RnVar{varName} = pretty varName
+
+instance Pretty (Type CompRn) where
+  pretty = \case
+    Type'Var var -> pretty var
+    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
+    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
+    Type'Concrete ty -> pretty ty
+
+instance Pretty (SynType CompRn) where
+  pretty = \case
+    SynType'Var _ var -> pretty var
+    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
+    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
+    SynType'Concrete _ ty -> pretty ty
 
 instance Pretty (SynTerm CompRn) where
   pretty = \case
@@ -1072,25 +1057,43 @@ instance Pretty (SynTerm CompRn) where
     SynTerm'Let _ name term1 term2 -> "let" <+> pretty name <+> "=" <+> pretty term1 <+> "in" <+> pretty term2
     SynTerm'Ann _ term ty -> parens (parens (pretty term) <+> "::" <+> pretty ty)
 
+-- ============================================
+-- Instances for Tc (typechecking stage) things
+-- ============================================
+
+instance Eq TcTyVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Ord TcTyVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
 instance Pretty TcLevel where
   pretty (TcLevel lvl) = "L " <> pretty lvl
 
-instance Pretty Name where
-  pretty name =
-    case name.nameOcc.occNameSpace of
-      NameSpace'Type'Concrete -> pretty name.nameOcc.occNameFS
-      _ -> pretty name.nameOcc.occNameFS <> "_" <> pretty name.nameUnique
+getTcTyVarKind :: (IsString a) => TcTyVarDetails -> a
+getTcTyVarKind = \case
+  BoundTv{} -> "Bound"
+  SkolemTv{} -> "Skolem"
+  MetaTv{} -> "Meta"
 
-instance Pretty (SynType CompRn) where
-  pretty = \case
-    SynType'Var _ var -> pretty var
-    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
-    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
-    SynType'Concrete _ ty -> pretty ty
+instance Pretty TcTyVar where
+  pretty v =
+    pretty v.varName
+      <> brackets
+        ( pretty (show v.varDetails.tcLevel)
+            <> ","
+            <+> getTcTyVarKind v.varDetails
+        )
 
-instance (Pretty a) => Pretty (Expected a) where
-  pretty (Infer _) = "[Infer]"
-  pretty (Check a) = "[Check]: " <> pretty a
+instance Show TcTyVar where
+  show var =
+    T.unpack var.varName.nameOcc.occNameFS
+      <> "["
+      <> ("L " <> show var.varDetails.tcLevel <> ", ")
+      <> (getTcTyVarKind var.varDetails <> ", ")
+      <> ("ID " <> show var.varName.nameUnique <> ", ")
+      <> show var.varName.nameLoc
+      <> "]"
 
 instance Pretty TcTermVar where
   pretty TcTermVar{varName, varType} =
@@ -1100,12 +1103,22 @@ instance Pretty TcTermVar where
       , braces (pretty varType)
       ]
 
+instance Pretty (Type CompTc) where
+  pretty = \case
+    Type'Var var -> pretty var
+    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
+    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
+    Type'Concrete ty -> pretty ty
+
 instance Pretty (SynType CompTc) where
   pretty = \case
     SynType'Var _ var -> pretty var
     SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
     SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
     SynType'Concrete _ ty -> pretty ty
+
+parensIndent :: Doc ann -> Doc ann
+parensIndent x = parens (line <> indent 2 x <> line)
 
 instance Pretty (SynTerm CompTc) where
   pretty = \case
@@ -1189,6 +1202,25 @@ instance Pretty (SynTerm CompTc) where
         , pretty annoType
         ]
 
+-- =======================================
+-- Instances for Zn (zonking stage) things
+-- =======================================
+
+instance Eq ZnTyVar where
+  var1 == var2 = var1.varName == var2.varName
+
+instance Ord ZnTyVar where
+  var1 <= var2 = var1.varName <= var2.varName
+
+instance Show ZnTyVar where
+  show ZnTyVar{varName} = show varName
+
+instance Pretty ZnTyVar where
+  pretty ZnTyVar{varName} = pretty varName
+
+instance Pretty ZnTermVar where
+  pretty ZnTermVar{varName, varType} = parens (pretty varName <+> "::" <+> pretty varType)
+
 instance Pretty (Type CompZn) where
   pretty = \case
     Type'Var var -> pretty var
@@ -1203,24 +1235,12 @@ instance Pretty (Type CompZn) where
             _ -> id
     Type'Concrete ty -> pretty ty
 
-instance Pretty ZnTermVar where
-  pretty ZnTermVar{varName, varType} = parens (pretty varName <+> "::" <+> pretty varType)
-
-instance Pretty Concrete where
-  pretty Concrete{concreteType} = pretty concreteType
-
-instance Pretty ZnTyVar where
-  pretty ZnTyVar{varName} = pretty varName
-
 instance Pretty (SynType CompZn) where
   pretty = \case
     SynType'Var _ var -> pretty var
     SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
     SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
     SynType'Concrete _ ty -> pretty ty
-
-parensIndent :: Doc ann -> Doc ann
-parensIndent x = parens (line <> indent 2 x <> line)
 
 instance Pretty (SynTerm CompZn) where
   pretty = \case
@@ -1303,13 +1323,3 @@ instance Pretty (SynTerm CompZn) where
         , "::"
         , pretty annoType
         ]
-
-instance Pretty TypeConcrete where
-  pretty = \case
-    TypeConcrete'Int -> "Int"
-    TypeConcrete'Bool -> "Bool"
-    TypeConcrete'String -> "String"
-
-instance Show TypeConcrete where
-  show = show . pretty
-  
