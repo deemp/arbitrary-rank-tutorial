@@ -299,6 +299,10 @@ data UnhelpfulSpanReason
   deriving stock (Eq, Show)
 
 -- | Real Source Span
+--
+-- It's open on the right: [start; finish)
+--
+-- It's zero-based here. Not sure about GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L367
 data RealSrcSpan
   = RealSrcSpan'
@@ -739,14 +743,14 @@ class ConvertAbsToBT a where
 
 convertPositionToSrcSpan :: (ICurrentFilePath) => BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
-  Just ((srcSpanSLine, srcSpanSCol), (srcSpanELine, srcSpanECol)) ->
+  Just ((sLine, sCol), (eLine, eCol)) ->
     RealSrcSpan
       RealSrcSpan'
         { srcSpanFile = ?currentFilePath
-        , srcSpanSLine
-        , srcSpanSCol
-        , srcSpanELine
-        , srcSpanECol
+        , srcSpanSLine = sLine - 1
+        , srcSpanSCol = sCol - 1
+        , srcSpanELine = eLine - 1
+        , srcSpanECol = eCol - 1
         }
   Nothing ->
     UnhelpfulSpan UnhelpfulNoLocationInfo
@@ -978,36 +982,25 @@ instance Ord ZnTyVar where
   var1 <= var2 = var1.varName <= var2.varName
 
 instance Pretty RealSrcSpan where
-  pretty
-    RealSrcSpan'
-      { srcSpanFile
-      , srcSpanSLine
-      , srcSpanSCol
-      -- TODO other fields
-      } = pretty srcSpanFile <> ":" <> pretty srcSpanSLine <> ":" <> pretty srcSpanSCol
+  pretty r =
+    (pretty r.srcSpanFile <> ":")
+      <> (pretty (r.srcSpanSLine + 1) <> ":" <> pretty (r.srcSpanSCol + 1))
+      <> "-"
+      <> (pretty (r.srcSpanELine + 1) <> ":" <> pretty (r.srcSpanECol + 1))
 
-instance Pretty (Type CompRn)
+instance Show RealSrcSpan where
+  show = show . pretty
 
-instance Pretty (Type CompTc) where
+instance Pretty SkolemInfoAnon where
   pretty = \case
-    Type'Var var -> pretty var
-    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
-    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
-    Type'Concrete ty -> pretty ty
-
-instance Pretty (TypeConcrete)
-
--- TODO implement
-instance Show SkolemInfoAnon where
-  show = \case
     SigSkol _ _ _ -> "SigSkol"
     SigTypeSkol _ -> "SigTypeSkol"
     ForAllSkol _ -> "ForAllSkol"
     InferSkol _ -> "InferSkol"
     UnifyForAllSkol _ -> "UnifyForAllSkol"
 
--- TODO implement
-instance Pretty SkolemInfoAnon
+instance Show SkolemInfoAnon where
+  show = show . pretty
 
 instance Pretty UnhelpfulSpanReason where
   pretty = \case
