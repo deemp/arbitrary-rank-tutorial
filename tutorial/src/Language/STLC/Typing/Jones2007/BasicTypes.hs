@@ -791,15 +791,15 @@ instance Ord RnVar where
   var1 <= var2 = var1.varName <= var2.varName
 
 instance Show RnVar where
-  show RnVar{varName} = show varName
+  show var = show var.varName
 
 instance Pretty RnVar where
-  pretty RnVar{varName} = pretty varName
+  pretty var = pretty var.varName
 
 instance Pretty (Type CompRn) where
   pretty = \case
     Type'Var var -> pretty var
-    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
+    Type'ForAll vars body -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty body
     Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
     Type'Concrete ty -> pretty ty
 
