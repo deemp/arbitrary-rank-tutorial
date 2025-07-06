@@ -8,10 +8,11 @@
 
 module Language.STLC.LanguageServer.IntervalMap where
 
+import Control.Lens (traversed, (%~), (&), _1)
 import Data.IntervalMap.Generic.Strict qualified as IM
 import Language.LSP.Protocol.Types (Position (..), Range (..))
-import Language.STLC.Typing.Jones2007.BasicTypes (AnnoZn (..), CompZn, Concrete (..), Name (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnTermVar (..), ZnTyVar (..), ZnType)
-import Prettyprinter (Pretty (..))
+import Language.STLC.Typing.Jones2007.BasicTypes (AnnoZn (..), CompZn, Concrete (..), FastString, Name (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnTermVar (..), ZnTyVar (..), ZnType)
+import Prettyprinter (Doc, Pretty (..))
 
 newtype IMPosition
   = IMPosition {imPosition :: Position}
@@ -96,6 +97,7 @@ toIntervalMap term = IM.fromList spanInfo
     (UnhelpfulSpan span', info) -> Left (span', info)
   spanInfo = snd (partitionWith isRealSrcSpan (goTerm term))
 
+-- | Find `IMRange` that contains the 'IMPosition'.
 lookupAtIMPosition :: IMPosition -> IM.IntervalMap IMRange a -> Maybe (IMRange, a)
 lookupAtIMPosition pos mp =
   case mbRange of
@@ -108,6 +110,21 @@ lookupAtIMPosition pos mp =
   pos' = pos.imPosition
   range' = IMRange (Range{_start = pos', _end = pos'})
   mbRange = IM.lookupLE range' mp
+
+toRealSrcSpan :: FastString -> IMRange -> RealSrcSpan
+toRealSrcSpan filePath (IMRange r) =
+  RealSrcSpan'
+    { srcSpanFile = filePath
+    , srcSpanSLine = fromIntegral r._start._line
+    , srcSpanSCol = fromIntegral r._start._character
+    , srcSpanELine = fromIntegral r._end._line
+    , srcSpanECol = fromIntegral r._end._character
+    }
+
+prettyIM :: (Pretty a) => FastString -> IM.IntervalMap IMRange a -> Doc ann
+prettyIM filePath mp = pretty mp'
+ where
+  mp' = IM.toAscList mp & traversed . _1 %~ toRealSrcSpan filePath
 
 instance Ord IMRange where
   IMRange x <= IMRange y =
