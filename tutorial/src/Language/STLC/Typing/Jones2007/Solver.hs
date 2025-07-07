@@ -1,4 +1,6 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -6,16 +8,17 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE ImplicitParams #-}
-{-# LANGUAGE ConstraintKinds #-}
 
 module Language.STLC.Typing.Jones2007.Solver where
 
-import Control.Monad (forM_, when)
+import Control.Monad (forM, forM_, when)
+import Data.Foldable (Foldable (..))
+import Data.IORef (readIORef, writeIORef)
+import GHC.IORef (newIORef)
 import Language.STLC.Typing.Jones2007.Bag
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.ConstraintTypes
-import Language.STLC.Typing.Jones2007.TcMonad (ITcErrorPropagated, TcError (..), die, readTcRef, writeTcRef)
+import Language.STLC.Typing.Jones2007.TcMonad (TcError (..), TcM, die, readTcRef, unify, writeTcRef)
 
 class MaxTcLevel a where
   getMaxTcLevel :: a -> TcLevel
@@ -32,17 +35,23 @@ instance MaxTcLevel TcType where
     Type'Fun arg res -> maximum ([getMaxTcLevel arg, getMaxTcLevel res])
     Type'Concrete _ -> 0
 
-type SolveM a = (ITcErrorPropagated) => a -> IO ()
+type SolveM a b = a -> TcM b
 
 class Solve a where
-  recurse :: ((Solve b) => SolveM b) -> SolveM a
-  solve :: SolveM a
-  solve = recurse solve
-  occursCheck :: SolveM a
-  occursCheck = recurse occursCheck
+  type Ret a
+  solve :: SolveM a (Ret a)
+  occursCheck :: SolveM a ()
+
+toListWc :: WantedConstraints -> [WantedConstraints]
+toListWc = \case
+  WantedCts{wc_simple = Bag [], wc_impl = Bag []} -> []
+  x -> [x]
+
+fromListWc :: [WantedConstraints] -> WantedConstraints
+fromListWc = fold
 
 instance Solve Ct where
-  recurse _ _ = pure ()
+  type Ret Ct = [WantedConstraints]
   solve ct = do
     let lhs = ct.ct_eq_can.eq_lhs
         rhs = ct.ct_eq_can.eq_rhs
@@ -58,8 +67,15 @@ instance Solve Ct where
             case metaDetails of
               Flexi -> do
                 writeTcRef metaTvRef (Indirect rhs)
-              -- TODO unify
-              Indirect _ty -> pure ()
+                pure []
+              Indirect ty -> do
+                writeTcRef ?constraints emptyWantedConstraints
+                -- TODO propagate Ct info into each new constraint?
+                unify Nothing ty rhs
+                -- Have to do this because unify doesn't return constraints
+                constraintsNew <- readTcRef ?constraints
+                writeTcRef ?constraints emptyWantedConstraints
+                pure $ toListWc constraintsNew
           else die TcError'SkolemEscape{ct}
   occursCheck ct = do
     let lhs = ct.ct_eq_can.eq_lhs
@@ -75,12 +91,44 @@ instance Solve Ct where
     when (lhs `occursIn` rhs) $ die TcError'OccursCheck{ct}
 
 instance Solve Cts where
-  recurse act cts = forM_ (reverse cts.bag) (recurse act)
+  type Ret Cts = [WantedConstraints]
+  solve cts = concat <$> forM (reverse cts.bag) solve
+  occursCheck cts = forM_ cts.bag occursCheck
 
 instance Solve Impls where
-  recurse act impls = forM_ (reverse impls.bag) (recurse act . (.ic_wanted))
+  type Ret Impls = [Implication]
+  solve impls = do
+    impls' <- forM (reverse impls.bag) $ \impl -> do
+      constraintsNew' <- fold <$> solve impl.ic_wanted
+      case toListWc constraintsNew' of
+        [] -> pure []
+        wcs -> pure [impl{ic_wanted = fold wcs}]
+    pure $ concat impls'
+  occursCheck impls =
+    forM_ (reverse impls.bag) (\impl -> occursCheck impl.ic_wanted)
 
 instance Solve WantedConstraints where
-  recurse act wcs = do
-    recurse act wcs.wc_simple
-    recurse act wcs.wc_impl
+  type Ret WantedConstraints = [WantedConstraints]
+  solve wcs = do
+    wc_simple <- fold <$> solve wcs.wc_simple
+    wc_impl <- solve wcs.wc_impl
+    let wcs' = wc_simple <> WantedCts{wc_simple = emptyBag, wc_impl = Bag wc_impl}
+    pure $ toListWc wcs'
+  occursCheck wcs = do
+    occursCheck wcs.wc_simple
+    occursCheck wcs.wc_impl
+
+solveIteratively :: TcM ()
+solveIteratively = do
+  forM_ ([0 .. 10] :: [Int]) $ \_ -> do
+    constraintsCurrent <- readIORef ?constraints
+
+    -- Don't modify any external mutable variables.
+    constraintsNew <- newIORef emptyWantedConstraints
+    tcErrorPropagated <- newIORef Nothing
+    let ?constraints = constraintsNew
+        ?tcErrorPropagated = tcErrorPropagated
+
+    wcs <- solve constraintsCurrent
+
+    writeIORef ?constraints (fold wcs)
