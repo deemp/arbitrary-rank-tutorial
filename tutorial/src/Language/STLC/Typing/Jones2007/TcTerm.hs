@@ -16,7 +16,7 @@ import GHC.IORef (newIORef)
 import Language.STLC.Typing.Jones2007.Bag (emptyBag, unitBag)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
-import Language.STLC.Typing.Jones2007.ConstraintTypes (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..))
+import Language.STLC.Typing.Jones2007.Solver (Solve (..))
 import Language.STLC.Typing.Jones2007.TcMonad
 import Prettyprinter (Pretty (..), (<+>))
 import GHC.Stack (HasCallStack)
