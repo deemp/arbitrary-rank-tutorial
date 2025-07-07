@@ -71,9 +71,9 @@ type IVarEnv = (?varEnv :: Map.Map Name Sigma)
 type ITcLevel = (?tcLevel :: TcLevel)
 type IDebug = (?debug :: Bool)
 type IConstraints = (?constraints :: IORef WantedConstraints)
-type ITcError = (?tcError :: IORef (Maybe TcError))
+type ITcErrorPropagated = (?tcErrorPropagated :: IORef (Maybe TcError))
 
-type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug, IConstraints, ITcError)
+type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug, IConstraints, ITcErrorPropagated)
 
 -- TcM in GHC is a ReaderT (Env a) IO b.
 -- It can be replaced with ImplicitParams
@@ -203,18 +203,18 @@ instance Exception TcError
 
 instance Exception TcErrorWithCallStack
 
-withTcError :: TcError -> TcM a -> TcM a
+withTcError :: (ITcErrorPropagated) => TcError -> IO a -> IO a
 withTcError err tcAction = do
-  writeIORef ?tcError (Just err)
+  writeIORef ?tcErrorPropagated (Just err)
   tcAction
 
-die :: TcError -> TcM a -- Fail unconditionally
+die :: (ITcErrorPropagated) => TcError -> IO a -- Fail unconditionally
 die tcErrorSuggested = do
-  tcErrorExisting <- readIORef ?tcError
+  tcErrorPropagated <- readIORef ?tcErrorPropagated
   -- TODO Currently, a newer error can not overwrite an already set error.
   -- Should we choose the error for each combination of errors (new, set)?
   let error' =
-        case tcErrorExisting of
+        case tcErrorPropagated of
           Nothing -> tcErrorSuggested
           Just err -> err
   throw (TcErrorWithCallStack error')
