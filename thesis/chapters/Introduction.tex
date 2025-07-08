@@ -3,24 +3,30 @@
 
 \epigraph{Any sufficiently advanced technology is indistinguishable from magic.}{\textit{Arthur C. Clarke}}
 
-For me, the Glasgow Haskell Compiler (GHC) \cite{ghc-site-2025} represented that "sufficiently advanced technology."
-Despite programming in Haskell for several years prior to beginning this thesis, I had not yet explored the internal workings of its primary compiler.
+For me, the Glasgow Haskell Compiler (GHC) \cite{ghc-site-2025} represented that "sufficiently advanced technology." Despite programming in Haskell for several years prior to beginning this thesis, I had not yet explored the internal workings of its primary compiler, which remained a source of profound curiosity.
 
-% TODO: Consider adding specific links to key resources like the GHC wiki, relevant publications, or community forums?
-Fortunately, GHC is open source, its implementation is grounded in scientific publications, and a wealth of resources --- including the project wiki, online presentations, and supportive online communities with compiler developers and experts --- facilitated my learning.
+As one of the most advanced and widely-used compilers for a functional programming language, the Glasgow Haskell Compiler (GHC) serves as a benchmark for research and development in type systems. However, a key challenge in understanding systems like GHC is the pedagogical gap between academic theory and production code. While GHC's design is documented in seminal papers like "Practical Type Inference for Arbitrary-Rank Polymorphism" \cite{jones-practical-2007}, these resources can be difficult for learners to approach. The academic literature is often theoretically dense, while GHC's source code is a large, highly-optimized production system, which can hide the core algorithms.
 
-To deepen my understanding of GHC's internals and create a practical context for further Haskell programming, I decided to implement a small, extensible, typed functional programming language employing approaches similar to those used in GHC. I called this language Practical Lambda Calculus (PLC) as it was based on a variant of lambda calculus introduced in the paper \citetitle{jones-practical-2007} \cite{jones-practical-2007}.
+This thesis aims to bridge this gap. It presents the design and implementation of a small, typed functional language called Arralac (\textbf{Ar}bitrary-\textbf{ra}nk polymorphism + \textbf{la}mbda \textbf{c}alculus). This project serves as a tutorial implementation of arbitrary-rank polymorphism. By using modern architectural patterns from GHC - such as the "Trees that Grow" AST representation and level-based scoping for unification - in a focused and simplified context, this work provides a clear path for understanding these advanced concepts.
 
-The project aimed to produce a complete toolchain for my language, including a parser, a type inference engine, an interpreter, a language server, and a corresponding VS Code extension.
+The central thesis of this work is that a focused, well-documented implementation can serve as a more accessible learning tool for advanced type systems than studying the original papers or production compilers directly. To support this, the project includes a complete toolchain, featuring a parser, interpreter, and a Language Server Protocol (LSP) implementation for an interactive development experience.
 
-My search on GitHub revealed a lack of well-documented, open-source implementations of simple languages that feature parametric predicative higher-rank polymorphism, include the aforementioned components, and mirror GHC's architecture. This work attempts to partially address this gap by documenting the design options considered and detailing my final implementation. The implementation \cite{deemp-higher-rank-free-foil} is available on GitHub under the MIT license.
+To guide this work, the following research questions are addressed:
+\begin{enumerate}
+    \item How can the core algorithms for type inference with arbitrary-rank polymorphism be implemented in a clear and step-by-step manner?
+    \item How can compiler implementation patterns from GHC, like "Trees that Grow" and level-based unification, be simplified for an educational setting while retaining their key benefits?
+    \item How can the Language Server Protocol be used to create an interactive development experience that helps in understanding a language's type system?
+\end{enumerate}
+
+The resulting implementation is publicly available on GitHub \cite{deemp-arbitrary-rank-tutorial} under the MIT license to serve as a resource for the community, aiming to fill the observed gap in well-documented, GHC-like educational compilers.
 
 \section{Overview}
 
 This thesis is structured as follows:
 
-\Cref{chap:LiteratureReview} reviews several abstract syntax tree (AST) representations and type inference algorithms, including those ultimately chosen for my implementation.
-Subsequently, \Cref{chap:DesignImplementation} details the theoretical foundations and implementation specifics of my language.
+\Cref{chap:LiteratureReview} reviews existing approaches to building parts of the desired system.
+Subsequently, \Cref{chap:DesignImplementation} explains my technical decisions and details the theoretical foundations.
 \Cref{chap:EvaluationDiscussion} evaluates the results obtained and discusses the development process and experience.
 Following this, \Cref{chap:Conclusion} outlines potential directions for future work.
-Finally, \Cref{chap:Appendix} contains relevant code snippets referenced throughout the thesis.
+% TODO does it?
+% Finally, \Cref{chap:Appendix} contains relevant code snippets referenced throughout the thesis.
