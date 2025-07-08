@@ -7,25 +7,27 @@ At the heart of many modern, statically-typed functional programming languages l
 
 \subsection{Simply-Typed Lambda Calculus}
 
-The theoretical foundation for most functional programming languages is the \textbf{Lambda Calculus}, a formal system for expressing computation based on function abstraction and application. The most basic typed version, the \textbf{Simply-Typed Lambda Calculus} (\textbf{STLC}), introduces a set of rules for assigning types to terms, preventing runtime errors by ensuring functions are only applied to arguments of the correct type. Using the notation based on the one specifid in \cite{Pierce-SF2}, the syntax of terms (\texttt{t}) and types (\texttt{T}) in a minimal STLC (using only booleans as a base type) in Backus-Naur form can be defined as follows:
+The theoretical foundation for most functional programming languages is the \textbf{Lambda Calculus}, a formal system for expressing computation based on function abstraction and application. The most basic typed version, the \textbf{Simply-Typed Lambda Calculus} (\textbf{STLC}), introduces a set of rules for assigning types to terms, preventing runtime errors by ensuring functions are only applied to arguments of the correct type. Using the notation based on the one specifid in \cite{Pierce-SF2}, the syntax of terms (\texttt{t}) and types (\texttt{T}) in a minimal STLC (using only booleans as a base type) can be defined as follows:
 
 \begin{figure}[h]
-    \begin{grammar}
-        <T> ::= `Bool'
-        \quad | <T> `->' <T>
+    \begin{center}
+        \begin{grammar}
+            <T> ::= `Bool' \\
+            \quad | <T> `->' <T>
 
-        <t> ::= <x> \\
-        \quad | `\\' `(' <x> `:' <T> `)' `.' <t> \\
-        \quad | <t> <t> \\
-        \quad | `true' \\
-        \quad | `false' \\
-        \quad | `if' <t> `then' <t> `else' <t>
-    \end{grammar}
+            <t> ::= <x> \\
+            \quad | `\\' `(' <x> `:' <T> `)' `.' <t> \\
+            \quad | <t> <t> \\
+            \quad | `true' \\
+            \quad | `false' \\
+            \quad | `if' <t> `then' <t> `else' <t>
+        \end{grammar}
+    \end{center}
     \caption{Backus-Naur form for STLC}
     \label{stlc-bnf}
 \end{figure}
 
-Here, \texttt{\textbackslash(x : T). t} represents a function abstraction, where \texttt{x} is the parameter, \texttt{T} is the type of that parameter, and \texttt{t} is the function's body. \texttt{t t} represents function application.
+Here, \texttt{\textbackslash(x : T). t} represents a function abstraction, where \texttt{x} is the parameter, \texttt{T} is the type of that parameter, and \texttt{t} is the function's body. Correspondingly, \texttt{t t} represents function application.
 
 The primary contribution of the type system is to assign a type to every valid term. For example:
 
@@ -127,7 +129,7 @@ Here, $d$ is an \textbf{evidence} of a class constraint (e.g., derived from an e
 An implication constraint (\cref{ghc-constraints}) of the form $\quad \forall a_1 .. a_n. W_1 \Rightarrow W_2$ states that the \textbf{wanted} constraint $W_2$ holds in the environment containing type variables $a_1 .. a_n$ when the \textbf{given} constraints $W_1$ hold in that environment.
 
 Implication constraints were described in \cite{essence-of-ml-type-inference}, where authors called these constraints \textit{assumptions}. Later, \citeauthor{vytiniotis-outsideinx-2011} \cite{vytiniotis-outsideinx-2011}
-proposed OutsideIn(X) - a constraint-based approach for modular local type inference that could work with implication constraints. Such approach lets typechecker accept only programs where each function has a principal (the most general) type. A function type is inferred using the information about the function at its definition rather than call sites, thus making type inference faster. The authors implemented in GHC 7 a constraint solver for a combination of the following features: type classes, Generalized Algebraic Data Types (GADTs), and type families.
+proposed OutsideIn(X) - a constraint-based approach for modular local type inference that could work with implication constraints. Such approach enables typechecker to accept only programs where each function has a principal (the most general) type. A function type is inferred using the information about the function at its definition rather than call sites, thus making type inference faster. The authors implemented in GHC 7 a constraint solver for a combination of the following features: type classes, Generalized Algebraic Data Types (GADTs), and type families.
 
 \subsection{\texttt{let}-generalization}
 
@@ -144,20 +146,20 @@ Here:
 \begin{itemize}
     \item \texttt{B'} is a constructor of type \texttt{B}.
     \item \texttt{C'} is a constructor of type \texttt{C}.
-    \item \texttt{f} is a top-level function with an argument \texttt{x}
-    \item \texttt{g} is a function introduced in a local \texttt{let}-binding inside the body of \texttt{f}
-    \item \texttt{(x, y)} is a pair of elements
+    \item \texttt{f} is a top-level function with an argument \texttt{x}.
+    \item \texttt{g} is a function introduced in a local \texttt{let}-binding inside the body of \texttt{f}.
+    \item \texttt{(x, y)} is a pair of elements.
     \item \texttt{g 3} and \texttt{g False} are applications of \texttt{g} to values of type \texttt{B} and type \texttt{C}.
 \end{itemize}
 
 The type environment of \texttt{g} contains all variables with their types; these variables are introduced in enclosing \texttt{let}-bindings and top-level definitions. In this case, \texttt{f} and \texttt{x} are in the type environment of \texttt{g}.
 
-If I disable the \href{https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html}{\texttt{MonoLocalBinds}} extension, GHC will \textbf{generalize} \texttt{g}, i.e., infer the polytype \texttt{forall {b}. b -> (p, b)} for \texttt{g}. It decided to \texttt{quantify} over \texttt{b} because that type variable was not in the type environment. However, \texttt{\{b\}} (in braces) means that I can't instantiate \texttt{b} with a particular type using the \href{https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_applications.html}{\texttt{TypeApplications}} extension.
+If I disable the \href{https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html}{\texttt{MonoLocalBinds}} extension, GHC will \textbf{generalize} \texttt{g}, i.e., infer the polytype \texttt{forall \{b\}. b -> (p, b)} for \texttt{g}. It decided to \texttt{quantify} over \texttt{b} because that type variable was not in the type environment. However, \texttt{\{b\}} (in braces) means that I can't instantiate \texttt{b} with a particular type using the \href{https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_applications.html}{\texttt{TypeApplications}} extension.
 
 On the other hand, if I disable the \texttt{MonoLocalBinds} extension, GHC will not generalize any \texttt{let}-binding that cannot be made a top-level function. Since the body of \texttt{g} contains \texttt{x} introduced in the definition of \texttt{f}, \texttt{g} cannot be a top-level function like \texttt{f}. Therefore, GHC will not generalize \texttt{g}. Instead, it will do roughly the following:
 
 \begin{enumerate}
-    \item Introduce two fresh \texttt{unification variables}, \texttt{a} and \texttt{b}.
+    \item Introduce two fresh \textbf{unification variables}, \texttt{a} and \texttt{b}.
     \item Record in the type environment that \texttt{y} has type \texttt{a} and \texttt{g} has type \texttt{a -> b}.
     \item Discover that \texttt{g} is applied to a value of type \texttt{B}.
     \item Generate a constraint that \texttt{a $\sim$ B}.
@@ -166,15 +168,16 @@ On the other hand, if I disable the \texttt{MonoLocalBinds} extension, GHC will 
     \item Try to solve the constraints.
     \item Substitute \texttt{B} for \texttt{a}.
     \item Find out that the constraint \texttt{B $\sim$ C} cannot be solved.
-    \item Report the type error that the argument of \texttt{g} has an unexpected type.
+    \item Report a type error that the argument of \texttt{g} has an unexpected type.
 \end{enumerate}
 
-\begin{verbatim}
-• Couldn't match expected type ‘B’ with actual type ‘C’
-• In the first argument of ‘g’, namely ‘C’
-    In the expression: g C
-    In the expression: (g B, g C)
-\end{verbatim}
+% https://tex.stackexchange.com/a/635404
+\begin{minted}[escapeinside=\#\#]{text}
+    #•# Couldn't match expected type ‘B’ with actual type ‘C’
+    #•# In the first argument of ‘g’, namely ‘C’
+        In the expression: g C
+        In the expression: (g B, g C)
+\end{minted}
 
 \subsection{Levels}
 
