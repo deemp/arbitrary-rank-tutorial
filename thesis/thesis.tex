@@ -1,14 +1,11 @@
-% \documentclass[oneside]{report}
 \documentclass[oneside,final,14pt,a4paper]{extreport}
-% \documentclass[journal,onecolumn,a4paper,12pt]{IEEEtran}
-\usepackage[T2A]{fontenc}
 
+\usepackage{tempora} % Times New Roman alike font  
 
 \usepackage{vmargin}
 \setpapersize{A4}
-\setmarginsrb{2.5cm}{2cm}{2cm}{2cm}{0pt}{10mm}{0pt}{13mm}
+\setmarginsrb{2.5cm}{2.2cm}{2.2cm}{2.2cm}{0pt}{10mm}{0pt}{13mm}
 \usepackage{setspace}
-\sloppy
 \setstretch{1.5}
 \usepackage{indentfirst}
 \parindent=1.25cm
@@ -17,11 +14,11 @@
 \DeclareFontShape{OT1}{cmtt}{bx}{n}{<5><6><7><8><9><10><10.95><12><14.4><17.28><20.74><24.88>cmttb10}{}
 \renewcommand{\ttdefault}{pcr}
 %%%%% END %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-\usepackage{atbegshi,picture}
-\AtBeginShipout{\AtBeginShipoutUpperLeft{%
-    \put(\dimexpr\paperwidth-1cm\relax,-1.5cm){\makebox[0pt][r]{\includegraphics[width=3cm]{figs/inno}}}%
-  }}
 
+\usepackage{atbegshi,picture}
+% \usepackage[T1,T2A]{fontenc}
+\usepackage{fontspec}
+\usepackage[utf8]{inputenc}
 
 \usepackage[english]{babel}
 \usepackage[backend=biber,style=ieee,autocite=inline]{biblatex}
@@ -29,6 +26,7 @@
 \DefineBibliographyStrings{english}{%
   bibliography = {References},}
 \usepackage{blindtext}
+
 \usepackage{pdfpages}
 \newenvironment{bottompar}{\par\vspace*{\fill}}{\clearpage}
 \usepackage{amsmath}
@@ -52,8 +50,7 @@
 \theoremstyle{remark}
 \newtheorem*{example}{Example}
 
-
-\usepackage{titlesec}
+% \usepackage{titlesec}
 \usepackage{float}
 \usepackage{graphicx}
 \graphicspath{{figs/}} %path to images
@@ -62,32 +59,28 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{hyperref}
-
-\hypersetup{
-  pdfborder={0 0 0}, % No border around links
-  % ...
-}
-
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black}
 \usepackage{paralist}
 \usepackage{listings}
 \usepackage{zed-csp}
 \usepackage{fancyhdr}
 \usepackage{csquotes}
 \usepackage{color}
-\usepackage{anyfontsize}
-\usepackage{t1enc}
+% \usepackage{anyfontsize}
+% \usepackage{mathptmx}
+% \usepackage{t1enc}
 \usepackage{syntax}
 \usepackage{chngcntr}
 \usepackage{upgreek}
 \usepackage{bm}
 \usepackage{multicol}
-\usepackage{setspace}
+% \usepackage{hyperref}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{longtable}
 \usepackage[font=singlespacing, labelfont=bf]{caption}
-\counterwithout{table}{chapter}
-\renewcommand{\thetable}{\Roman{table}}
+% \counterwithout{table}{chapter}
+% \renewcommand{\thetable}{\Roman{table}}
 %Hints
 \newcommand\pic[1]{(Fig. \ref{#1})} %Ref on figure
 \newcommand\tab[1]{(Tab. \ref{#1})} %Ref on table
@@ -98,6 +91,48 @@
 \setlist*[inlinelist,1]{%
   label=(\arabic*),
 }
+
+% \setcounter{secnumdepth}{4}
+\captionsetup[table]{labelfont={normalfont}, name={TABLE}, labelsep={newline}}
+\setlength{\parindent}{2em} 
+\DeclareCaptionLabelSeparator{figSep}{.\quad}
+\captionsetup[figure]{labelfont={normalfont}, name={Fig.}, labelsep=period}
+\counterwithin{figure}{chapter}
+
+% \usepackage{titlesec}
+% \titleformat{\section}[hang]{\fontsize{20}{24}\selectfont\filcenter}{\Roman{section}}{1em}{}
+% \titleformat{\subsection}[hang]{\itshape}{\Alph{subsection}.}{1em}{}[]
+% \titleformat{\subsubsection}[runin]{\itshape}{\arabic{subsubsection})}{1em}{}[$:$]
+% \titlespacing{\subsubsection}{1em}{1em}{1em}
+% \titleformat{\paragraph}[runin]{\itshape}{\alph{paragraph})}{1em}{}[$:$\quad]
+% \titlespacing{\paragraph}{2em}{1em}{1em}
+
+\usepackage{placeins} % for \FloatBarrier
+
+\pagestyle{fancyplain}
+
+% remember section title
+\renewcommand{\chaptermark}[1]%
+	{\markboth{\chaptername~\thechapter~--~#1}{}}
+
+% subsection number and title
+\renewcommand{\sectionmark}[1]%
+	{\markright{\thesection\ #1}}
+
+\rhead[\fancyplain{}{\bf\leftmark}]%
+      {\fancyplain{}{\bf\thepage}}
+\lhead[\fancyplain{}{\bf\thepage}]%
+      {\fancyplain{}{\bf\rightmark}}
+\cfoot{} %bfseries
+
+
+\newcommand{\dedication}[1]
+   {\thispagestyle{empty}
+     
+   \begin{flushleft}\raggedleft #1\end{flushleft}
+}
+
+
 
 \usepackage{cleveref}
 \crefname{table}{table}{tables}
@@ -139,64 +174,21 @@
 
 \newcommand{\hs}{\mintinline[fontsize=\normalsize]{haskell}}
 
-\newcommand{\clerk}{the \hs{clerk} library }
-\newcommand{\Clerk}{The \hs{clerk} library }
-
-
 % --- END --- minted
 
-\setcounter{secnumdepth}{4}
-\captionsetup[table]{labelfont={normalfont}, name={TABLE}, labelsep={newline}}
-\counterwithout{table}{chapter}
-\renewcommand{\thetable}{\Roman{table}}
-\setlength{\parindent}{2em}
-\DeclareCaptionLabelSeparator{figSep}{.\quad}
-\captionsetup[figure]{labelfont={normalfont}, name={Fig.}, labelsep=period}
-\counterwithout{figure}{chapter}
+% \setcounter{secnumdepth}{4}
+% \captionsetup[table]{labelfont={normalfont}, name={TABLE}, labelsep={newline}}
+% \counterwithout{table}{chapter}
+% \renewcommand{\thetable}{\Roman{table}}
+% \setlength{\parindent}{2em}
+% \DeclareCaptionLabelSeparator{figSep}{.\quad}
+% \captionsetup[figure]{labelfont={normalfont}, name={Fig.}, labelsep=period}
+% \counterwithout{figure}{chapter}
 
-\titleformat{\section}[hang]{\fontsize{20}{24}\selectfont\filcenter}{\Roman{section}}{1em}{}
-\titleformat{\subsection}[hang]{\itshape}{\Alph{subsection}.}{1em}{}[]
-\titleformat{\subsubsection}[runin]{\itshape}{\arabic{subsubsection})}{1em}{}[$:$]
-\titlespacing{\subsubsection}{1em}{1em}{1em}
-\titleformat{\paragraph}[runin]{\itshape}{\alph{paragraph})}{1em}{}[$:$\quad]
-\titlespacing{\paragraph}{2em}{1em}{1em}
-
-\pagestyle{fancyplain}
-
-% remember section title
-\renewcommand{\chaptermark}[1]%
-{\markboth{\chaptername~\thechapter~--~#1}{}}
-
-% subsection number and title
-\renewcommand{\sectionmark}[1]%
-{\markright{\thesection\ #1}}
-
-\rhead[\fancyplain{}{\bf\leftmark}]%
-{\fancyplain{}{\bf\thepage}}
-\lhead[\fancyplain{}{\bf\thepage}]%
-{\fancyplain{}{\bf\rightmark}}
-\cfoot{} %bfseries
-
-
-\newcommand{\dedication}[1]
-{\thispagestyle{empty}
-
-  \begin{flushleft}\raggedleft #1\end{flushleft}
-}
 
 % don't break citations
 \let\oldcite\cite
 \renewcommand{\cite}[2][]{\mbox{\oldcite[#1]{#2}}}
-
-\begin{document}
-
-% \includepdf[noautoscale,offset=75 -75,pages=-]{../docs/Thesis Title - Nikolai Kudasov.pdf}
-% \includepdf[noautoscale,offset=75 -75,pages=-]{../docs/Thesis Title - Giancarlo Succi.pdf}
-% \includepdf[noautoscale,offset=75 -75,pages=-]{../docs/Thesis Title - Giancarlo Succi - signed.pdf}
-
-\tableofcontents
-% \listoftables
-% \listoffigures
 
 \newcommand{\fig}[4]{
   \begin{figure}[h]
@@ -207,12 +199,20 @@
   \end{figure}
 }
 
+\begin{document}
+
+% \includepdf[pages=-]{title.pdf}
+
+\tableofcontents
+\listoftables
+\listoffigures
+
 \newpage
 % Depend on above part
 
 % \include{chapters/Abstract}
 
-% \setcounter{page}{7}
+\setcounter{page}{7}
 
 \include{chapters/Introduction}
 
@@ -227,6 +227,7 @@
 
 %% REFERENCES
 \printbibliography[heading=bibintoc,title={Bibliography cited}]
+
 
 \include{chapters/Appendix}
 
