@@ -1,12 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Language.STLC.Typing.Jones2007.ConstraintTypes where
 
 import GHC.Generics (Generic)
-import Language.STLC.Typing.Jones2007.Bag (Bag)
-import Language.STLC.Typing.Jones2007.BasicTypes (CompRn, CompTc, RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType, Type)
+import Language.STLC.Typing.Jones2007.Bag (Bag (..), emptyBag)
+import Language.STLC.Typing.Jones2007.BasicTypes (CompRn, RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType)
 import Language.STLC.Typing.Jones2007.Pretty (genericPretty)
 import Prettyprinter (Pretty (..))
 
@@ -161,14 +167,34 @@ data Ct = CEqCan
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L164
 type Cts = Bag Ct
 
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L164
+type Impls = Bag Implication
+
 -- | Constraints that we want to solve.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L1089
 data WantedConstraints = WantedCts
   { wc_simple :: Cts
-  , wc_impl :: Bag Implication
+  , wc_impl :: Impls
   }
   deriving stock (Generic)
+
+emptyWantedConstraints :: WantedConstraints
+emptyWantedConstraints =
+  WantedCts
+    { wc_simple = emptyBag
+    , wc_impl = emptyBag
+    }
+
+instance Semigroup WantedConstraints where
+  wcs1 <> wcs2 =
+    WantedCts
+      { wc_simple = wcs1.wc_simple <> wcs2.wc_simple
+      , wc_impl = wcs1.wc_impl <> wcs2.wc_impl
+      }
+
+instance Monoid WantedConstraints where
+  mempty = emptyWantedConstraints
 
 instance Pretty TypedThing where
   pretty (HsExprRnThing ex) = pretty ex

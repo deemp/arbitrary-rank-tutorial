@@ -11,7 +11,7 @@ import Prettyprinter (Pretty (pretty), indent, vsep)
 -- A list will be enough in our case.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/Bag.hs#L48
 newtype Bag a = Bag {bag :: [a]}
-  deriving newtype (Functor, Semigroup)
+  deriving newtype (Functor, Semigroup, Monoid)
 
 emptyBag :: Bag a
 emptyBag = Bag []
