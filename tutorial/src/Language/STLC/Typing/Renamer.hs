@@ -1,38 +1,61 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ImplicitParams #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies #-}
-
 module Language.STLC.Typing.Renamer where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (forM)
+import Data.Char (isDigit)
+import Data.Function ((&))
+import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text qualified as T
+import Data.Text.IO qualified as T
+import GHC.Base (when)
+import GHC.Exception (prettyCallStack)
 import GHC.IORef (readIORef, writeIORef)
 import GHC.Stack (HasCallStack, callStack)
-import Language.STLC.Common
+import Language.STLC.Common (parseWith)
+import Language.STLC.Syntax.Abs (BNFC'Position)
 import Language.STLC.Syntax.Abs qualified as Abs
-import Language.STLC.Syntax.Par
+import Language.STLC.Syntax.Par (pProgram)
 import Language.STLC.Typing.Jones2007.BasicTypes as BT
-import qualified Data.Text.IO as T
-import GHC.Exception (prettyCallStack)
+import Prettyprinter (Pretty (..), vsep, (<+>))
 
-data ParseErrorWithCallStack where
-  ParseErrorWithCallStack :: (HasCallStack) => String -> ParseErrorWithCallStack
+data RnError
+  = RnError'LexerError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
+  | RnError'Unknown {message :: String}
+  | RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
+  | RnError'UnboundTypeVariable {srcSpan :: SrcSpan}
+
+data RnErrorWithCallStack where
+  RnErrorWithCallStack :: (HasCallStack) => RnError -> RnErrorWithCallStack
+
+-- | Fail unconditionally
+dieRn :: (HasCallStack) => RnError -> IO a
+dieRn rnError = throw (RnErrorWithCallStack rnError)
+
+type Scope = Map NameFs Int
+
+-- | Current term variables scope.
+--
+-- Visible term variable names and their ids.
+type ITermVarScope = (?termVarScope :: Scope)
+
+-- | Current type variables scope.
+--
+-- Visible type variable names and their ids.
+type ITyVarScope = (?tyVarScope :: Scope)
+
+-- | Scope containing built-in types.
+-- 
+-- Built-in types and their ids.
+type ITyConcreteScope = (?tyConcreteScope :: Scope)
 
 -- TODO add index because the parse type isn't enough to differentiate
 -- TODO add built-in types to the scope
--- TODO Should we have a separate scope for terms and types?
 -- TODO Forbid shadowing?
-type IConvertRename = (IUniqueSupply, IScope, ICurrentFilePath)
+
+type IRnConstraints = (HasCallStack, BT.IUniqueSupply, ITermVarScope, ITyVarScope, ITyConcreteScope, BT.ICurrentFilePath, BT.IDebug)
+
+type RnM a = (IRnConstraints) => IO a
 
 newUnique :: (IUniqueSupply) => IO Int
 newUnique = do
@@ -40,37 +63,72 @@ newUnique = do
   writeIORef ?uniqueSupply (r + 1)
   pure r
 
-getEnvVarId :: (IScope) => NameFs -> Maybe Int
-getEnvVarId k = Map.lookup k ?scope
+selectScope :: (IRnConstraints) => NameSpace -> Scope
+selectScope = \case
+  NameSpace'TermVar -> ?termVarScope
+  NameSpace'TypeVar -> ?tyVarScope
+  NameSpace'TypeConcrete -> ?tyConcreteScope
 
-getUnique :: (IConvertRename) => NameFs -> IO Int
-getUnique name = maybe newUnique pure (getEnvVarId name)
+getVarId :: (IRnConstraints) => NameSpace -> NameFs -> Maybe Int
+getVarId ns k = Map.lookup k (selectScope ns)
 
-withNameInScope :: (IConvertRename) => Name -> ((IConvertRename) => IO a) -> IO a
-withNameInScope name act =
-  let ?scope = Map.insert name.nameOcc.occNameFS name.nameUnique ?scope
-   in act
+getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Int
+getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
 
-withNamesInScope :: (IConvertRename) => [Name] -> ((IConvertRename) => IO a) -> IO a
-withNamesInScope names act =
+getExistingUnique :: NameSpace -> BNFC'Position -> NameFs -> RnM Int
+getExistingUnique ns pos name =
+  case getVarId ns name of
+    Nothing ->
+      dieRn
+        RnError'UnboundTypeVariable
+          { srcSpan = convertPositionToSrcSpan pos
+          }
+    Just u -> pure u
+
+runWithScope :: NameSpace -> Scope -> RnM a -> RnM a
+runWithScope ns scope act =
+  case ns of
+    NameSpace'TermVar -> let ?termVarScope = scope in act
+    NameSpace'TypeVar -> let ?tyVarScope = scope in act
+    NameSpace'TypeConcrete -> let ?tyConcreteScope = scope in act
+
+withNameInScope :: NameSpace -> Name -> RnM a -> RnM a
+withNameInScope ns name act = do
+  let scope = Map.insert name.nameOcc.occNameFS name.nameUnique (selectScope ns)
+  runWithScope ns scope act
+
+withNamesInScope :: NameSpace -> [Name] -> RnM a -> RnM a
+withNamesInScope ns names act = do
   -- Map.union prefers the first argument
   -- and we need to add new names to the scope
   -- to implement shadowing
-  let ?scope = Map.union (Map.fromList ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)) ?scope
-   in act
+  let scope =
+        Map.union
+          ( Map.fromList
+              ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)
+          )
+          $ (selectScope ns)
+  runWithScope ns scope act
 
-convertProgram :: (IConvertRename) => Abs.Program -> IO (BT.SynTerm BT.CompRn)
+convertProgram :: Abs.Program -> RnM (BT.SynTerm BT.CompRn)
 convertProgram (Abs.Program _ program) = convertAbsToBT program
-
-type RnM a = (BT.IUniqueSupply, BT.IScope, BT.ICurrentFilePath, BT.IDebug) => IO a
 
 parseInputText :: T.Text -> RnM (BT.SynTerm BT.CompRn)
 parseInputText input = do
   let
     parsed = parseWith pProgram input
   case parsed of
-    -- TODO throw better and handle where necessary
-    Left err -> throw (ParseErrorWithCallStack err)
+    -- TODO parse error message
+    Left err -> do
+      let lexerError = getLineAndColumnFromError err
+      dieRn $ case lexerError of
+        Just (lineNumber, columnNumber) ->
+          RnError'LexerError
+            { lineNumber = lineNumber - 1
+            , columnNumber = columnNumber - 1
+            , currentFilePath = ?currentFilePath
+            }
+        Nothing -> RnError'Unknown{message = err}
     Right prog -> convertProgram prog
 
 parseInput :: Either String T.Text -> RnM (BT.SynTerm BT.CompRn)
@@ -88,14 +146,21 @@ parseString input = parseInput (Right input)
 -- TODO throw exceptions when encounter conversion errors
 -- e.g. forall without variables, shadowing
 
-instance Show ParseErrorWithCallStack where
-  show (ParseErrorWithCallStack err) = prettyCallStack callStack <> "\n\n" <> err
-
-instance Exception ParseErrorWithCallStack
+-- TODO use megaparsec
+getLineAndColumnFromError :: String -> Maybe (Int, Int)
+getLineAndColumnFromError s =
+  s
+    & filter (/= ',')
+    & words
+    & filter (isDigit . head)
+    & \x -> case x of
+      [lineNumber, columnNumber] ->
+        pure (read lineNumber, read columnNumber)
+      _ -> Nothing
 
 class ConvertAbsToBT a where
   type To a
-  convertAbsToBT :: (HasCallStack, IConvertRename) => a -> (To a)
+  convertAbsToBT :: (IRnConstraints) => a -> (To a)
 
 convertPositionToSrcSpan :: (ICurrentFilePath) => Abs.BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
@@ -127,19 +192,19 @@ instance ConvertAbsToBT Abs.Exp where
       pure $ SynTerm'App (convertPositionToSrcSpan pos) term1' term2'
     Abs.ExpAbs pos var term -> do
       var' <- convertAbsToBT var True
-      term' <- withNameInScope var' (convertAbsToBT term)
+      term' <- withNameInScope NameSpace'TermVar var' (convertAbsToBT term)
       pure $ SynTerm'Lam (convertPositionToSrcSpan pos) var' term'
     Abs.ExpAbsAnno pos var ty term -> do
       var' <- convertAbsToBT var True
       ty' <- convertAbsToBT ty
-      term' <- withNameInScope var' (convertAbsToBT term)
+      term' <- withNameInScope NameSpace'TermVar var' (convertAbsToBT term)
       pure $ SynTerm'ALam (convertPositionToSrcSpan pos) var' ty' term'
     Abs.ExpLet pos var term1 term2 -> do
       var' <- convertAbsToBT var True
       -- TODO should the let-expression be recursive
       -- and the var be brought into scope of the assigned term?
       term1' <- convertAbsToBT term1
-      term2' <- withNameInScope var' (convertAbsToBT term2)
+      term2' <- withNameInScope NameSpace'TermVar var' (convertAbsToBT term2)
       pure $ SynTerm'Let (convertPositionToSrcSpan pos) var' term1' term2'
     Abs.ExpAnno pos term ty -> do
       term' <- convertAbsToBT term
@@ -152,12 +217,16 @@ instance ConvertAbsToBT Abs.Exp where
 instance ConvertAbsToBT Abs.Var where
   type To Abs.Var = Bool -> IO Name
   convertAbsToBT (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
-    nameUnique <- if needUnique then newUnique else getUnique name
+    let ns = NameSpace'TermVar
+    nameUnique <-
+      if needUnique
+        then newUnique
+        else getExistingOrNewUnique ns name
     pure $
       Name
         { nameOcc =
             OccName
-              { occNameSpace = NameSpace'Term
+              { occNameSpace = ns
               , occNameFS = name
               }
         , nameUnique
@@ -167,12 +236,14 @@ instance ConvertAbsToBT Abs.Var where
 instance ConvertAbsToBT Abs.TypeVariable where
   type To Abs.TypeVariable = IO Name
   convertAbsToBT (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
+    -- Each type variable in a `forall`
+    -- must have a globally unique identifier.
     nameUnique <- newUnique
     pure $
       Name
         { nameOcc =
             OccName
-              { occNameSpace = NameSpace'Type'Var
+              { occNameSpace = NameSpace'TypeVar
               , occNameFS = name
               }
         , nameUnique
@@ -185,43 +256,81 @@ instance ConvertAbsToBT Abs.Type where
     -- TODO not a variable
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
       -- TODO should all mentions of a type have the same uniques?
-      nameUnique <- getUnique name
+      let ns = NameSpace'TypeConcrete
+      nameUnique <- getExistingOrNewUnique ns name
       pure $
         SynType'Concrete
           ()
           Name
             { nameOcc =
                 OccName
-                  { occNameSpace = NameSpace'Type'Concrete
+                  { occNameSpace = ns
                   , occNameFS = name
                   }
             , nameUnique
             , nameLoc = (convertPositionToSrcSpan pos)
             }
     Abs.TypeVariable pos (Abs.NameLowerCase name) -> do
-      nameUnique <- getUnique name
+      let ns = NameSpace'TypeVar
+      -- Each type variable in the type body must be bound.
+      nameUnique <- getExistingUnique ns pos name
       pure $
         SynType'Var
           ()
           ( Name
               { nameOcc =
                   OccName
-                    { occNameSpace = NameSpace'Type'Var
+                    { occNameSpace = ns
                     , occNameFS = name
                     }
               , nameUnique
               , nameLoc = (convertPositionToSrcSpan pos)
               }
           )
-    -- TODO throw if forall introduces zero type variables?
-    -- or, prohibit this at parser level?
     Abs.TypeForall pos tys ty -> do
-      -- TODO report
-      -- No variables bound at
-      tys' <- forM tys (\x -> convertAbsToBT x)
-      ty' <- withNamesInScope tys' (convertAbsToBT ty)
+      when (tys == []) $
+        dieRn
+          RnError'ForallBindsNoTvs
+            { srcSpan = convertPositionToSrcSpan pos
+            }
+      tys' <- forM tys convertAbsToBT
+      ty' <- withNamesInScope NameSpace'TypeVar tys' (convertAbsToBT ty)
       pure $ SynType'ForAll (convertPositionToSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 ->
       SynType'Fun (convertPositionToSrcSpan pos)
         <$> (convertAbsToBT ty1)
         <*> (convertAbsToBT ty2)
+
+instance Pretty RnError where
+  pretty = \case
+    RnError'LexerError{currentFilePath, lineNumber, columnNumber} ->
+      "Lexer error at"
+        <+> (pretty currentFilePath <> ":")
+        <> (pretty (lineNumber + 1) <> ":")
+        <> (pretty (columnNumber + 1))
+    RnError'Unknown{message} ->
+      pretty message
+    RnError'ForallBindsNoTvs{srcSpan} ->
+      vsep
+        [ "'forall' binds no type variables at:"
+        , pretty srcSpan
+        ]
+    RnError'UnboundTypeVariable{srcSpan} ->
+      vsep
+        [ "Unbound type variable at:"
+        , pretty srcSpan
+        ]
+
+instance Show RnError where
+  show = show . pretty
+
+instance Exception RnError
+
+instance Pretty RnErrorWithCallStack where
+  pretty (RnErrorWithCallStack err) =
+    vsep [pretty (prettyCallStack callStack), "", pretty err]
+
+instance Show RnErrorWithCallStack where
+  show (RnErrorWithCallStack err) = prettyCallStack callStack <> "\n\n" <> show err
+
+instance Exception RnErrorWithCallStack
