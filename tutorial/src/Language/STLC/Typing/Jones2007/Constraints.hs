@@ -8,7 +8,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Language.STLC.Typing.Jones2007.ConstraintTypes where
+module Language.STLC.Typing.Jones2007.Constraints where
 
 import GHC.Generics (Generic)
 import Language.STLC.Typing.Jones2007.Bag (Bag (..), emptyBag)
