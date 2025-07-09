@@ -16,7 +16,7 @@ import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Language.STLC.Syntax.Abs qualified as Abs
 import Language.STLC.Typing.Jones2007.Bag (Bag (..))
 import Language.STLC.Typing.Jones2007.BasicTypes
-import Language.STLC.Typing.Pass.Renamed
+import Language.STLC.Typing.Renamer
 import Prettyprinter
 import Prettyprinter.Render.Text
 

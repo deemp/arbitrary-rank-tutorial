@@ -10,7 +10,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Language.STLC.Typing.Pass.Renamed where
+module Language.STLC.Typing.Renamer where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (forM)

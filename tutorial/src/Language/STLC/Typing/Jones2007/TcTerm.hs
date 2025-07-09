@@ -10,9 +10,9 @@ import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
 import Language.STLC.Typing.Jones2007.Solver (Solve (..))
 import Language.STLC.Typing.Jones2007.TcMonad
+import Language.STLC.Typing.Renamer (parseInputText)
 import Prettyprinter (Pretty (..), (<+>))
 import GHC.Stack (HasCallStack)
-import Language.STLC.Typing.Pass.Renamed (parseInputText)
 
 ------------------------------------------
 --      The top-level wrapper           --
