@@ -48,7 +48,7 @@ main =
                   , "cd src/Language/STLC/Syntax"
                   , "alex Lex.x"
                   , "happy --ghc Par.y"
-                  , "rm -f {ErrM,Skel,Test,Layout}.hs *.bak"
+                  , "rm -f {ErrM,Skel,Test,Layout,Print}.hs *.bak *.txt"
                   , "true"
                   ]
 
