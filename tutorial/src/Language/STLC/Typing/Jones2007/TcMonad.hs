@@ -1,30 +1,5 @@
 module Language.STLC.Typing.Jones2007.TcMonad where
-
--- (
---   TcM, -- The monad type constructor
---   -- runTc,
---   -- ErrMsg,
---   lift,
---   check,
---   -- Environment manipulation
---   extendVarEnv,
---   lookupVar,
---   getEnvTypes,
---   getFreeTyVars,
---   getMetaTyVars,
---   -- Types and unification
---   -- newTyVarTy,
---   instantiate,
---   skolemise,
---   zonkType,
---   quantify,
---   unify,
---   unifyFun,
---   -- Ref cells
---   newTcRef,
---   readTcRef,
---   writeTcRef,
--- )
+  
 
 import Control.Exception (Exception, throw)
 import Control.Monad (when)
