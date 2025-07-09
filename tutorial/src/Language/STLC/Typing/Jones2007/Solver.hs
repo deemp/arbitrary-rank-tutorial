@@ -1,14 +1,3 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ImplicitParams #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-
 module Language.STLC.Typing.Jones2007.Solver where
 
 import Control.Monad (forM, forM_, when)

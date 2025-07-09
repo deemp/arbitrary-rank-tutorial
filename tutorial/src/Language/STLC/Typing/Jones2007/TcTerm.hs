@@ -1,11 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ImplicitParams #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-
 module Language.STLC.Typing.Jones2007.TcTerm where
 
 import Control.Exception.Base (catch)
