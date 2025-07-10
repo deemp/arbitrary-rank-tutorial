@@ -166,14 +166,16 @@ withTcError err tcAction = do
     Just _ -> do
       tcAction
 
-die :: (ITcErrorPropagated) => TcError -> IO a -- Fail unconditionally
-die tcErrorSuggested = do
+die :: (ITcErrorPropagated, HasCallStack) => TcError -> IO a -- Fail unconditionally
+die tcErrorCurrent = do
   tcErrorPropagated <- readIORef ?tcErrorPropagated
-  -- TODO Currently, a newer error can not overwrite an already set error.
-  -- Should we choose the error for each combination of errors (new, set)?
+  -- TODO Currently, a newer error can not overwrite the propagated error.
+  -- We need this behavior to propagate actual vs expected type errors.
+  -- If there's a mismatch during unification, we can immediately report.
+  -- Should we choose the error for each combination of types of errors (new, propagated)?
   let error' =
         case tcErrorPropagated of
-          Nothing -> tcErrorSuggested
+          Nothing -> tcErrorCurrent
           Just err -> err
   throw (TcErrorWithCallStack error')
 
