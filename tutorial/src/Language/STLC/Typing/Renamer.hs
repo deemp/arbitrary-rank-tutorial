@@ -4,13 +4,13 @@ import Control.Exception (Exception, throw)
 import Control.Monad (forM)
 import Data.Char (isDigit)
 import Data.Function ((&))
+import Data.IORef (readIORef, writeIORef)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import GHC.Base (when)
 import GHC.Exception (prettyCallStack)
-import GHC.IORef (readIORef, writeIORef)
 import GHC.Stack (HasCallStack, callStack)
 import Language.STLC.Common (parseWith)
 import Language.STLC.Syntax.Abs (BNFC'Position)

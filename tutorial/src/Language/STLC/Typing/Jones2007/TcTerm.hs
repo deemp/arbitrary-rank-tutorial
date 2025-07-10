@@ -1,7 +1,7 @@
 module Language.STLC.Typing.Jones2007.TcTerm where
 
 import Control.Exception.Base (catch)
-import Control.Monad (forM)
+import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import GHC.IORef (newIORef)
@@ -73,9 +73,9 @@ inferRho expr =
     debug'
       "inferRho"
       [pretty expr]
-    ref <- newTcRef (error "inferRho: empty result")
+    ref <- newIORef (error "inferRho: empty result")
     expr' <- tcRho expr (Infer ref)
-    ref' <- readTcRef ref
+    ref' <- readIORef ref
     pure (expr', ref')
 
 -- TODO optimize
@@ -178,7 +178,7 @@ tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
 tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
   var_ty <- Type'Var <$> newMetaTyVar' "m"
   (body', body_ty) <- extendVarEnv varName var_ty (inferRho body)
-  writeTcRef ref (var_ty --> body_ty)
+  writeIORef ref (Type'Fun var_ty body_ty)
   pure $
     SynTerm'Lam
       AnnoTc{annoSrcLoc, annoType = modeTy}
@@ -199,7 +199,7 @@ tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
 tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
   (var_ty_syn, var_ty') <- convertSynTy var_ty
   (body', body_ty) <- extendVarEnv varName var_ty' (inferRho body)
-  writeTcRef ref (var_ty' --> body_ty)
+  writeIORef ref (Type'Fun var_ty' body_ty)
   -- TODO is it correct to use Check here?
   pure $
     SynTerm'ALam

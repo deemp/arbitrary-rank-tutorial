@@ -5,6 +5,7 @@ module Language.STLC.Typing.Jones2007.Solver where
 import Control.Exception (Exception, throw)
 import Control.Monad (forM, forM_, when)
 import Data.Foldable (Foldable (..))
+import Data.IORef (readIORef, writeIORef)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
 import Language.STLC.Typing.Jones2007.Bag
@@ -114,14 +115,14 @@ instance Solve Ct where
             rhsLevel = getMaxTcLevel rhs
         if
           | lhsLevel >= rhsLevel -> do
-              metaDetails <- readTcRef metaTvRef
+              metaDetails <- readIORef metaTvRef
               case metaDetails of
                 Flexi -> do
                   debug
                     "solve Ct - Flexi"
                     [ "ct:" <> line <> prettyVerbose ct
                     ]
-                  writeTcRef metaTvRef (Indirect rhs)
+                  writeIORef metaTvRef (Indirect rhs)
                   pure []
                 Indirect ty -> do
                   debug

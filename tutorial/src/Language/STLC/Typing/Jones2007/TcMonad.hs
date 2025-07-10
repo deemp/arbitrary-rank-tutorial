@@ -348,7 +348,7 @@ newSkolemTyVar _ x =
 -- TODO not maybe, but Flexi and Indirect
 readTv :: TcTyVarMeta -> TcM (Maybe Tau)
 readTv (TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) = do
-  details <- readTcRef ref
+  details <- readIORef ref
   pure $ case details of
     Flexi -> Nothing
     Indirect ty -> Just ty
@@ -447,7 +447,7 @@ isMetaTv _ = False
 
 isFlexiTv :: TcTyVar -> TcM Bool
 isFlexiTv TcTyVar{varDetails = MetaTv{metaTvRef}} =
-  readTcRef metaTvRef >>= \case
+  readIORef metaTvRef >>= \case
     Flexi -> pure True
     _ -> pure False
 isFlexiTv _ = pure False
@@ -563,7 +563,7 @@ zonkType v@(Type'Var var) =
           Just ty -> do
             ty' <- zonkType ty
             -- "Short out" multiple hops
-            writeTv var ty'
+            writeIORef metaTvRef (Indirect ty)
             pure ty'
     _ -> pure (Type'Var var)
 
@@ -645,7 +645,7 @@ mkCEqCan thing tv ty swapped =
 
 emitCEqCan :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> TcM ()
 emitCEqCan thing tv ty swapped = do
-  constraints <- readTcRef ?constraints
+  constraintsCur <- readIORef ?constraints
   let constraint = mkCEqCan thing tv ty swapped
       constraints' = constraints{wc_simple = Bag [constraint] <> constraints.wc_simple}
   -- debug "unifyVar" [pretty constraint]
