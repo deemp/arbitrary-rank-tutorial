@@ -154,10 +154,17 @@ instance Exception TcError
 
 instance Exception TcErrorWithCallStack
 
-withTcError :: (ITcErrorPropagated) => TcError -> IO a -> IO a
+withTcError :: TcError -> TcM a -> TcM a
 withTcError err tcAction = do
-  writeIORef ?tcErrorPropagated (Just err)
-  tcAction
+  tcErrorCurrent <- readIORef ?tcErrorPropagated
+  case tcErrorCurrent of
+    Nothing -> do
+      writeIORef ?tcErrorPropagated (Just err)
+      res <- tcAction
+      writeIORef ?tcErrorPropagated Nothing
+      pure res
+    Just _ -> do
+      tcAction
 
 die :: (ITcErrorPropagated) => TcError -> IO a -- Fail unconditionally
 die tcErrorSuggested = do
