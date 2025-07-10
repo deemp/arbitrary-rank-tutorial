@@ -179,16 +179,27 @@ die tcErrorCurrent = do
           Just err -> err
   throw (TcErrorWithCallStack error')
 
+-- ==============================================
+-- Debugging Utility
+-- ==============================================
+
 debug :: (IDebug, IPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
 debug label xs = when ?debug do
-  putDocW 1000
+  putDocW
+    1000
     ( vsep
         [ "[" <> label <> "]"
-        , (foldMap (\x -> "$ " <> x <> line) xs)
+        , foldMap (\x -> "$ " <> x <> line) xs
         , pretty' (prettyCallStack callStack)
-        , ""
+        , line
         ]
     )
+
+debug' :: (IDebug, IPrettyVerbosity) => Doc ann -> [(Doc ann, Doc ann)] -> IO ()
+debug' label xs = debug label (prettyVarVal <$> xs)
+ where
+  prettyVarVal :: (Doc ann, Doc ann) -> Doc ann
+  prettyVarVal (var, val) = var <> ":" <> line <> indent 4 val
 
 -- TODO use somewhere
 check :: Bool -> TcError -> TcM ()
