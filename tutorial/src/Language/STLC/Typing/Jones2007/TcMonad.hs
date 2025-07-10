@@ -201,33 +201,9 @@ debug' label xs = debug label (prettyVarVal <$> xs)
   prettyVarVal :: (Doc ann, Doc ann) -> Doc ann
   prettyVarVal (var, val) = var <> ":" <> line <> indent 4 val
 
--- TODO use somewhere
-check :: Bool -> TcError -> TcM ()
-check True _ = pure ()
-check False d = die d
-
--- TODO explain optimizations
-
--- TODO adapt?
-lift :: IO a -> TcM a
--- Lift a state transformer action into the typechecker monad
--- ignores the environment and always succeeds
-lift st = st
-
--- TcM (\_env -> do r <- st; pure (Right r))
-
-newTcRef :: a -> TcM (IORef a)
-newTcRef v = lift (newIORef v)
-
-readTcRef :: IORef a -> TcM a
-readTcRef r = lift (readIORef r)
-
-writeTcRef :: IORef a -> a -> TcM ()
-writeTcRef r v = lift (writeIORef r v)
-
---------------------------------------------------
---      Dealing with the type environment       --
-------------------------------------------------- -
+-- ==============================================
+-- Dealing with the type environment
+-- ==============================================
 
 extendVarEnv :: Name -> Sigma -> TcM a -> TcM a
 extendVarEnv var ty tcAction =
@@ -242,21 +218,9 @@ lookupVar n =
     Just ty -> pure ty
     Nothing -> die (TcError'UndefinedVariable n)
 
--- TODO don't use `pretty` or use it on a newtype
--- to better control the output format
-
---------------------------------------------------
---      Creating, reading, writing MetaTvs        --
---------------------------------------------------
-
--- TODO pattern synonym for MetaTv
-
--- TODO rename to use Meta
--- newTyVarTy :: TcM Tau
--- newTyVarTy = do
---   -- TODO use a supplied name
---   tv <- newMetaTyVar "a"
---   pure (Type'Var tv)
+-- ==============================================
+--      Creating, reading, writing MetaTvs
+-- ==============================================
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L552
 mkSystemNameAt :: Unique -> OccName -> SrcSpan -> Name
@@ -430,16 +394,6 @@ instantiate (Type'ForAll tvs ty) = do
     , ("tvs'", pretty' tvs')
     ]
   substTy tvs (Type'Var <$> tvs') ty
--- TODO we should have a way to not do anything to the type
--- perhaps we need to add constructor to TcTyVar that wraps RnVar
--- and traverse ty to wrap each RnVar in this constructor
--- If this is a part of a computation that converts RnType to TcType,
--- we can return an Either
-
--- TODO I believe we we should convert the type to a Tc version
--- using TcRnVar
-
--- If possible, we shouldn't do that in advance to not lose some type safety
 instantiate ty = pure ty
 
 -- ==============================================
@@ -701,12 +655,6 @@ unifyFun thing tau = do
   res_ty <- Type'Var <$> newMetaTyVar' "b"
   unify thing tau (Type'Fun arg_ty res_ty)
   pure (arg_ty, res_ty)
-
------------------------------------------
-occursCheckErr :: TcTyVar -> Tau -> TcM ()
--- Raise an occurs-check error
-occursCheckErr tv ty =
-  die (TcError'OccursCheck tv ty)
 
 -- ---------------------------------
 -- --  Free and bound variables
