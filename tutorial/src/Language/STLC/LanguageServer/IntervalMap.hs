@@ -11,8 +11,8 @@ module Language.STLC.LanguageServer.IntervalMap where
 import Control.Lens (traversed, (%~), (&), _1)
 import Data.IntervalMap.Generic.Strict qualified as IM
 import Language.LSP.Protocol.Types (Position (..), Range (..))
-import Language.STLC.Typing.Jones2007.BasicTypes (AnnoZn (..), CompZn, Concrete (..), FastString, Name (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnTermVar (..), ZnTyVar (..), ZnType)
-import Prettyprinter (Doc, Pretty (..))
+import Language.STLC.Typing.Jones2007.BasicTypes (AnnoZn (..), CompZn, Concrete (..), FastString, IPrettyVerbosity, Name (..), Pretty' (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnTermVar (..), ZnTyVar (..), ZnType)
+import Prettyprinter (Doc)
 
 newtype IMPosition
   = IMPosition {imPosition :: Position}
@@ -121,8 +121,8 @@ toRealSrcSpan filePath (IMRange r) =
     , srcSpanECol = fromIntegral r._end._character
     }
 
-prettyIM :: (Pretty a) => FastString -> IM.IntervalMap IMRange a -> Doc ann
-prettyIM filePath mp = pretty mp'
+prettyIM :: (IPrettyVerbosity, Pretty' a) => FastString -> IM.IntervalMap IMRange a -> Doc ann
+prettyIM filePath mp = pretty' mp'
  where
   mp' = IM.toAscList mp & traversed . _1 %~ toRealSrcSpan filePath
 
@@ -136,23 +136,17 @@ instance IM.Interval IMRange IMPosition where
   upperBound (IMRange Range{_end}) = IMPosition _end
   rightClosed _ = False
 
-instance Pretty SpanInfo where
-  pretty = \case
-    SpanInfo'Name name -> pretty name
-    SpanInfo'ZnType ty -> pretty ty
+instance Pretty' SpanInfo where
+  pretty' = \case
+    SpanInfo'Name name -> pretty' name
+    SpanInfo'ZnType ty -> pretty' ty
 
-instance Show SpanInfo where
-  show = show . pretty
+instance Pretty' IMPosition where
+  pretty' (IMPosition Position{_line, _character}) =
+    pretty' (_line + 1) <> ":" <> pretty' (_character + 1)
 
-instance Pretty IMPosition where
-  pretty (IMPosition Position{_line, _character}) =
-    pretty (_line + 1) <> ":" <> pretty (_character + 1)
-
-instance Show IMPosition where
-  show = show . pretty
-
-instance Pretty IMRange where
-  pretty (IMRange Range{_start, _end}) =
-    (pretty (IMPosition _start))
+instance Pretty' IMRange where
+  pretty' (IMRange Range{_start, _end}) =
+    (pretty' (IMPosition _start))
       <> "-"
-      <> (pretty (IMPosition _end))
+      <> (pretty' (IMPosition _end))

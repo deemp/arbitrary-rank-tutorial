@@ -13,7 +13,6 @@ import Language.STLC.Syntax.Par
 -- TODO import only in doctests
 
 import Data.Text (Text, pack, unpack)
-import Language.STLC.Syntax.Print
 
 -- $setup
 -- >>> :set -XOverloadedStrings

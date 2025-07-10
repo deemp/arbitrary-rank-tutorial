@@ -39,9 +39,9 @@ import Language.LSP.Protocol.Types qualified as LSP
 import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getVirtualFile, notificationHandler, requestHandler, runLspT, runServer, sendNotification, type (<~>) (Iso))
 import Language.LSP.VFS (virtualFileText)
 import Language.STLC.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
-import Language.STLC.Typing.Jones2007.BasicTypes (FastString)
+import Language.STLC.Typing.Jones2007.BasicTypes (FastString, IPrettyVerbosity, Pretty' (..), PrettyVerbosity (..))
 import Language.STLC.Typing.Jones2007.TcTerm (runTypechecker')
-import Prettyprinter (Doc, Pretty (..), defaultLayoutOptions, layoutPretty)
+import Prettyprinter (Doc, defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
 import UnliftIO (catch)
 
@@ -65,12 +65,14 @@ data Config = Config {}
   deriving stock (Generic, Show)
   deriving anyclass (J.ToJSON, J.FromJSON)
 
+type IConfig = (HasCallStack, ILogger, IServerState, IPrettyVerbosity)
+
 -- | Like library LspM, but with a constant config.
 -- https://hackage.haskell.org/package/lsp-2.7.0.0/docs/Language-LSP-Server.html#t:LspM
-type LspM a = (HasCallStack, ILogger, IServerState) => LspT Config IO a
+type LspM a = (IConfig) => LspT Config IO a
 
 -- | 'Handlers' with additional context
-type Handlers' = (IServerState, ILogger) => Handlers (LspT Config IO)
+type Handlers' = (IConfig) => Handlers (LspT Config IO)
 
 -- ================
 -- The LSP Handlers
@@ -104,12 +106,12 @@ hoverHandler = requestHandler SMethod_TextDocumentHover $ \req responder -> do
               <$> mbFilePath
               <*> mNode
 
-      ?logger <& ("Found node: " <> renderStrictDoc (pretty mNode')) `WithSeverity` Info
+      ?logger <& ("Found node: " <> renderStrictDoc (pretty' mNode')) `WithSeverity` Info
 
       case mNode of
         Just (range', typeInfo) -> do
           -- Create the hover response.
-          let ms = LSP.InL $ LSP.mkMarkdown $ "```haskell\n" <> renderStrictDoc (pretty typeInfo) <> "\n```"
+          let ms = LSP.InL $ LSP.mkMarkdown $ "```haskell\n" <> renderStrictDoc (pretty' typeInfo) <> "\n```"
               rsp = Hover ms (Just (imRange range'))
           responder (Right $ LSP.InL rsp)
         Nothing -> do
@@ -221,6 +223,7 @@ serverDefinition serverState =
         let
           ?serverState = serverState
           ?logger = dualLogger
+          ?prettyVerbosity = PrettyVerbosity'Compact
          in
           serverHandlers
     , options = lspOptions

@@ -16,7 +16,7 @@ import Control.Monad.Foil.Internal (DExt, Distinct, Name (..), Scope (..), ident
 import Control.Monad.Free.Foil (AST (..), ScopedAST (..), substitute)
 import Data.Bifunctor.TH (deriveBifunctor)
 import Language.STLC.Interpreter.FreeFoil (CoreNameBinder (..), PrettyName (..), addSubst, extendScope, withFreshUsingUnique)
-import Language.STLC.Typing.Jones2007.BasicTypes (CompZn, SynLit, SynTerm (..))
+import Language.STLC.Typing.Jones2007.BasicTypes (CompZn, Pretty' (..), SynLit, SynTerm (..))
 import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
 import Prettyprinter
 
@@ -92,11 +92,11 @@ whnf scope = \case
      in whnf scope (substitute scope subst rhs)
   t -> t
 
-instance Pretty (CoreE n) where
-  pretty = \case
+instance Pretty' (CoreE n) where
+  pretty' = \case
     Node x -> case x of
-      Core'Lit lit -> pretty lit
-      Core'App fun arg -> parens (pretty fun) <+> parens (pretty arg)
-      Core'Lam (ScopedAST binder body) -> "\\" <> pretty binder <> "." <+> pretty body
-      Core'Let body (ScopedAST binder rhs) -> "let" <+> pretty binder <+> "=" <+> pretty body <+> "in" <+> pretty rhs
-    Var x -> pretty (PrettyName x)
+      Core'Lit lit -> pretty' lit
+      Core'App fun arg -> parens (pretty' fun) <+> parens (pretty' arg)
+      Core'Lam (ScopedAST binder body) -> "\\" <> pretty' binder <> "." <+> pretty' body
+      Core'Let body (ScopedAST binder rhs) -> "let" <+> pretty' binder <+> "=" <+> pretty' body <+> "in" <+> pretty' rhs
+    Var x -> pretty' (PrettyName x)

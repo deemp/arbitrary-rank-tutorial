@@ -17,7 +17,7 @@ import Language.STLC.Syntax.Abs (BNFC'Position)
 import Language.STLC.Syntax.Abs qualified as Abs
 import Language.STLC.Syntax.Par (pProgram)
 import Language.STLC.Typing.Jones2007.BasicTypes as BT
-import Prettyprinter (Pretty (..), vsep, (<+>))
+import Prettyprinter (vsep, (<+>))
 
 data RnError
   = RnError'LexerError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
@@ -45,7 +45,7 @@ type ITermVarScope = (?termVarScope :: Scope)
 type ITyVarScope = (?tyVarScope :: Scope)
 
 -- | Scope containing built-in types.
--- 
+--
 -- Built-in types and their ids.
 type ITyConcreteScope = (?tyConcreteScope :: Scope)
 
@@ -301,36 +301,30 @@ instance ConvertAbsToBT Abs.Type where
         <$> (convertAbsToBT ty1)
         <*> (convertAbsToBT ty2)
 
-instance Pretty RnError where
-  pretty = \case
+instance Pretty' RnError where
+  pretty' = \case
     RnError'LexerError{currentFilePath, lineNumber, columnNumber} ->
       "Lexer error at"
-        <+> (pretty currentFilePath <> ":")
-        <> (pretty (lineNumber + 1) <> ":")
-        <> (pretty (columnNumber + 1))
+        <+> (pretty' currentFilePath <> ":")
+        <> (pretty' (lineNumber + 1) <> ":")
+        <> (pretty' (columnNumber + 1))
     RnError'Unknown{message} ->
-      pretty message
+      pretty' message
     RnError'ForallBindsNoTvs{srcSpan} ->
       vsep
-        [ "'forall' binds no type variables at:"
-        , pretty srcSpan
+        [ "`forall' binds no type variables at:"
+        , pretty' srcSpan
         ]
     RnError'UnboundTypeVariable{srcSpan} ->
       vsep
         [ "Unbound type variable at:"
-        , pretty srcSpan
+        , pretty' srcSpan
         ]
-
-instance Show RnError where
-  show = show . pretty
 
 instance Exception RnError
 
-instance Pretty RnErrorWithCallStack where
-  pretty (RnErrorWithCallStack err) =
-    vsep [pretty (prettyCallStack callStack), "", pretty err]
-
-instance Show RnErrorWithCallStack where
-  show (RnErrorWithCallStack err) = prettyCallStack callStack <> "\n\n" <> show err
+instance Pretty' RnErrorWithCallStack where
+  pretty' (RnErrorWithCallStack err) =
+    vsep [pretty' (prettyCallStack callStack), "", pretty' err]
 
 instance Exception RnErrorWithCallStack

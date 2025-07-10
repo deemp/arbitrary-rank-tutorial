@@ -10,7 +10,7 @@ import Data.IORef
 import Data.Map (Map)
 import Data.String (IsString)
 import Data.Text (Text)
-import Data.Text qualified as T
+import Language.LSP.Protocol.Types (UInt)
 import Language.STLC.Common ()
 import Prettyprinter
 import Prelude hiding ((<>))
@@ -320,13 +320,19 @@ data Type p
   | -- | Type literals are similar to type constructors.
     Type'Concrete TypeConcrete
 
--- TODO implement
-instance (Show (XVar' p)) => Show (Type p) where
-  show = \case
-    Type'Var var -> show var
-    Type'ForAll vars body -> "forall " <> concatMap show vars <> ". " <> show body
-    Type'Fun arg res -> "(" <> show arg <> ")" <> "->" <> "(" <> show res <> ")"
-    Type'Concrete ty -> show ty
+instance (Pretty' (XVar' p)) => Pretty' (Type p) where
+  pretty' = \case
+    Type'Var var -> pretty' var
+    Type'ForAll vars body -> "forall " <> hsep (pretty' <$> vars) <> "." <+> pretty' body
+    Type'Fun arg res -> parens' arg' <+> "->" <+> pretty' res
+     where
+      arg' = pretty' arg
+      parens' =
+        case arg of
+          Type'Fun _ _ -> parens
+          Type'ForAll _ _ -> parens
+          _ -> id
+    Type'Concrete ty -> pretty' ty
 
 -- TODO separate Type from TcType
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
@@ -684,72 +690,75 @@ instance Eq Name where
 instance Ord Name where
   n1 <= n2 = n1.nameUnique <= n2.nameUnique
 
-instance Pretty RealSrcSpan where
-  pretty r =
-    (pretty r.srcSpanFile <> ":")
-      <> (pretty (r.srcSpanSLine + 1) <> ":" <> pretty (r.srcSpanSCol + 1))
+instance Pretty' RealSrcSpan where
+  pretty' r =
+    (pretty' r.srcSpanFile <> ":")
+      <> (pretty' (r.srcSpanSLine + 1) <> ":" <> pretty' (r.srcSpanSCol + 1))
       <> "-"
-      <> (pretty (r.srcSpanELine + 1) <> ":" <> pretty (r.srcSpanECol + 1))
+      <> (pretty' (r.srcSpanELine + 1) <> ":" <> pretty' (r.srcSpanECol + 1))
 
-instance Show RealSrcSpan where
-  show = show . pretty
-
-instance Pretty SkolemInfoAnon where
-  pretty = \case
+instance Pretty' SkolemInfoAnon where
+  pretty' = \case
     SigSkol _ _ _ -> "SigSkol"
     SigTypeSkol _ -> "SigTypeSkol"
     ForAllSkol _ -> "ForAllSkol"
     InferSkol _ -> "InferSkol"
     UnifyForAllSkol _ -> "UnifyForAllSkol"
 
-instance Show SkolemInfoAnon where
-  show = show . pretty
-
-instance Pretty UnhelpfulSpanReason where
-  pretty = \case
+instance Pretty' UnhelpfulSpanReason where
+  pretty' = \case
     UnhelpfulNoLocationInfo -> "No location"
     UnhelpfulGenerated -> "Generated"
-    UnhelpfulOther reason -> pretty reason
+    UnhelpfulOther reason -> pretty' reason
 
-instance Pretty SrcSpan where
-  pretty = \case
-    RealSrcSpan sp -> pretty sp
-    UnhelpfulSpan reason -> "Unknown span:" <+> pretty reason
+instance Pretty' SrcSpan where
+  pretty' = \case
+    RealSrcSpan sp -> pretty' sp
+    UnhelpfulSpan reason -> "Unknown span:" <+> pretty' reason
 
-instance Show SrcSpan where
-  show = show . pretty
+-- TODO pretty' with configurable verbosity
+data PrettyVerbosity
+  = PrettyVerbosity'Compact
+  | PrettyVerbosity'Verbose
 
-instance Pretty Name where
-  pretty name =
-    case name.nameOcc.occNameSpace of
-      NameSpace'Type'Concrete -> pretty name.nameOcc.occNameFS
-      _ -> pretty name.nameOcc.occNameFS <> "_" <> pretty name.nameUnique
+type IPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
 
-instance Show Name where
-  show n =
-    T.unpack n.nameOcc.occNameFS <> "[" <> "ID " <> show n.nameUnique <> ", " <> show n.nameLoc <> "]"
+class Pretty' a where
+  pretty' :: (IPrettyVerbosity) => a -> Doc ann
+  prettyCompact :: a -> Doc ann
+  prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Compact in pretty'
+  prettyVerbose :: a -> Doc ann
+  prettyVerbose = let ?prettyVerbosity = PrettyVerbosity'Verbose in pretty'
 
-instance Pretty SynLit where
-  pretty = \case
-    SynLit'Num val -> pretty val
-    SynLit'Str val -> "\"" <> pretty val <> "\""
-    SynLit'Bool val -> pretty val
+instance Pretty' Name where
+  pretty' name =
+    case ?prettyVerbosity of
+      PrettyVerbosity'Compact ->
+        case name.nameOcc.occNameSpace of
+          NameSpace'TypeConcrete -> pretty' name.nameOcc.occNameFS
+          _ -> pretty' name.nameOcc.occNameFS <> "_" <> pretty' name.nameUnique
+      PrettyVerbosity'Verbose ->
+        pretty' name.nameOcc.occNameFS
+          <> brackets ("ID" <+> pretty' name.nameUnique <> "," <+> pretty' name.nameLoc)
 
-instance Pretty TypeConcrete where
-  pretty = \case
+instance Pretty' SynLit where
+  pretty' = \case
+    SynLit'Num val -> pretty' val
+    SynLit'Str val -> "\"" <> pretty' val <> "\""
+    SynLit'Bool val -> pretty' val
+
+instance Pretty' TypeConcrete where
+  pretty' = \case
     TypeConcrete'Int -> "Int"
     TypeConcrete'Bool -> "Bool"
     TypeConcrete'String -> "String"
 
-instance Show TypeConcrete where
-  show = show . pretty
+instance Pretty' Concrete where
+  pretty' c = pretty' c.concreteType
 
-instance Pretty Concrete where
-  pretty c = pretty c.concreteType
-
-instance (Pretty a) => Pretty (Expected a) where
-  pretty (Infer _) = "[Infer]"
-  pretty (Check a) = "[Check]: " <> pretty a
+instance (Pretty' a) => Pretty' (Expected a) where
+  pretty' (Infer _) = "[Infer]"
+  pretty' (Check a) = "[Check]: " <> pretty' a
 
 -- ========================================
 -- Instances for Rn (renaming stage) things
@@ -761,35 +770,25 @@ instance Eq RnVar where
 instance Ord RnVar where
   var1 <= var2 = var1.varName <= var2.varName
 
-instance Show RnVar where
-  show var = show var.varName
+instance Pretty' RnVar where
+  pretty' var = pretty' var.varName
 
-instance Pretty RnVar where
-  pretty var = pretty var.varName
+instance Pretty' (SynType CompRn) where
+  pretty' = \case
+    SynType'Var _ var -> pretty' var
+    SynType'ForAll _ vars body -> "forall" <+> hsep (pretty' <$> vars) <> "." <+> pretty' body
+    SynType'Fun _ ty1 ty2 -> parens (pretty' ty1) <+> "->" <+> pretty' ty2
+    SynType'Concrete _ ty -> pretty' ty
 
-instance Pretty (Type CompRn) where
-  pretty = \case
-    Type'Var var -> pretty var
-    Type'ForAll vars body -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty body
-    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
-    Type'Concrete ty -> pretty ty
-
-instance Pretty (SynType CompRn) where
-  pretty = \case
-    SynType'Var _ var -> pretty var
-    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
-    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
-    SynType'Concrete _ ty -> pretty ty
-
-instance Pretty (SynTerm CompRn) where
-  pretty = \case
-    SynTerm'Var _ var -> pretty var
-    SynTerm'Lit _ val -> pretty val
-    SynTerm'App _ term1 term2 -> parens (pretty term1) <+> pretty term2
-    SynTerm'Lam _ var term -> "\\" <> pretty var <> "." <+> pretty term
-    SynTerm'ALam _ var ty term -> "\\" <> parens (pretty var <+> "::" <+> pretty ty) <> "." <+> pretty term
-    SynTerm'Let _ name term1 term2 -> "let" <+> pretty name <+> "=" <+> pretty term1 <+> "in" <+> pretty term2
-    SynTerm'Ann _ term ty -> parens (parens (pretty term) <+> "::" <+> pretty ty)
+instance Pretty' (SynTerm CompRn) where
+  pretty' = \case
+    SynTerm'Var _ var -> pretty' var
+    SynTerm'Lit _ val -> pretty' val
+    SynTerm'App _ term1 term2 -> parens (pretty' term1) <+> pretty' term2
+    SynTerm'Lam _ var term -> "\\" <> pretty' var <> "." <+> pretty' term
+    SynTerm'ALam _ var ty term -> "\\" <> parens (pretty' var <+> "::" <+> pretty' ty) <> "." <+> pretty' term
+    SynTerm'Let _ name term1 term2 -> "let" <+> pretty' name <+> "=" <+> pretty' term1 <+> "in" <+> pretty' term2
+    SynTerm'Ann _ term ty -> parens (parens (pretty' term) <+> "::" <+> pretty' ty)
 
 -- ============================================
 -- Instances for Tc (typechecking stage) things
@@ -801,8 +800,8 @@ instance Eq TcTyVar where
 instance Ord TcTyVar where
   var1 <= var2 = var1.varName <= var2.varName
 
-instance Pretty TcLevel where
-  pretty (TcLevel lvl) = "L " <> pretty lvl
+instance Pretty' TcLevel where
+  pretty' (TcLevel lvl) = "L" <+> pretty' lvl
 
 getTcTyVarKind :: (IsString a) => TcTyVarDetails -> a
 getTcTyVarKind = \case
@@ -810,71 +809,108 @@ getTcTyVarKind = \case
   SkolemTv{} -> "Skolem"
   MetaTv{} -> "Meta"
 
-instance Pretty TcTyVar where
-  pretty v =
-    pretty v.varName
-      <> brackets
-        ( pretty (show v.varDetails.tcLevel)
-            <> ","
-            <+> getTcTyVarKind v.varDetails
+instance Pretty' Int where
+  pretty' = pretty
+
+instance Pretty' Integer where
+  pretty' = pretty
+
+instance Pretty' Bool where
+  pretty' = pretty
+
+instance {-# OVERLAPPABLE #-} (Pretty' a) => Pretty' [a] where
+  pretty' xs =
+    encloseSep
+      "[ "
+      (sp <> "]")
+      (line <> comma <> space)
+      (pretty' <$> xs)
+   where
+    sp =
+      case xs of
+        [] -> ""
+        [_] -> " "
+        _ -> line
+
+instance Pretty' String where
+  pretty' = pretty
+
+instance Pretty' FastString where
+  pretty' = pretty
+
+instance (Pretty' a) => Pretty' (Maybe a) where
+  pretty' = maybe "" pretty'
+
+instance (Pretty' a, Pretty' b) => Pretty' (a, b) where
+  pretty' (a, b) = parens (pretty' a <> "," <+> pretty' b)
+
+instance Pretty' UInt where
+  pretty' = pretty' . show
+
+instance {-# OVERLAPPABLE #-} (Pretty' a) => Show a where
+  show =
+    let ?prettyVerbosity = PrettyVerbosity'Verbose
+     in show . pretty'
+
+instance Pretty' TcTyVar where
+  pretty' var =
+    pretty' var.varName.nameOcc.occNameFS
+      <> encloseSep
+        lbracket
+        rbracket
+        (comma <> space)
+        ( case ?prettyVerbosity of
+            PrettyVerbosity'Compact ->
+              [ pretty' var.varDetails.tcLevel
+              , getTcTyVarKind var.varDetails
+              ]
+            PrettyVerbosity'Verbose ->
+              [ "ID" <+> pretty' var.varName.nameUnique
+              , pretty' var.varDetails.tcLevel
+              , getTcTyVarKind var.varDetails
+              , pretty' var.varName.nameLoc
+              ]
         )
 
-instance Show TcTyVar where
-  show var =
-    T.unpack var.varName.nameOcc.occNameFS
-      <> "["
-      <> ("L " <> show var.varDetails.tcLevel <> ", ")
-      <> (getTcTyVarKind var.varDetails <> ", ")
-      <> ("ID " <> show var.varName.nameUnique <> ", ")
-      <> show var.varName.nameLoc
-      <> "]"
-
-instance Pretty TcTermVar where
-  pretty var =
+instance Pretty' TcTermVar where
+  pretty' var =
     hsep
-      [ pretty var.varName
+      [ pretty' var.varName
       , "::"
-      , braces (pretty var.varType)
+      , braces (pretty' var.varType)
       ]
 
-instance Pretty (Type CompTc) where
-  pretty = \case
-    Type'Var var -> pretty var
-    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
-    Type'Fun arg res -> "(" <> pretty arg <> ")" <> "->" <> "(" <> pretty res <> ")"
-    Type'Concrete ty -> pretty ty
-
-instance Pretty (SynType CompTc) where
-  pretty = \case
-    SynType'Var _ var -> pretty var
-    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
-    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
-    SynType'Concrete _ ty -> pretty ty
+instance Pretty' (SynType CompTc) where
+  pretty' = \case
+    SynType'Var _ var -> pretty' var
+    SynType'ForAll _ vars body -> "forall" <+> hsep (pretty' <$> vars) <> "." <+> pretty' body
+    SynType'Fun _ ty1 ty2 -> pretty' ty1 <+> "->" <+> pretty' ty2
+    SynType'Concrete _ ty -> pretty' ty
 
 parensIndent :: Doc ann -> Doc ann
 parensIndent x = parens (line <> indent 2 x <> line)
 
-instance Pretty (SynTerm CompTc) where
-  pretty = \case
-    SynTerm'Var _ var -> pretty var
-    SynTerm'Lit _ val -> pretty val
+instance Pretty' (SynTerm CompTc) where
+  pretty' = \case
+    SynTerm'Var _ var -> pretty' var
+    SynTerm'Lit _ val -> pretty' val
     SynTerm'App anno term1 term2 ->
       hsep
-        [ parensIndent (parensIndent (pretty term1) <> line <> indent 2 (pretty term2))
+        [ parensIndent (parensIndent (pretty' term1) <> line <> indent 2 (pretty' term2))
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'Lam anno var term ->
       hsep
         [ parensIndent
             ( "\\"
-                <> pretty var
+                <> pretty' var
                 <> "."
                 <> line
-                <> indent 2 (parensIndent (pretty term))
+                <> indent 2 (parensIndent (pretty' term))
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'ALam anno var ty term ->
       hsep
@@ -883,19 +919,19 @@ instance Pretty (SynTerm CompTc) where
                 <> "\\"
                 <> parens
                   ( hsep
-                      [ pretty var.varName
+                      [ pretty' var.varName
                       , "::"
-                      , braces (pretty ty)
+                      , braces (pretty' ty)
                       , "::"
-                      , pretty var.varType
+                      , pretty' var.varType
                       ]
                   )
                 <> "."
-                <+> pretty term
+                <+> pretty' term
                 <> line
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'Let anno var term1 term2 ->
       hsep
@@ -905,35 +941,35 @@ instance Pretty (SynTerm CompTc) where
                 , indent
                     2
                     ( vsep
-                        [ pretty var.varName <+> "="
+                        [ pretty' var.varName <+> "="
                         , indent
                             2
                             ( hsep
-                                [ parensIndent (pretty term1)
+                                [ parensIndent (pretty' term1)
                                 , "::"
-                                , pretty var.varType
+                                , pretty' var.varType
                                 ]
                             )
                         ]
                     )
                 , "in"
-                , indent 2 (pretty term2)
+                , indent 2 (pretty' term2)
                 ]
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'Ann anno term ty ->
       hsep
         [ parensIndent
             ( hsep
-                [ parensIndent (pretty term)
+                [ parensIndent (pretty' term)
                 , "::"
-                , braces (pretty ty)
+                , braces (pretty' ty)
                 ]
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
 
 -- =======================================
@@ -946,57 +982,40 @@ instance Eq ZnTyVar where
 instance Ord ZnTyVar where
   var1 <= var2 = var1.varName <= var2.varName
 
-instance Show ZnTyVar where
-  show ZnTyVar{varName} = show varName
+instance Pretty' ZnTyVar where
+  pretty' ZnTyVar{varName} = pretty' varName
 
-instance Pretty ZnTyVar where
-  pretty ZnTyVar{varName} = pretty varName
+instance Pretty' ZnTermVar where
+  pretty' ZnTermVar{varName, varType} = parens (pretty' varName <+> "::" <+> pretty' varType)
 
-instance Pretty ZnTermVar where
-  pretty ZnTermVar{varName, varType} = parens (pretty varName <+> "::" <+> pretty varType)
+instance Pretty' (SynType CompZn) where
+  pretty' = \case
+    SynType'Var _ var -> pretty' var
+    SynType'ForAll _ vars body -> "forall" <+> hsep (pretty' <$> vars) <> "." <+> pretty' body
+    SynType'Fun _ ty1 ty2 -> pretty' ty1 <+> "->" <+> pretty' ty2
+    SynType'Concrete _ ty -> pretty' ty
 
-instance Pretty (Type CompZn) where
-  pretty = \case
-    Type'Var var -> pretty var
-    Type'ForAll vars body -> "forall" <+> hcat (pretty <$> vars) <> "." <+> pretty body
-    Type'Fun arg res -> arg' <+> "->" <+> pretty res
-     where
-      arg' =
-        pretty arg
-          & case arg of
-            Type'Fun _ _ -> parens
-            Type'ForAll _ _ -> parens
-            _ -> id
-    Type'Concrete ty -> pretty ty
-
-instance Pretty (SynType CompZn) where
-  pretty = \case
-    SynType'Var _ var -> pretty var
-    SynType'ForAll _ vars ty -> "forall" <+> hsep (pretty <$> vars) <> "." <+> pretty ty
-    SynType'Fun _ ty1 ty2 -> pretty ty1 <+> "->" <+> pretty ty2
-    SynType'Concrete _ ty -> pretty ty
-
-instance Pretty (SynTerm CompZn) where
-  pretty = \case
-    SynTerm'Var _ var -> pretty var
-    SynTerm'Lit _ val -> pretty val
+instance Pretty' (SynTerm CompZn) where
+  pretty' = \case
+    SynTerm'Var _ var -> pretty' var
+    SynTerm'Lit _ val -> pretty' val
     SynTerm'App anno term1 term2 ->
       hsep
-        [ parensIndent (parensIndent (pretty term1) <> line <> indent 2 (pretty term2))
+        [ parensIndent (parensIndent (pretty' term1) <> line <> indent 2 (pretty' term2))
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'Lam anno var term ->
       hsep
         [ parensIndent
             ( "\\"
-                <> pretty var
+                <> pretty' var
                 <> "."
                 <> line
-                <> indent 2 (parensIndent (pretty term))
+                <> indent 2 (parensIndent (pretty' term))
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'ALam anno var ty term ->
       hsep
@@ -1005,19 +1024,19 @@ instance Pretty (SynTerm CompZn) where
                 <> "\\"
                 <> parens
                   ( hsep
-                      [ pretty var.varName
+                      [ pretty' var.varName
                       , "::"
-                      , braces (pretty ty)
+                      , braces (pretty' ty)
                       , "::"
-                      , pretty var.varType
+                      , pretty' var.varType
                       ]
                   )
                 <> "."
-                <+> pretty term
+                <+> pretty' term
                 <> line
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'Let anno var term1 term2 ->
       hsep
@@ -1027,33 +1046,33 @@ instance Pretty (SynTerm CompZn) where
                 , indent
                     2
                     ( vsep
-                        [ pretty var.varName <+> "="
+                        [ pretty' var.varName <+> "="
                         , indent
                             2
                             ( hsep
-                                [ parensIndent (pretty term1)
+                                [ parensIndent (pretty' term1)
                                 , "::"
-                                , pretty var.varType
+                                , pretty' var.varType
                                 ]
                             )
                         ]
                     )
                 , "in"
-                , indent 2 (pretty term2)
+                , indent 2 (pretty' term2)
                 ]
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]
     SynTerm'Ann anno term ty ->
       hsep
         [ parensIndent
             ( hsep
-                [ parensIndent (pretty term)
+                [ parensIndent (pretty' term)
                 , "::"
-                , braces (pretty ty)
+                , braces (pretty' ty)
                 ]
             )
         , "::"
-        , pretty anno.annoType
+        , pretty' anno.annoType
         ]

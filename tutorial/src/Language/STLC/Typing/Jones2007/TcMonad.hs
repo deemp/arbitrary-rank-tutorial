@@ -18,7 +18,7 @@ import Language.STLC.Typing.Jones2007.Bag (Bag (..))
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Renamer
 import Prettyprinter
-import Prettyprinter.Render.Text
+import Prettyprinter.Util (putDocW)
 
 ------------------------------------------
 --      The monad itself                --
@@ -64,70 +64,70 @@ getThingStart (HsExprRnThing thing) =
     SynTerm'Let anno _ _ _ -> anno
     SynTerm'Ann anno _ _ -> anno
 
-prettyDefinedAt :: TypedThing -> Doc ann
-prettyDefinedAt thing = "Defined at" <+> pretty (getThingStart thing)
+prettyDefinedAt :: (IPrettyVerbosity) => TypedThing -> Doc ann
+prettyDefinedAt thing = "defined at" <+> pretty' (getThingStart thing)
 
-instance Pretty TcError where
-  pretty = \case
+instance Pretty' TcError where
+  pretty' = \case
     TcError'UndefinedVariable{varName} ->
       vsep'
         [ "Not in scope:"
-        , pretty varName
+        , pretty' varName
         ]
     TcError'UnboundVariable{var} ->
       vsep'
         [ "Expected a bound variable, but got:"
-        , pretty var
+        , pretty' var
         ]
     TcError'UnexpectedType{expected, actual, thing} ->
       vsep'
         [ "Expected type:"
-        , pretty expected
+        , pretty' expected
         , ""
         , "but got type:"
-        , pretty actual
+        , pretty' actual
         , prettyThingLocation thing
         ]
-    TcError'OccursCheck{tv, ty} ->
+    TcError'OccursCheck{ct} ->
       vsep'
         [ "Occurs check failed!"
         , "Type variable:"
-        , pretty tv
+        , pretty' ct.ct_eq_can.eq_lhs
         , ""
         , "occurs in the type:"
-        , pretty ty
+        , pretty' ct.ct_eq_can.eq_rhs
         ]
     TcError'UnifyingBoundTypes{ty1, ty2, thing} ->
       vsep'
         [ "Trying to unify type:"
-        , pretty ty1
+        , pretty' ty1
         , ""
         , "with type:"
-        , pretty ty2
+        , pretty' ty2
         , prettyThingLocation thing
         ]
     TcError'ExpectedFlexiVariables{tvs} ->
       vsep'
         [ "Expected all variables to be Flexi, but these are not:"
-        , pretty tvs
+        , pretty' tvs
         ]
     TcError'UnknownConcreteType{name} ->
       vsep'
         [ "Unknown concrete type:"
-        , pretty name
+        , pretty' name
         ]
     TcError'ExpectedAllMetavariables{tvs} ->
       vsep'
         [ "Expected all variables to be metavariables, but got:"
-        , pretty tvs
+        , pretty' tvs
         ]
     TcError'CannotUnify{ty1, ty2, thing} ->
       vsep'
         [ "Cannot unify type:"
-        , pretty ty1
+        , pretty' ty1
         , ""
         , "with type:"
-        , pretty ty2
+        , pretty' ty2
         , prettyThingLocation thing
         ]
    where
@@ -140,21 +140,14 @@ instance Pretty TcError where
         vsep
           [ ""
           , "in expression:"
-          , pretty thing
+          , pretty' thing
           , ""
           , prettyDefinedAt thing
           ]
 
-instance Pretty TcErrorWithCallStack where
-  pretty :: TcErrorWithCallStack -> Doc ann
-  pretty (TcErrorWithCallStack err) =
-    vsep [pretty (prettyCallStack callStack), "", pretty err]
-
-instance Show TcError where
-  show = show . pretty
-
-instance Show TcErrorWithCallStack where
-  show = show . pretty
+instance Pretty' TcErrorWithCallStack where
+  pretty' (TcErrorWithCallStack err) =
+    vsep [pretty' (prettyCallStack callStack), "", pretty' err]
 
 instance Exception TcError
 
@@ -176,13 +169,13 @@ die tcErrorSuggested = do
           Just err -> err
   throw (TcErrorWithCallStack error')
 
-debug :: (IDebug) => Doc a -> [Doc a] -> IO ()
+debug :: (IDebug, IPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
 debug label xs = when ?debug do
-  putDoc
+  putDocW 1000
     ( vsep
         [ "[" <> label <> "]"
         , (foldMap (\x -> "$ " <> x <> line) xs)
-        , pretty (prettyCallStack callStack)
+        , pretty' (prettyCallStack callStack)
         , ""
         ]
     )
@@ -733,7 +726,7 @@ ex2 = do
     ?scope = Map.fromList (zip builtInTypes [0 ..])
     ?uniqueSupply = uniqueSupply
     ?currentFilePath = "Unknown"
-  pretty <$> convertAbsToBT ex1
+  prettyCompact <$> convertAbsToBT ex1
 
 -- >>> ex2
 -- \(x_1 :: forall b_2. Int). (\z_3. z_3) x_1

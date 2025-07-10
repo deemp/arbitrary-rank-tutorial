@@ -16,8 +16,8 @@ import Control.Monad.Foil.Internal (DExt, Name (..), NameBinder (..), Scope (..)
 import Data.IntMap qualified as IntMap
 import Data.IntSet qualified as IntSet
 import Generics.Kind.TH
+import Language.STLC.Typing.Jones2007.BasicTypes (Pretty' (..))
 import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
-import Prettyprinter
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | A wrapper around 'NameBinder' that stores additional information.
@@ -107,12 +107,12 @@ newtype PrettyName n = PrettyName (Name n)
 
 newtype PrettyNameBinder n l = PrettyNameBinder (NameBinder n l)
 
-instance Pretty (PrettyName n) where
-  pretty (PrettyName (UnsafeName n)) = "x_" <> pretty n
+instance Pretty' (PrettyName n) where
+  pretty' (PrettyName (UnsafeName n)) = "x_" <> pretty' n
 
-instance Pretty (PrettyNameBinder n l) where
-  pretty (PrettyNameBinder (UnsafeNameBinder name)) = pretty (PrettyName name)
+instance Pretty' (PrettyNameBinder n l) where
+  pretty' (PrettyNameBinder (UnsafeNameBinder name)) = pretty' (PrettyName name)
 
-instance Pretty (CoreNameBinder n l) where
-  pretty binder = pretty (PrettyNameBinder binder.nameBinder)
+instance Pretty' (CoreNameBinder n l) where
+  pretty' binder = pretty' (PrettyNameBinder binder.nameBinder)
 

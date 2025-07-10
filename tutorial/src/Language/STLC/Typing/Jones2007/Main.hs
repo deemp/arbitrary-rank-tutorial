@@ -14,18 +14,24 @@ module Language.STLC.Typing.Jones2007.Main where
 
 import Prettyprinter
 
+import Control.Monad.Foil (emptyScope)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
+import Language.STLC.Interpreter.Main (convertASTToCore, whnf)
+import Language.STLC.Typing.Jones2007.BasicTypes (Pretty' (..), PrettyVerbosity (PrettyVerbosity'Compact))
 import Language.STLC.Typing.Jones2007.TcTerm
-import Language.STLC.Typing.Pass.Renamed
+import Prettyprinter.Render.Text
 import Prelude hiding (exp)
 
-t3 :: RnM (Doc ann)
+t3 :: IO ()
 t3 = do
   let filePath = "test/data/Program1.stlc"
   content <- T.readFile filePath
+  let ?debug = True
+      ?prettyVerbosity = PrettyVerbosity'Compact
   programZn <- runTypechecker' (T.pack filePath) content
-  pure $ pretty programZn
+  putDoc $ line <> pretty' programZn <> line
+  putDoc $ line <> pretty' (whnf emptyScope (convertASTToCore emptyScope programZn)) <> line
 
 -- >>> t3
 -- "Exception!"

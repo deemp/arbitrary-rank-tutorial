@@ -12,9 +12,8 @@ module Language.STLC.Typing.Jones2007.Constraints where
 
 import GHC.Generics (Generic)
 import Language.STLC.Typing.Jones2007.Bag (Bag (..), emptyBag)
-import Language.STLC.Typing.Jones2007.BasicTypes (CompRn, RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType)
+import Language.STLC.Typing.Jones2007.BasicTypes (CompRn, RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType, Pretty' (..))
 import Language.STLC.Typing.Jones2007.Pretty (genericPretty)
-import Prettyprinter (Pretty (..))
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L123
 
@@ -196,35 +195,35 @@ instance Semigroup WantedConstraints where
 instance Monoid WantedConstraints where
   mempty = emptyWantedConstraints
 
-instance Pretty TypedThing where
-  pretty (HsExprRnThing ex) = pretty ex
+instance Pretty' TypedThing where
+  pretty' (HsExprRnThing ex) = pretty' ex
 
-instance Pretty CtOrigin where
-  pretty = genericPretty
+instance Pretty' CtOrigin where
+  pretty' = genericPretty
 
-instance Pretty CtLoc where
-  pretty = genericPretty
+instance Pretty' CtLoc where
+  pretty' = genericPretty
 
-instance Pretty CtLocEnv where
-  pretty = genericPretty
+instance Pretty' CtLocEnv where
+  pretty' = genericPretty
 
-instance Pretty WantedCtEvidence where
-  pretty = genericPretty
+instance Pretty' WantedCtEvidence where
+  pretty' = genericPretty
 
-instance Pretty CtEvidence where
-  pretty = genericPretty
+instance Pretty' CtEvidence where
+  pretty' = genericPretty
 
-instance Pretty EqCt where
-  pretty = genericPretty
+instance Pretty' EqCt where
+  pretty' = genericPretty
 
-instance Pretty Ct where
-  pretty = genericPretty
+instance Pretty' Ct where
+  pretty' = genericPretty
 
-instance Pretty ImplicStatus where
-  pretty status = pretty (show status)
+instance Pretty' ImplicStatus where
+  pretty' status = pretty' (show status)
 
-instance Pretty Implication where
-  pretty = genericPretty
+instance Pretty' Implication where
+  pretty' = genericPretty
 
-instance Pretty WantedConstraints where
-  pretty = genericPretty
+instance Pretty' WantedConstraints where
+  pretty' = genericPretty

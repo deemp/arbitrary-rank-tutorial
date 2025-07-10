@@ -48,7 +48,7 @@ runTypechecker program = do
   typecheck program
   
 -- TODO use filepath from implicit params
-runTypechecker' :: (HasCallStack, BT.IDebug) => BT.FastString -> T.Text -> IO (SynTerm CompZn)
+runTypechecker' :: (HasCallStack, BT.IDebug, IPrettyVerbosity) => BT.FastString -> T.Text -> IO (SynTerm CompZn)
 runTypechecker' filePath content = do
   uniqueSupply <- newIORef 0
   let ?uniqueSupply = uniqueSupply
