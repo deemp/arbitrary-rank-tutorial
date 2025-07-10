@@ -65,89 +65,88 @@ getThingStart (HsExprRnThing thing) =
     SynTerm'Ann anno _ _ -> anno
 
 prettyDefinedAt :: (IPrettyVerbosity) => TypedThing -> Doc ann
-prettyDefinedAt thing = "defined at" <+> pretty' (getThingStart thing)
+prettyDefinedAt thing =
+  vsep'
+    [ "defined at:"
+    , prettyIndent (getThingStart thing)
+    ]
 
 instance Pretty' TcError where
   pretty' = \case
     TcError'UndefinedVariable{varName} ->
       vsep'
         [ "Not in scope:"
-        , pretty' varName
+        , prettyIndent varName
         ]
     TcError'UnboundVariable{var} ->
       vsep'
         [ "Expected a bound variable, but got:"
-        , pretty' var
+        , prettyIndent var
         ]
     TcError'UnexpectedType{expected, actual, thing} ->
       vsep'
-        [ "Expected type:"
-        , pretty' expected
-        , ""
-        , "but got type:"
-        , pretty' actual
+        [ "Expected the type:"
+        , prettyIndent expected
+        , "but got the type:"
+        , prettyIndent actual
         , prettyThingLocation thing
         ]
     TcError'OccursCheck{ct} ->
       vsep'
         [ "Occurs check failed!"
         , "Type variable:"
-        , pretty' ct.ct_eq_can.eq_lhs
-        , ""
+        , prettyIndent ct.ct_eq_can.eq_lhs
         , "occurs in the type:"
-        , pretty' ct.ct_eq_can.eq_rhs
+        , prettyIndent ct.ct_eq_can.eq_rhs
         ]
     TcError'UnifyingBoundTypes{ty1, ty2, thing} ->
       vsep'
         [ "Trying to unify type:"
-        , pretty' ty1
-        , ""
+        , prettyIndent ty1
         , "with type:"
-        , pretty' ty2
+        , prettyIndent ty2
         , prettyThingLocation thing
         ]
     TcError'ExpectedFlexiVariables{tvs} ->
       vsep'
         [ "Expected all variables to be Flexi, but these are not:"
-        , pretty' tvs
+        , prettyIndent tvs
         ]
     TcError'UnknownConcreteType{name} ->
       vsep'
         [ "Unknown concrete type:"
-        , pretty' name
+        , prettyIndent name
         ]
     TcError'ExpectedAllMetavariables{tvs} ->
       vsep'
         [ "Expected all variables to be metavariables, but got:"
-        , pretty' tvs
+        , prettyIndent tvs
         ]
     TcError'CannotUnify{ty1, ty2, thing} ->
       vsep'
         [ "Cannot unify type:"
-        , pretty' ty1
-        , ""
+        , prettyIndent ty1
         , "with type:"
-        , pretty' ty2
+        , prettyIndent ty2
         , prettyThingLocation thing
         ]
    where
-    vsep' xs = vsep (xs <> [line])
-
     prettyThingLocation :: Maybe TypedThing -> Doc ann
     prettyThingLocation = \case
       Nothing -> mempty
       Just thing ->
-        vsep
-          [ ""
-          , "in expression:"
-          , pretty' thing
-          , ""
+        vsep'
+          [ "in the expression:"
+          , prettyIndent thing
           , prettyDefinedAt thing
           ]
 
 instance Pretty' TcErrorWithCallStack where
   pretty' (TcErrorWithCallStack err) =
-    vsep [pretty' (prettyCallStack callStack), "", pretty' err]
+    vsep'
+      [ pretty' (prettyCallStack callStack)
+      , pretty' err
+      ]
 
 instance Exception TcError
 
