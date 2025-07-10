@@ -17,21 +17,29 @@ import Language.STLC.Syntax.Abs (BNFC'Position)
 import Language.STLC.Syntax.Abs qualified as Abs
 import Language.STLC.Syntax.Par (pProgram)
 import Language.STLC.Typing.Jones2007.BasicTypes as BT
-import Prettyprinter (vsep, (<+>))
+import Prettyprinter (indent, vsep)
 
+-- | A renamer exception.
 data RnError
   = RnError'LexerError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
   | RnError'Unknown {message :: String}
   | RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
   | RnError'UnboundTypeVariable {srcSpan :: SrcSpan}
 
+-- | A renamer exception that can capture the 'callStack'
+-- at the 'throw' side.
+-- 
+-- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
 data RnErrorWithCallStack where
   RnErrorWithCallStack :: (HasCallStack) => RnError -> RnErrorWithCallStack
 
--- | Fail unconditionally
+-- | Fail unconditionally with a renamer exception.
 dieRn :: (HasCallStack) => RnError -> IO a
 dieRn rnError = throw (RnErrorWithCallStack rnError)
 
+-- | Variables scope.
+-- 
+-- Variable names and their ids.
 type Scope = Map NameFs Int
 
 -- | Current term variables scope.
@@ -44,9 +52,9 @@ type ITermVarScope = (?termVarScope :: Scope)
 -- Visible type variable names and their ids.
 type ITyVarScope = (?tyVarScope :: Scope)
 
--- | Scope containing built-in types.
+-- | Built-in types scope.
 --
--- Built-in types and their ids.
+-- Built-in type names and their ids.
 type ITyConcreteScope = (?tyConcreteScope :: Scope)
 
 -- TODO add index because the parse type isn't enough to differentiate
@@ -57,6 +65,10 @@ type IRnConstraints = (HasCallStack, BT.IUniqueSupply, ITermVarScope, ITyVarScop
 
 type RnM a = (IRnConstraints) => IO a
 
+
+-- | Similar to `genSym` in GHC.
+-- 
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L257
 newUnique :: (IUniqueSupply) => IO Int
 newUnique = do
   r <- readIORef ?uniqueSupply
@@ -304,27 +316,36 @@ instance ConvertAbsToBT Abs.Type where
 instance Pretty' RnError where
   pretty' = \case
     RnError'LexerError{currentFilePath, lineNumber, columnNumber} ->
-      "Lexer error at"
-        <+> (pretty' currentFilePath <> ":")
-        <> (pretty' (lineNumber + 1) <> ":")
-        <> (pretty' (columnNumber + 1))
+      vsep'
+        [ "Lexer error at:"
+        , indent 2 $
+            (pretty' currentFilePath <> ":")
+              <> (pretty' (lineNumber + 1) <> ":")
+              <> (pretty' (columnNumber + 1))
+        ]
     RnError'Unknown{message} ->
-      pretty' message
+      vsep'
+        [ "Unknown error:"
+        , prettyIndent message
+        ]
     RnError'ForallBindsNoTvs{srcSpan} ->
       vsep
         [ "`forall' binds no type variables at:"
-        , pretty' srcSpan
+        , prettyIndent srcSpan
         ]
     RnError'UnboundTypeVariable{srcSpan} ->
       vsep
         [ "Unbound type variable at:"
-        , pretty' srcSpan
+        , prettyIndent srcSpan
         ]
 
 instance Exception RnError
 
 instance Pretty' RnErrorWithCallStack where
   pretty' (RnErrorWithCallStack err) =
-    vsep [pretty' (prettyCallStack callStack), "", pretty' err]
+    vsep'
+      [ pretty' (prettyCallStack callStack)
+      , pretty' err
+      ]
 
 instance Exception RnErrorWithCallStack
