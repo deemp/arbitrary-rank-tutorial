@@ -13,9 +13,9 @@ import Language.STLC.Typing.Jones2007.TcMonad
 import Language.STLC.Typing.Renamer (parseInputText)
 import Language.STLC.Typing.Zonker (Zonk (..))
 
-------------------------------------------
---      The top-level wrapper           --
-------------------------------------------
+-- ==============================================
+--      The top-level wrapper
+-- ==============================================
 
 -- TODO Too much boilerplate...
 
@@ -58,13 +58,9 @@ runTypechecker' filePath content = do
   program <- parseInputText content
   runTypechecker program
 
------------------------------------
---      The expected type       --
------------------------------------
-
-------------------------------------------
---      tcRho, and its variants         --
-------------------------------------------
+-- ==============================================
+-- tcRho and its variants
+-- ==============================================
 
 checkRho :: SynTerm CompRn -> Rho -> TcM (SynTerm CompTc)
 -- Invariant: the Rho is always in weak-prenex form
@@ -81,40 +77,6 @@ inferRho expr =
     expr' <- tcRho expr (Infer ref)
     ref' <- readTcRef ref
     pure (expr', ref')
-
--- NOTE
--- Bidirectional type checking
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/HsType.hs#L1030
-
--- TODO Quick Look
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/App.hs#L79
-
--- Storing the types
---
--- How does HLS store signatures of expressions?
---
--- Let's save types of each identifier and each parenthesized expression.
---
--- Alternative:
--- When a user requests the type of a parenthesized expression
--- the expression is inferred as a hole.
---
--- A parenthesized expression is a hole.
-
--- HsExpr GhcTc has Id instead of TcTyVar
--- and it's possible to calculate the type of each sub-expression
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Syn/Type.hs#L104
-
--- tcExpr: the main expression typechecker
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L224
--- The second argument is the `Exp`ected rho-type
-
--- ExpType
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L401
-
--- So, tcExpr returns SynTerm CompTc where we have Id instead of TcTyVar
--- TODO separate Type and TcTyVar
--- Maybe make Type a TTG
 
 -- TODO optimize
 parseTypeConcrete :: Name -> TcM TypeConcrete
@@ -153,7 +115,9 @@ mkTypedThingIfCheck thing = \case
   Infer _ -> Nothing
   Check _ -> Just (HsExprRnThing thing)
 
--- TODO return reconstructed SynTerm CompTc
+-- | Similar to `tcCheckPolyExpr` in GHC.
+-- 
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L100
 tcRho :: SynTerm CompRn -> Expected Rho -> TcM (SynTerm CompTc)
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
@@ -164,9 +128,6 @@ tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
           SynLit'Bool{} -> TypeConcrete'Bool
           SynLit'Str{} -> TypeConcrete'String
   instSigma (mkTypedThingIfCheck t exp_ty) (Type'Concrete ty) exp_ty
-  -- TODO what to return?
-  -- TODO should we use the annotation field
-  -- to store the inferred type?
   pure $
     SynTerm'Lit
       AnnoTc{annoSrcLoc, annoType = exp_ty}
@@ -226,7 +187,7 @@ tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
 tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
   (arg_ty, body_ty) <- unifyFun (mkTypedThingIfCheck t modeTy) exp_ty
   (var_ty_syn, var_ty') <- convertSynTy var_ty
-  -- TODO what should be passed?
+  -- TODO Should some typed thing be passed?
   subsCheck Nothing arg_ty var_ty'
   body' <- extendVarEnv varName var_ty' (checkRho body body_ty)
   pure $
@@ -275,9 +236,9 @@ tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
       body'
       ann_ty_syn
 
-------------------------------------------
---      inferSigma and checkSigma
-------------------------------------------
+-- ==============================================
+-- inferSigma and checkSigma
+-- ==============================================
 
 annotateTc :: Sigma -> SynTerm CompTc -> SynTerm CompTc
 annotateTc s = \case

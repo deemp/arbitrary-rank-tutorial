@@ -45,9 +45,9 @@ unsafeParseWith parser input =
 
 -- >>> printModule name = Pretty . (\x -> "==========\n" <> name <> "\n==========\n" <> x) . printTree . fromString @Program <$> (readFile ("free-foil-stlc/test/data/" <> name))
 -- >>> printModule "Program.stlc"
--- ==========
+-- ==============================================
 -- Program.stlc
--- ==========
+-- ==============================================
 -- ex1 = if (((y) (1)) (2)) then
 -- {
 --   (x) (true)

@@ -20,9 +20,9 @@ import Language.STLC.Typing.Renamer
 import Prettyprinter
 import Prettyprinter.Util (putDocW)
 
-------------------------------------------
---      The monad itself                --
-------------------------------------------
+-- ==============================================
+-- The Type Checking Monad
+-- ==============================================
 
 type IVarEnv = (?varEnv :: Map.Map Name Sigma)
 type ITcLevel = (?tcLevel :: TcLevel)
@@ -35,14 +35,16 @@ type ITcEnv = (IUniqueSupply, IVarEnv, ITcLevel, IDebug, IConstraints, ITcErrorP
 -- TcM in GHC is a ReaderT (Env a) IO b.
 -- It can be replaced with ImplicitParams
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types.hs#L271
-type TcM a = (ITcEnv, HasCallStack) => IO a
+
+-- ==============================================
+-- The Type Checking Errors
+-- ==============================================
 
 data TcError
   = TcError'UndefinedVariable {varName :: Name}
   | TcError'UnboundVariable {var :: TcTyVar}
   | TcError'UnexpectedType {expected :: TcType, actual :: TcType, thing :: Maybe TypedThing}
-  | TcError'OccursCheck {tv :: TcTyVar, ty :: TcType}
-  | TcError'UnifyingBoundTypes {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
+  | -- TODO specify which type(s) are bound
   | TcError'ExpectedFlexiVariables {tvs :: [TcTyVar]}
   | TcError'UnknownConcreteType {name :: Name}
   | TcError'ExpectedAllMetavariables {tvs :: [TcTyVar]}
@@ -311,20 +313,23 @@ tyVarToMetaTyVar x = newMetaTyVar' x.varName.nameOcc.occNameFS
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L1046
 mkTcTyVar :: Name -> TcTyVarDetails -> TcTyVar
 mkTcTyVar name details =
-  -- NB: 'kind' may be a coercion kind; cf, 'GHC.Tc.Utils.TcMType.newMetaCoVar'
   TcTyVar
     { varName = name
     , varDetails = details
     }
 
+-- | Makes a new skolem tv.
+--
+-- Similar to 'newSkolemTyVar'
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L765
 newSkolemTyVar' :: (ITcLevel) => SkolemInfo -> Name -> TcTyVar
 newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 
--- TODO use `uniqFromTag`
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L282
-
--- Similar to `cloneTyVarTyVar`
+-- | Converts a 'BoundTv' to a 'SkolemTv'
+--
+-- Similar to 'cloneTyVarTyVar'
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L779
 newSkolemTyVar :: SkolemInfoAnon -> TcBoundVar -> TcM TcTyVar
 newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv{}} = do
@@ -408,16 +413,20 @@ instantiate (Type'ForAll tvs ty) = do
 -- If possible, we shouldn't do that in advance to not lose some type safety
 instantiate ty = pure ty
 
--- TODO need recursive do?
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L579
+-- ==============================================
+-- Skolemisation
+-- ==============================================
+
+-- | Performs deep skolemisation, returning the
+-- skolem constants and the skolemised type.
 skolemise :: Sigma -> TcM ([TcTyVar], Rho)
--- Performs deep skolemisation, returning the
--- skolem constants and the skolemised type
 -- Rule PRPOLY
 skolemise (Type'ForAll tvs ty) = do
+  -- TODO Do we need recursive do?
+  -- Note [Keeping SkolemInfo inside a SkolemTv]
+  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L579
   let info = ForAllSkol tvs
   sks1 <- mapM (newSkolemTyVar info) tvs
-  -- TODO fix
   (sks2, ty') <- skolemise =<< (substTy tvs (Type'Var <$> sks1) ty)
   pure (sks1 <> sks2, ty')
 -- Rule PRFUN
@@ -427,9 +436,10 @@ skolemise (Type'Fun arg_ty res_ty) = do
 -- Rule PRMONO
 skolemise ty = pure ([], ty)
 
-------------------------------------------
+
+-- ==============================================
 --      Quantification                  --
-------------------------------------------
+-- ==============================================
 
 isMetaTv :: TcTyVar -> Bool
 isMetaTv TcTyVar{varDetails = MetaTv{}} = True
@@ -464,9 +474,15 @@ allBinders =
        , x <- ['a' .. 'z']
        ]
 
--- TODO account for levels
+-- | Quantify over given type variables.
+--
+-- Should be used only in 'inferSigma'.
+--
+-- Note [quantifyTyVars]
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1677
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1750
+--
+-- Note [Deciding quantification]
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver.hs#L1138
 quantify :: [TcTyVarMeta] -> Rho -> TcM Sigma
 -- Quantify over the specified type variables (all flexible)
 quantify tvs ty | all isMetaTv tvs = do
@@ -490,6 +506,7 @@ quantify tvs ty | all isMetaTv tvs = do
   -- -- Avoid quantified type variables in use
   newBinders :: [FastString]
   newBinders = take (length tvs) (allBinders \\ ((.varName.nameOcc.occNameFS) <$> usedBinders))
+
   bind :: (TcTyVarMeta, FastString) -> TcM TcTyVar
   bind (tv, name) = do
     -- TODO use info from tv?
@@ -507,14 +524,10 @@ quantify tvs ty | all isMetaTv tvs = do
 quantify tvs _ =
   die (TcError'ExpectedAllMetavariables tvs)
 
-------------------------------------------
---      Getting the free tyvars         --
-------------------------------------------
-
-------------------------------------------
---      Zonking                         --
+-- ==============================================
+-- Zonking
 -- Eliminate any substitutions in the type
-------------------------------------------
+-- ==============================================
 
 -- TODO backsubstitution
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L925
@@ -554,9 +567,9 @@ zonkType v@(Type'Var var) =
             pure ty'
     _ -> pure (Type'Var var)
 
-------------------------------------------
---      Unification                     --
-------------------------------------------
+-- ==============================================
+--      Unification
+-- ==============================================
 
 badType :: Tau -> Bool
 -- Tells which types should never be encountered during unification
@@ -568,6 +581,10 @@ badType _ = False
 -- It's similar to `unifyType` in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2011
+--
+-- See Note [Unification preconditions]:
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2589
 unify :: Maybe TypedThing -> Tau -> Tau -> TcM ()
 -- Invariant:
 -- The first type is "expected",
@@ -634,10 +651,12 @@ emitCEqCan thing tv ty swapped = do
   -- debug "unifyVar" [pretty constraint]
   writeTcRef ?constraints constraints'
 
------------------------------------------
+-- | Unify a variable with a type.
+-- 
+-- The 'Maybe TypedThing' may provide evidence for this equality
 unifyVar :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> TcM ()
--- Invariant: tv1 is a flexible type variable
--- Check whether tv1 is bound
+-- Invariant: tv is a flexible type variable
+-- Check whether tv is bound
 unifyVar thing tv ty swapped | isMetaTv tv = do
   emitCEqCan thing tv ty swapped
 -- mb_ty1 <- readTv tv

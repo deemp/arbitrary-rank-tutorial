@@ -165,12 +165,17 @@ type family IdCompP pass where
   IdCompP 'Typechecked = TcTyVar
   IdCompP 'Zonked = Id
 
--- TODO use ping-pong
+-- ==============================================
+-- Annotations in the AST
+-- ==============================================
 
 -- Note [Ping-pong in TTG]
--- ~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~
 --
--- Why do we annotate some nodes without using the extension field?
+-- GHC wraps almost each node of the AST into a data constructor
+-- that stores the node location in the source code.
+--
+-- Why should we annotate AST nodes without using the extension field of an AST node?
 --
 -- See
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L125
@@ -182,9 +187,25 @@ type family IdCompP pass where
 -- There would no longer be a guaruntee that there will always
 -- be a Located layer between the Expr layers in our huge expression sandwich.
 
+-- Currently, we do not follow the ping-pong approach.
+-- Instead, we use 'Anno' in extension points of AST node constructors.
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L122
+type family Anno a = b
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L647
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
+type instance Anno Name = SrcSpan
+type instance Anno SynLit = SrcSpan
+type instance Anno TcTyVar = SrcSpan
+
+-- TODO Use the ping-pong approach with the following definitions.
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L759
 data GenLocated l e = L l e
   deriving stock (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
 
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L764
 type Located = GenLocated SrcSpan
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L120
@@ -202,9 +223,6 @@ type LIdCompP p = XAnno (IdCompP p)
 data Annotated l e = Annotated l e
   deriving stock (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
 
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L122
-type family Anno a = b
-
 -- (XAnno tree) wraps `tree` in a Compiler-specific,
 -- but pass-independent, source location
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L105
@@ -219,14 +237,9 @@ type XVar p = XRec p (IdP p)
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L202
 type instance IdP (CompPass p) = IdCompP p
 
--- See Note [Ping-pong in TTG]
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L647
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L108
-type instance Anno Name = SrcSpan
-type instance Anno SynLit = SrcSpan
-type instance Anno TcTyVar = SrcSpan
-
--- ----------------------
+-- ==============================================
+-- Names and positions in the source code
+-- ==============================================
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
 data NameSpace
@@ -285,6 +298,10 @@ data SrcSpan
   = -- TODO Replace with RealSrcSpan
     RealSrcSpan RealSrcSpan
   | UnhelpfulSpan UnhelpfulSpanReason
+
+-- ==============================================
+-- Types
+-- ==============================================
 
 -- | The key type representing kinds in the compiler.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
@@ -447,11 +464,16 @@ data MetaInfo
     TauTv
   | -- | A variant of TauTv, except that it should not be
     --   unified with a type, only with a type variable
+    --
     -- See Note [TyVarTv] in GHC.Tc.Utils.TcMType
+    --
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L698
     TyVarTv
 
--- A TyVarDetails is inside a TyVar
+-- | Details about a 'TyVar'
+--
 -- See Note [TyVars and TcTyVars during type checking]
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
   = -- Always bound by an enclosing ForAll. No well-formed Type ever has a free BoundTv. (p.42)
@@ -488,9 +510,12 @@ data TcTyVarDetails
       }
 
 -- | Identifier
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L150
 type Id = ZnTyVar
 
+-- | A unique, unambiguous name for something, containing information about where that thing originated.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
 data Name = Name
   { nameOcc :: OccName
@@ -499,33 +524,28 @@ data Name = Name
   -- , nameSort :: NameSort
   -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L148
   }
+  deriving stock (Generic)
 
--- TODO use a single Var type and select varDetails depending on the phase?
--- E.g., In CompRn, varDetails is Void
-
--- | Variable
+-- | A term or a type variable produced by the renamer.
 --
--- Essentially a typed 'Name', that may also contain some additional information
--- about the 'Var' and its use sites.
+-- Similar to 'RdrName' in GHC.
 --
--- Variable is always local
---
--- FIXME If TyVar occurs during constraint solving, it means BoundTv
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L257
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Reader.hs#L166
 data RnVar = RnVar
   { varName :: !Name
   }
 
--- TODO What happens to bound type variables?
--- They are skolemised (`skolemise`, `newSkolemTyVar`) or instantiated (`instantiate`) with metavariables
--- Can we immediately replace them with TcTyVar?
-
+-- | A bound type variable that can only appear in a 'forall'.
+--
+-- @forall {bound tvs}. {type body}@
+--
+-- Such variables are either skolemised or instantiated and never appear in type bodies.
 type TcBoundVar = TcTyVar
 
--- | Type variable that might be a metavariable.
--- A separate type instead of a type synonym
+-- | A type variable.
+--
+-- For type safety, this is a separate type instead of a type synonym.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L169
--- and a constructor
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L268
 data TcTyVar
   = -- | Used only during type inference
@@ -534,15 +554,17 @@ data TcTyVar
     , varDetails :: TcTyVarDetails
     }
 
--- TODO write error in each vartype?
--- so that it must be filled
+-- | A term variable, possibly with a known type.
 data TcTermVar
   = TcTermVar
   { varName :: !Name
   , varType :: Expected TcType
   }
 
--- Zonked type variable or a term variable with a zonked type
+-- | A zonked type variable.
+--
+-- Doesn't have a type, unlike 'Id' in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L277
 data ZnTyVar
   = -- | Variable identifier
@@ -646,9 +668,15 @@ type instance XSynLit'Num' x = ()
 
 type instance XSynType'Var' x = ()
 
--- TODO note about the same representations
--- of type-level and term-level variables
+-- We use the same representation for term and type variables
+-- following the approach used in GHC.
+--
+-- GHC uses the same 'LIdP p' type to represent type and term variables in the AST.
+--
+-- Term variables:
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L334
+--
+-- Type variables:
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L828
 type instance XSynType'Var CompRn = Name
 type instance XSynType'Var CompTc = TcTyVar
@@ -672,12 +700,12 @@ type instance XSynType'Concrete CompZn = Concrete
 
 type NameFs = FastString
 
-type IUniqueSupply = (?uniqueSupply :: IORef Int)
-
--- | Current scope.
+-- | A global counter used for creating globally unique names.
 --
--- Visible variable names and their ids.
-type IScope = (?scope :: Map NameFs Int)
+-- GHC implements a much more sophisticated unique supply.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L67
+type IUniqueSupply = (?uniqueSupply :: IORef Int)
 
 type ICurrentFilePath = (?currentFilePath :: FastString)
 
@@ -758,9 +786,9 @@ instance (Pretty' a) => Pretty' (Expected a) where
   pretty' (Infer _) = "[Infer]"
   pretty' (Check a) = "[Check]: " <> pretty' a
 
--- ========================================
+-- ==============================================
 -- Instances for Rn (renaming stage) things
--- ========================================
+-- ==============================================
 
 instance Eq RnVar where
   var1 == var2 = var1.varName == var2.varName
@@ -788,9 +816,9 @@ instance Pretty' (SynTerm CompRn) where
     SynTerm'Let _ name term1 term2 -> "let" <+> pretty' name <+> "=" <+> pretty' term1 <+> "in" <+> pretty' term2
     SynTerm'Ann _ term ty -> parens (parens (pretty' term) <+> "::" <+> pretty' ty)
 
--- ============================================
+-- ==============================================
 -- Instances for Tc (typechecking stage) things
--- ============================================
+-- ==============================================
 
 instance Eq TcTyVar where
   var1 == var2 = var1.varName == var2.varName
@@ -970,9 +998,9 @@ instance Pretty' (SynTerm CompTc) where
         , pretty' anno.annoType
         ]
 
--- =======================================
+-- ==============================================
 -- Instances for Zn (zonking stage) things
--- =======================================
+-- ==============================================
 
 instance Eq ZnTyVar where
   var1 == var2 = var1.varName == var2.varName

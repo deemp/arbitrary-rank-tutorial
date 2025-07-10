@@ -28,7 +28,7 @@ data RnError
 
 -- | A renamer exception that can capture the 'callStack'
 -- at the 'throw' side.
--- 
+--
 -- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
 data RnErrorWithCallStack where
   RnErrorWithCallStack :: (HasCallStack) => RnError -> RnErrorWithCallStack
@@ -38,7 +38,7 @@ dieRn :: (HasCallStack) => RnError -> IO a
 dieRn rnError = throw (RnErrorWithCallStack rnError)
 
 -- | Variables scope.
--- 
+--
 -- Variable names and their ids.
 type Scope = Map NameFs Int
 
@@ -65,9 +65,8 @@ type IRnConstraints = (HasCallStack, BT.IUniqueSupply, ITermVarScope, ITyVarScop
 
 type RnM a = (IRnConstraints) => IO a
 
-
 -- | Similar to `genSym` in GHC.
--- 
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L257
 newUnique :: (IUniqueSupply) => IO Int
 newUnique = do

@@ -79,9 +79,9 @@ type LspM a = (IConfig) => LspT Config IO a
 -- | 'Handlers' with additional context
 type Handlers' = (IConfig) => Handlers (LspT Config IO)
 
--- ================
+-- ==============================================
 -- The LSP Handlers
--- ================
+-- ==============================================
 
 renderStrictDoc :: Doc ann -> T.Text
 renderStrictDoc doc = renderStrict (layoutPretty defaultLayoutOptions doc)
@@ -209,9 +209,9 @@ serverHandlers _cs =
     , configurationChangeHandler
     ]
 
--- ==========================================
--- The Server Definition and Main Entry Poin
--- ==========================================
+-- ==============================================
+-- The Server Definition
+-- ==============================================
 
 stderrLogger :: LogAction IO (WithSeverity T.Text)
 stderrLogger = L.cmap show L.logStringStderr
@@ -251,7 +251,7 @@ serverDefinition sectionName serverState =
   lspOptions =
     defaultOptions
       { -- This tells the client to send us the full text of the document
-        -- on open and change, which is what our `updateStateForFile` function needs.
+        -- on open and change, which is what our 'updateStateForFile' function needs.
         optTextDocumentSync =
           Just $
             TextDocumentSyncOptions
@@ -262,6 +262,10 @@ serverDefinition sectionName serverState =
               , _save = Just $ InR $ SaveOptions $ Just False
               }
       }
+
+-- ==============================================
+-- The Main Entry Point for the Server
+-- ==============================================
 
 -- | The main entry point for our server.
 main :: IO Int
