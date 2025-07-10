@@ -259,9 +259,6 @@ newSysName occ =
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L728
 newMetaTyVarName :: FastString -> TcM Name
--- Makes a /System/ Name, which is eagerly eliminated by
--- the unifier; see GHC.Tc.Utils.Unify.nicer_to_update_tv1, and
--- GHC.Tc.Solver.Equality.canEqTyVarTyVar (nicer_to_update_tv2)
 newMetaTyVarName str = newSysName (mkTyVarOccFS str)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/IOEnv.hs#L218
@@ -631,7 +628,7 @@ emitCEqCan thing tv ty swapped = do
   writeTcRef ?constraints constraints'
 
 -- | Unify a variable with a type.
--- 
+--
 -- The 'Maybe TypedThing' may provide evidence for this equality
 unifyVar :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> TcM ()
 -- Invariant: tv is a flexible type variable
@@ -655,70 +652,3 @@ unifyFun thing tau = do
   res_ty <- Type'Var <$> newMetaTyVar' "b"
   unify thing tau (Type'Fun arg_ty res_ty)
   pure (arg_ty, res_ty)
-
--- ---------------------------------
--- --  Free and bound variables
-
--- Get the MetaTvs from a type; no duplicates in result
-metaTvs :: [TcType] -> [TcTyVar]
-metaTvs tys = nubOrd (foldr (flip go) [] tys)
- where
-  go :: [TcTyVar] -> TcType -> [TcTyVar]
-  go acc = \case
-    Type'Var var ->
-      case var of
-        TcTyVar{varDetails = MetaTv{}} -> var : acc
-        _ -> acc
-    Type'ForAll _ ty -> go acc ty
-    Type'Concrete _ -> acc
-    Type'Fun ty1 ty2 -> go (go acc ty1) ty2
-
-freeTyVars :: [TcType] -> [TcTyVar]
--- Get the free TyVars from a type; no duplicates in result
-freeTyVars tys = nubOrd (foldr (go Set.empty) [] tys)
- where
-  go ::
-    -- Bound type variables
-    Set.Set TcTyVar ->
-    -- Type to look at
-    TcType ->
-    -- Accumulates result
-    [TcTyVar] ->
-    [TcTyVar]
-  go bound v acc =
-    case v of
-      Type'Var var
-        -- Ignore occurrences of bound type variables
-        | Set.member var bound -> acc
-        | otherwise -> var : acc
-      Type'Concrete _ -> acc
-      Type'ForAll vars ty -> go (Set.fromList vars <> bound) ty acc
-      Type'Fun ty1 ty2 -> go bound ty1 (go bound ty2 acc)
-
-tyVarBndrs :: Rho -> [TcTyVar]
--- Get all the binders used in ForAlls in the type, so that
--- when quantifying an outer for-all we can avoid these inner ones
-tyVarBndrs ty = nub (bndrs ty)
- where
-  bndrs = \case
-    Type'ForAll vars body -> vars <> bndrs body
-    -- (ForAll' tvs body) = tvs ++ bndrs body
-    Type'Fun arg res -> bndrs arg <> bndrs res
-    _ -> []
-
-ex1 :: Abs.Exp
-ex1 = "\\ (x :: forall b. Int). (\\ z. z) x"
-
-ex2 :: IO (Doc ann)
-ex2 = do
-  let builtInTypes = ["Int"]
-  uniqueSupply <- newIORef (length builtInTypes)
-  let
-    ?scope = Map.fromList (zip builtInTypes [0 ..])
-    ?uniqueSupply = uniqueSupply
-    ?currentFilePath = "Unknown"
-  prettyCompact <$> convertAbsToBT ex1
-
--- >>> ex2
--- \(x_1 :: forall b_2. Int). (\z_3. z_3) x_1
-
