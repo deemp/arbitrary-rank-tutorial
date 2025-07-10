@@ -23,10 +23,12 @@ import Control.Concurrent.STM
 import Control.Exception (SomeException)
 import Control.Lens hiding (Iso)
 import Control.Monad.IO.Class (MonadIO (..))
+import Data.Aeson (fromJSON)
 import Data.Aeson qualified as J
 import Data.IntervalMap.Generic.Strict qualified as IM
 import Data.Map (Map)
 import Data.Map qualified as M
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
@@ -36,13 +38,14 @@ import Language.LSP.Protocol.Message (SMethod (..), TRequestMessage (..))
 import Language.LSP.Protocol.Types
 import Language.LSP.Protocol.Types qualified as L
 import Language.LSP.Protocol.Types qualified as LSP
-import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getVirtualFile, notificationHandler, requestHandler, runLspT, runServer, sendNotification, type (<~>) (Iso))
+import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getConfig, getVirtualFile, notificationHandler, requestHandler, runLspT, runServer, sendNotification, type (<~>) (Iso))
 import Language.LSP.VFS (virtualFileText)
 import Language.STLC.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
 import Language.STLC.Typing.Jones2007.BasicTypes (FastString, IPrettyVerbosity, Pretty' (..), PrettyVerbosity (..))
 import Language.STLC.Typing.Jones2007.TcTerm (runTypechecker')
 import Prettyprinter (Doc, defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
+import System.Environment (lookupEnv)
 import UnliftIO (catch)
 
 -- | The server's state.
@@ -61,7 +64,9 @@ type ILogger = (?logger :: L.LogAction (LspT Config IO) (WithSeverity T.Text))
 -- | Language server config
 --
 -- TODO specify meaningful options
-data Config = Config {}
+data Config = Config
+  { solverIterations :: Int
+  }
   deriving stock (Generic, Show)
   deriving anyclass (J.ToJSON, J.FromJSON)
 
@@ -164,7 +169,10 @@ updateStateForFile docUri filePath docText =
   do
     let ?debug = False
 
-    ast <- liftIO $ runTypechecker' filePath docText
+    ast <- do
+      config <- getConfig
+      let ?solverIterations = config.solverIterations
+      liftIO $ runTypechecker' filePath docText
 
     let mp = toIntervalMap ast
 
@@ -213,8 +221,8 @@ dualLogger :: LogAction (LspT Config IO) (WithSeverity T.Text)
 dualLogger = clientLogger <> L.hoistLogAction liftIO stderrLogger
 
 -- | This defines the server's capabilities and how to run the handlers.
-serverDefinition :: TVar ServerState -> ServerDefinition Config
-serverDefinition serverState =
+serverDefinition :: T.Text -> TVar ServerState -> ServerDefinition Config
+serverDefinition sectionName serverState =
   ServerDefinition
     { onConfigChange = const $ pure ()
     , -- TODO something meaninful
@@ -227,12 +235,17 @@ serverDefinition serverState =
          in
           serverHandlers
     , options = lspOptions
-    , -- TODO fix?
+    , -- TODO Need to fix?
       interpretHandler = \env -> Iso (runLspT env) liftIO
-    , defaultConfig = Config{}
-    , -- TODO support config
-      configSection = ""
-    , parseConfig = \_ _ -> Right Config{}
+    , defaultConfig =
+        Config
+          { solverIterations = 10
+          }
+    , configSection = sectionName
+    , parseConfig = \_ val ->
+        case fromJSON val of
+          J.Error str -> Left $ T.pack str
+          J.Success conf -> Right conf
     }
  where
   lspOptions =
@@ -253,12 +266,15 @@ serverDefinition serverState =
 -- | The main entry point for our server.
 main :: IO Int
 main = do
+  sectionName <- lookupEnv "LSP_SETTINGS_ARRALAC_SECTION"
+  let sectionName' = T.pack $ fromMaybe "arralac" sectionName
+
   -- Create the initial empty server state.
   initialServerState <- newTVarIO M.empty
 
   -- Start the server.
   -- 'runServer' wraps 'runServerWithHandles'
-  exitCode <- runServer $ serverDefinition initialServerState
+  exitCode <- runServer $ serverDefinition sectionName' initialServerState
 
   -- Return the exit code.
   pure exitCode
