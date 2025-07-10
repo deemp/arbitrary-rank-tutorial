@@ -418,7 +418,7 @@ skolemise ty = pure ([], ty)
 
 
 -- ==============================================
---      Quantification                  --
+-- Quantification
 -- ==============================================
 
 isMetaTv :: TcTyVar -> Bool
@@ -474,36 +474,50 @@ quantify tvs ty | all isMetaTv tvs = do
     _ -> pure ()
   -- 'bind' is just a cunning way of doing the substitution
   -- TODO is it correct to use these vars in ForAll?
-  vars <- mapM bind (tvs `zip` newBinders)
+  vars <- mapM bind (tvs `zip` newBinders tvs ty)
   debug'
     "quantify"
     [ ("ty", pretty' ty)
     ]
+  -- TODO should we zonk?
   ty' <- zonkType ty
   pure (Type'ForAll vars ty')
- where
-  -- TODO optimize
-  usedBinders = tyVarBndrs ty
-  -- -- Avoid quantified type variables in use
-  newBinders :: [FastString]
-  newBinders = take (length tvs) (allBinders \\ ((.varName.nameOcc.occNameFS) <$> usedBinders))
-
-  bind :: (TcTyVarMeta, FastString) -> TcM TcTyVar
-  bind (tv, name) = do
-    -- TODO use info from tv?
-    name' <- newSysName (mkTyVarOccFS name)
-    -- TODO this should be boundtv, not flexi
-    -- Why?
-    -- TODO is tcLevel correct?
-    let var =
-          TcTyVar
-            { varName = name'
-            , varDetails = BoundTv{tcLevel = ?tcLevel}
-            }
-    writeTv tv (Type'Var var)
-    pure var
 quantify tvs _ =
   die (TcError'ExpectedAllMetavariables tvs)
+
+-- Avoid quantified type variables in use
+newBinders :: [TcTyVarMeta] -> TcType -> [FastString]
+newBinders tvs ty =
+  take
+    (length tvs)
+    (allBinders \\ ((.varName.nameOcc.occNameFS) <$> tyVarBndrs ty))
+
+bind :: (TcTyVarMeta, FastString) -> TcM TcTyVar
+bind (tv, name) = do
+  -- TODO use info from tv?
+  name' <- newSysName (mkTyVarOccFS name)
+  -- TODO this should be boundtv, not flexi
+  -- Why?
+  -- TODO is tcLevel correct?
+  let var =
+        TcTyVar
+          { varName = name'
+          , varDetails = BoundTv{tcLevel = ?tcLevel}
+          }
+  -- unifyVar
+  -- unifyVar Nothing tv (Type'Var var)
+  -- writeTv tv (Type'Var var)
+  pure var
+
+tyVarBndrs :: Rho -> [TcTyVar]
+-- Get all the binders used in ForAlls in the type, so that
+-- when quantifying an outer for-all we can avoid these inner ones
+tyVarBndrs ty = nub (bndrs ty)
+ where
+  bndrs = \case
+    Type'ForAll vars body -> vars <> bndrs body
+    Type'Fun arg res -> bndrs arg <> bndrs res
+    _ -> []
 
 -- ==============================================
 -- Zonking
