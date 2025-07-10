@@ -28,7 +28,7 @@ t3 = do
   let filePath = "test/data/Program1.stlc"
   content <- T.readFile filePath
   let ?debug = True
-      ?prettyVerbosity = PrettyVerbosity'Compact
+      ?prettyVerbosity = PrettyVerbosity'Normal
   programZn <- runTypechecker' (T.pack filePath) content
   putDoc $ line <> pretty' programZn <> line
   putDoc $ line <> pretty' (whnf emptyScope (convertASTToCore emptyScope programZn)) <> line

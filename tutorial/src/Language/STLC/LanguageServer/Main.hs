@@ -223,7 +223,7 @@ serverDefinition serverState =
         let
           ?serverState = serverState
           ?logger = dualLogger
-          ?prettyVerbosity = PrettyVerbosity'Compact
+          ?prettyVerbosity = PrettyVerbosity'Normal
          in
           serverHandlers
     , options = lspOptions

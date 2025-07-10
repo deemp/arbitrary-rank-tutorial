@@ -715,28 +715,27 @@ instance Pretty' SrcSpan where
     RealSrcSpan sp -> pretty' sp
     UnhelpfulSpan reason -> "Unknown span:" <+> pretty' reason
 
--- TODO pretty' with configurable verbosity
 data PrettyVerbosity
-  = PrettyVerbosity'Compact
-  | PrettyVerbosity'Verbose
+  = PrettyVerbosity'Normal
+  | PrettyVerbosity'Detailed
 
 type IPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
 
 class Pretty' a where
   pretty' :: (IPrettyVerbosity) => a -> Doc ann
   prettyCompact :: a -> Doc ann
-  prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Compact in pretty'
+  prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Normal in pretty'
   prettyVerbose :: a -> Doc ann
-  prettyVerbose = let ?prettyVerbosity = PrettyVerbosity'Verbose in pretty'
+  prettyVerbose = let ?prettyVerbosity = PrettyVerbosity'Detailed in pretty'
 
 instance Pretty' Name where
   pretty' name =
     case ?prettyVerbosity of
-      PrettyVerbosity'Compact ->
+      PrettyVerbosity'Normal ->
         case name.nameOcc.occNameSpace of
           NameSpace'TypeConcrete -> pretty' name.nameOcc.occNameFS
           _ -> pretty' name.nameOcc.occNameFS <> "_" <> pretty' name.nameUnique
-      PrettyVerbosity'Verbose ->
+      PrettyVerbosity'Detailed ->
         pretty' name.nameOcc.occNameFS
           <> brackets ("ID" <+> pretty' name.nameUnique <> "," <+> pretty' name.nameLoc)
 
@@ -848,7 +847,7 @@ instance Pretty' UInt where
 
 instance {-# OVERLAPPABLE #-} (Pretty' a) => Show a where
   show =
-    let ?prettyVerbosity = PrettyVerbosity'Verbose
+    let ?prettyVerbosity = PrettyVerbosity'Detailed
      in show . pretty'
 
 instance Pretty' TcTyVar where
@@ -859,11 +858,11 @@ instance Pretty' TcTyVar where
         rbracket
         (comma <> space)
         ( case ?prettyVerbosity of
-            PrettyVerbosity'Compact ->
+            PrettyVerbosity'Normal ->
               [ pretty' var.varDetails.tcLevel
               , getTcTyVarKind var.varDetails
               ]
-            PrettyVerbosity'Verbose ->
+            PrettyVerbosity'Detailed ->
               [ "ID" <+> pretty' var.varName.nameUnique
               , pretty' var.varDetails.tcLevel
               , getTcTyVarKind var.varDetails
