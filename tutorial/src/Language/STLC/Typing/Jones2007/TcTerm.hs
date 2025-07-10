@@ -11,8 +11,7 @@ import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
 import Language.STLC.Typing.Jones2007.Solver (Solve (..))
 import Language.STLC.Typing.Jones2007.TcMonad
 import Language.STLC.Typing.Renamer (parseInputText)
-import Prettyprinter (Pretty (..), (<+>))
-import GHC.Stack (HasCallStack)
+import Language.STLC.Typing.Zonker (Zonk (..))
 
 ------------------------------------------
 --      The top-level wrapper           --
@@ -25,7 +24,7 @@ typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
 typecheck term =
   do
     tcResult <- inferSigma term
-    zonkFinallyTerm (fst tcResult)
+    zonk (fst tcResult)
 
 runTypechecker :: (IDebug, IScope, IUniqueSupply, ICurrentFilePath) => SynTerm BT.CompRn -> IO (SynTerm BT.CompZn)
 runTypechecker program = do
@@ -58,114 +57,6 @@ runTypechecker' filePath content = do
       ?callStack = ?callStack
   program <- parseInputText content
   runTypechecker program
-
-type ZnM a = (HasCallStack, IDebug, IPrettyVerbosity) => IO a
-
-zonkFinallyTcTyVar :: TcTyVar -> ZnM (Either ZnTyVar ZnType)
-zonkFinallyTcTyVar var =
-  case var.varDetails of
-    MetaTv{metaTvRef} -> do
-      debug "zonkFinallyTcTyVar - MetaTv" [pretty' var]
-      metaDetails <- readTcRef metaTvRef
-      case metaDetails of
-        Flexi -> do
-          let name' = var.varName & #nameOcc . #occNameFS %~ \x -> x <> "_Unsolved"
-          pure $ Left ZnTyVar{varName = name'}
-        Indirect ty -> do
-          ty' <- zonkFinallyTcType ty
-          pure $ Right ty'
-    _ -> do
-      debug "zonkFinallyTcTyVar - not MetaTv" [pretty' var]
-      pure $ Left ZnTyVar{varName = var.varName}
-
-zonkFinallySynType :: SynType CompTc -> ZnM (SynType CompZn)
-zonkFinallySynType = \case
-  -- TODO get type from tctyvar
-  SynType'Var anno TcTyVar{varName} -> do
-    pure $ SynType'Var anno ZnTyVar{varName}
-  (SynType'ForAll srcLoc vars body) -> do
-    (vars', _tys) <- partitionEithers <$> forM vars zonkFinallyTcTyVar
-    -- TODO handle _tys non-empty
-    body' <- zonkFinallySynType body
-    pure $ SynType'ForAll srcLoc vars' body'
-  SynType'Fun srcLoc arg res -> do
-    arg' <- zonkFinallySynType arg
-    res' <- zonkFinallySynType res
-    pure $ SynType'Fun srcLoc arg' res'
-  SynType'Concrete anno lit -> do
-    pure $ SynType'Concrete anno lit
-
--- TODO are zonks of different parts of a type independent?
-zonkFinallyTcType :: TcType -> ZnM ZnType
-zonkFinallyTcType = \case
-  Type'Var var -> do
-    var' <- zonkFinallyTcTyVar var
-    pure $ either Type'Var id var'
-  Type'ForAll vars body -> do
-    (vars', _tys) <- partitionEithers <$> forM vars zonkFinallyTcTyVar
-    -- TODO handle _tys non-empty
-    body' <- zonkFinallyTcType body
-    pure $ Type'ForAll vars' body'
-  Type'Fun arg res -> do
-    arg' <- zonkFinallyTcType arg
-    res' <- zonkFinallyTcType res
-    pure $ Type'Fun arg' res'
-  Type'Concrete ty -> do
-    pure $ Type'Concrete ty
-
-zonkFinallyAnno :: AnnoTc -> ZnM AnnoZn
-zonkFinallyAnno AnnoTc{annoSrcLoc, annoType} = do
-  annoType' <- zonkFinallyExpectedType annoType
-  pure AnnoZn{annoSrcLoc, annoType = annoType'}
-
-zonkFinallyTcTermVar :: TcTermVar -> ZnM ZnTermVar
-zonkFinallyTcTermVar TcTermVar{varName, varType} = do
-  varType' <- zonkFinallyExpectedType varType
-  pure ZnTermVar{varName, varType = varType'}
-
-zonkFinallyExpectedType :: Expected TcType -> ZnM ZnType
-zonkFinallyExpectedType ty = do
-  varType' <-
-    case ty of
-      Infer r -> readTcRef r
-      Check t -> pure t
-  zonkFinallyTcType varType'
-
-zonkFinallyTerm :: SynTerm CompTc -> ZnM (SynTerm CompZn)
-zonkFinallyTerm = \case
-  SynTerm'Var _ var -> do
-    var' <- zonkFinallyTcTermVar var
-    pure $ SynTerm'Var () var'
-  SynTerm'Lit anno lit -> do
-    anno' <- zonkFinallyAnno anno
-    pure $ SynTerm'Lit anno' lit
-  SynTerm'App anno fun arg -> do
-    anno' <- zonkFinallyAnno anno
-    fun' <- zonkFinallyTerm fun
-    arg' <- zonkFinallyTerm arg
-    pure $ SynTerm'App anno' fun' arg'
-  SynTerm'Lam anno var ty -> do
-    anno' <- zonkFinallyAnno anno
-    var' <- zonkFinallyTcTermVar var
-    ty' <- zonkFinallyTerm ty
-    pure $ SynTerm'Lam anno' var' ty'
-  SynTerm'ALam anno var ty body -> do
-    anno' <- zonkFinallyAnno anno
-    var' <- zonkFinallyTcTermVar var
-    ty' <- zonkFinallySynType ty
-    body' <- zonkFinallyTerm body
-    pure $ SynTerm'ALam anno' var' ty' body'
-  SynTerm'Let anno var val term -> do
-    anno' <- zonkFinallyAnno anno
-    var' <- zonkFinallyTcTermVar var
-    val' <- zonkFinallyTerm val
-    term' <- zonkFinallyTerm term
-    pure $ SynTerm'Let anno' var' val' term'
-  SynTerm'Ann anno term ty -> do
-    anno' <- zonkFinallyAnno anno
-    term' <- zonkFinallyTerm term
-    ty' <- zonkFinallySynType ty
-    pure $ SynTerm'Ann anno' term' ty'
 
 -----------------------------------
 --      The expected type       --
