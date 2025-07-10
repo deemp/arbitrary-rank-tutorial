@@ -59,13 +59,33 @@ runTypechecker' filePath content = do
   program <- parseInputText content
   runTypechecker program
 
+type ZnM a = (HasCallStack, IDebug, IPrettyVerbosity) => IO a
 
-zonkFinallySynType :: SynType CompTc -> TcM (SynType CompZn)
+zonkFinallyTcTyVar :: TcTyVar -> ZnM (Either ZnTyVar ZnType)
+zonkFinallyTcTyVar var =
+  case var.varDetails of
+    MetaTv{metaTvRef} -> do
+      debug "zonkFinallyTcTyVar - MetaTv" [pretty' var]
+      metaDetails <- readTcRef metaTvRef
+      case metaDetails of
+        Flexi -> do
+          let name' = var.varName & #nameOcc . #occNameFS %~ \x -> x <> "_Unsolved"
+          pure $ Left ZnTyVar{varName = name'}
+        Indirect ty -> do
+          ty' <- zonkFinallyTcType ty
+          pure $ Right ty'
+    _ -> do
+      debug "zonkFinallyTcTyVar - not MetaTv" [pretty' var]
+      pure $ Left ZnTyVar{varName = var.varName}
+
+zonkFinallySynType :: SynType CompTc -> ZnM (SynType CompZn)
 zonkFinallySynType = \case
+  -- TODO get type from tctyvar
   SynType'Var anno TcTyVar{varName} -> do
     pure $ SynType'Var anno ZnTyVar{varName}
-  SynType'ForAll srcLoc vars body -> do
-    vars' <- forM vars zonkFinallyTcTyVar
+  (SynType'ForAll srcLoc vars body) -> do
+    (vars', _tys) <- partitionEithers <$> forM vars zonkFinallyTcTyVar
+    -- TODO handle _tys non-empty
     body' <- zonkFinallySynType body
     pure $ SynType'ForAll srcLoc vars' body'
   SynType'Fun srcLoc arg res -> do
@@ -75,17 +95,15 @@ zonkFinallySynType = \case
   SynType'Concrete anno lit -> do
     pure $ SynType'Concrete anno lit
 
-zonkFinallyTcTyVar :: TcTyVar -> TcM ZnTyVar
-zonkFinallyTcTyVar TcTyVar{varName} =
-  pure ZnTyVar{varName}
-
 -- TODO are zonks of different parts of a type independent?
-zonkFinallyTcType :: TcType -> TcM ZnType
+zonkFinallyTcType :: TcType -> ZnM ZnType
 zonkFinallyTcType = \case
-  Type'Var TcTyVar{varName} -> do
-    pure $ Type'Var ZnTyVar{varName}
+  Type'Var var -> do
+    var' <- zonkFinallyTcTyVar var
+    pure $ either Type'Var id var'
   Type'ForAll vars body -> do
-    vars' <- forM vars zonkFinallyTcTyVar
+    (vars', _tys) <- partitionEithers <$> forM vars zonkFinallyTcTyVar
+    -- TODO handle _tys non-empty
     body' <- zonkFinallyTcType body
     pure $ Type'ForAll vars' body'
   Type'Fun arg res -> do
@@ -95,17 +113,17 @@ zonkFinallyTcType = \case
   Type'Concrete ty -> do
     pure $ Type'Concrete ty
 
-zonkFinallyAnno :: AnnoTc -> TcM AnnoZn
+zonkFinallyAnno :: AnnoTc -> ZnM AnnoZn
 zonkFinallyAnno AnnoTc{annoSrcLoc, annoType} = do
   annoType' <- zonkFinallyExpectedType annoType
   pure AnnoZn{annoSrcLoc, annoType = annoType'}
 
-zonkFinallyTcTermVar :: TcTermVar -> TcM ZnTermVar
+zonkFinallyTcTermVar :: TcTermVar -> ZnM ZnTermVar
 zonkFinallyTcTermVar TcTermVar{varName, varType} = do
   varType' <- zonkFinallyExpectedType varType
   pure ZnTermVar{varName, varType = varType'}
 
-zonkFinallyExpectedType :: Expected TcType -> TcM ZnType
+zonkFinallyExpectedType :: Expected TcType -> ZnM ZnType
 zonkFinallyExpectedType ty = do
   varType' <-
     case ty of
@@ -113,7 +131,7 @@ zonkFinallyExpectedType ty = do
       Check t -> pure t
   zonkFinallyTcType varType'
 
-zonkFinallyTerm :: SynTerm CompTc -> TcM (SynTerm CompZn)
+zonkFinallyTerm :: SynTerm CompTc -> ZnM (SynTerm CompZn)
 zonkFinallyTerm = \case
   SynTerm'Var _ var -> do
     var' <- zonkFinallyTcTermVar var
