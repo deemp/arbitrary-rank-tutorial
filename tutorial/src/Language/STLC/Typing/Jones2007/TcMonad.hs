@@ -306,10 +306,13 @@ newMetaTyVar' str = do
 
 -- TODO how to remember the origin of a metavariable?
 
--- It's usually `newMetaTyVarName` + `mkTcTyVar`
-tyVarToMetaTyVar :: (HasField "varName" x Name) => x -> TcM TcTyVar
-tyVarToMetaTyVar x = newMetaTyVar' x.varName.nameOcc.occNameFS
-
+  x' <- newMetaTyVar' x.varName.nameOcc.occNameFS
+  debug'
+    "tyVarToMetaTyVar"
+    [ ("x", pretty' x)
+    , ("x'", pretty' x')
+    ]
+  pure x'
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L1046
 mkTcTyVar :: Name -> TcTyVarDetails -> TcTyVar
 mkTcTyVar name details =
@@ -400,6 +403,12 @@ instantiate :: Sigma -> TcM Rho
 -- with flexible type variables
 instantiate (Type'ForAll tvs ty) = do
   tvs' <- forM tvs tyVarToMetaTyVar
+  debug'
+    "instantiate Type'ForAll"
+    [ ("tvs", pretty' tvs)
+    , ("ty", pretty' ty)
+    , ("tvs'", pretty' tvs')
+    ]
   substTy tvs (Type'Var <$> tvs') ty
 -- TODO we should have a way to not do anything to the type
 -- perhaps we need to add constructor to TcTyVar that wraps RnVar
@@ -497,7 +506,8 @@ quantify tvs ty | all isMetaTv tvs = do
   vars <- mapM bind (tvs `zip` newBinders)
   debug'
     "quantify"
-    [pretty ty]
+    [ ("ty", pretty' ty)
+    ]
   ty' <- zonkType ty
   pure (Type'ForAll vars ty')
  where
@@ -539,14 +549,10 @@ zonkType (Type'ForAll ns ty) = do
 zonkType (Type'Fun arg res) = do
   debug'
     "zonkType"
-    [ "arg (pretty):"
-    , pretty arg
-    , "res (pretty):"
-    , pretty res
-    , "arg:"
-    , pretty (show arg)
-    , "res"
-    , pretty (show res)
+    [ ("arg", pretty' arg)
+    , ("arg", prettyVerbose arg)
+    , ("res", pretty' res)
+    , ("res", prettyVerbose res)
     ]
   arg' <- zonkType arg
   res' <- zonkType res
@@ -593,10 +599,9 @@ unify thing ty1 ty2
   | badType ty1 || badType ty2 -- Compiler error
     =
       do
-        debug
+        debug'
           "unify bound types"
-          [ -- TODO specify pretty instance for the variable environment
-            pretty (show ?varEnv)
+          [ ("?varEnv", prettyVerbose (Map.toAscList ?varEnv))
           ]
         die (TcError'UnifyingBoundTypes ty1 ty2 thing)
 unify

@@ -12,7 +12,7 @@ import Language.STLC.Typing.Jones2007.Bag
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.Constraints
 import Language.STLC.Typing.Jones2007.TcMonad (IConstraints, ITcErrorPropagated, TcError (..), TcM, badType, debug, die, readTcRef, writeTcRef)
-import Prettyprinter (line)
+import Prettyprinter (indent)
 
 data SolverError
   = SolverError'CannotUnifySkolemVar {ct :: Ct}
@@ -118,16 +118,16 @@ instance Solve Ct where
               metaDetails <- readIORef metaTvRef
               case metaDetails of
                 Flexi -> do
-                  debug
+                  debug'
                     "solve Ct - Flexi"
-                    [ "ct:" <> line <> prettyVerbose ct
+                    [ ("ct", prettyVerbose ct)
                     ]
                   writeIORef metaTvRef (Indirect rhs)
                   pure []
                 Indirect ty -> do
-                  debug
+                  debug'
                     "solve Ct - Indirect"
-                    [ "ct:" <> line <> prettyVerbose ct
+                    [ ("ct", prettyVerbose ct)
                     ]
                   constraintsNew <- unify ct ty rhs
                   pure constraintsNew

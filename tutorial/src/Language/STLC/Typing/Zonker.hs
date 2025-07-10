@@ -22,7 +22,10 @@ instance Zonk TcTyVar where
   zonk var =
     case var.varDetails of
       MetaTv{metaTvRef} -> do
-        debug "zonk TcTyVar - MetaTv" [pretty' var]
+        debug'
+          "zonk TcTyVar - MetaTv"
+          [ ("var", pretty' var)
+          ]
         metaDetails <- readIORef metaTvRef
         case metaDetails of
           Flexi -> do
@@ -32,7 +35,10 @@ instance Zonk TcTyVar where
             ty' <- zonk ty
             pure $ Right ty'
       _ -> do
-        debug "zonk TcTyVar - not MetaTv" [pretty' var]
+        debug'
+          "zonk TcTyVar - not MetaTv"
+          [ ("var", pretty' var)
+          ]
         pure $ Left ZnTyVar{varName = var.varName}
 
 instance Zonk (SynType CompTc) where

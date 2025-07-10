@@ -25,6 +25,12 @@ typecheck term =
   do
     tcResult <- inferSigma term
     zonk (fst tcResult)
+    `finally` do
+      constraints <- readIORef ?constraints
+      debug'
+        "typecheck"
+        [ ("constraints", pretty' constraints)
+        ]
 
 runTypechecker :: (IDebug, IScope, IUniqueSupply, ICurrentFilePath) => SynTerm BT.CompRn -> IO (SynTerm BT.CompZn)
 runTypechecker program = do
@@ -64,7 +70,13 @@ runTypechecker' filePath content = do
 
 checkRho :: SynTerm CompRn -> Rho -> TcM (SynTerm CompTc)
 -- Invariant: the Rho is always in weak-prenex form
-checkRho expr ty = tcRho expr (Check ty)
+checkRho expr ty = do
+  debug'
+    "checkRho"
+    [ ("expr", pretty' expr)
+    , ("rho", pretty' ty)
+    ]
+  tcRho expr (Check ty)
 
 -- TODO should return synterm along with the type?
 inferRho :: SynTerm CompRn -> TcM (SynTerm CompTc, Rho)
@@ -72,7 +84,8 @@ inferRho expr =
   do
     debug'
       "inferRho"
-      [pretty expr]
+      [ ("expr", pretty' expr)
+      ]
     ref <- newIORef (error "inferRho: empty result")
     expr' <- tcRho expr (Infer ref)
     ref' <- readIORef ref
@@ -135,14 +148,18 @@ tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
 tcRho t@(SynTerm'Var _ varName) exp_ty = do
   v_sigma <- lookupVar varName
   debug'
-    "var"
-    [ pretty varName
-    , pretty (show varName)
-    , pretty v_sigma
-    , pretty (show v_sigma)
-    , case exp_ty of
-        Infer _ -> "Infer"
-        Check t -> "Check" <> pretty (show t)
+    "tcRho SynTerm'Var"
+    [ ("varName", pretty' varName)
+    , ("varName", prettyVerbose varName)
+    , ("v_sigma", pretty' v_sigma)
+    , ("v_sigma", prettyVerbose v_sigma)
+    ,
+      ( "exp_ty"
+      , case exp_ty of
+          Infer _ -> "Infer"
+          Check t' -> "Check" <> line <> pretty' t'
+      )
+    , ("thing", pretty' (mkTypedThingIfCheck t exp_ty))
     ]
   instSigma (mkTypedThingIfCheck t exp_ty) v_sigma exp_ty
   pure $
@@ -162,12 +179,11 @@ tcRho t@(SynTerm'App annoSrcLoc fun arg) exp_ty = do
       arg'
 tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
   (var_ty, body_ty) <- unifyFun (mkTypedThingIfCheck t modeTy) exp_ty
-  debug
+  debug'
     "tcRho SynTerm'Lam"
-    [ pretty varName
-    , pretty body
-    , pretty exp_ty
-    , pretty (var_ty, body_ty)
+    [ ("varName", pretty' varName)
+    , ("body", pretty' body)
+    , ("exp_ty", pretty' exp_ty)
     ]
   body' <- extendVarEnv varName var_ty (checkRho body body_ty)
   pure $
@@ -220,13 +236,10 @@ tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
 tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
   (ann_ty_syn, ann_ty') <- convertSynTy ann_ty
   debug'
-    "tcRho Ann"
-    [ "body (pretty):"
-    , pretty body
-    , "ann_ty (pretty):"
-    , pretty ann_ty
-    , "ann_ty' (pretty)"
-    , pretty ann_ty'
+    "tcRho SynTerm'Ann"
+    [ ("body", pretty' body)
+    , ("ann_ty", pretty' ann_ty)
+    , ("ann_ty'", pretty' ann_ty')
     ]
   body' <- checkSigma body ann_ty'
   instSigma (mkTypedThingIfCheck t exp_ty) ann_ty' exp_ty
@@ -287,27 +300,14 @@ checkSigma expr sigma =
   do
     debug'
       "checkSigma before skolemise"
-      [ "sigma (pretty):"
-      , pretty sigma
+      [ ("sigma", pretty' sigma)
       ]
     (skol_tvs, rho) <- skolemise sigma
     debug'
       "checkSigma after skolemise"
-      [ "skol_tvs (pretty):"
-      , pretty skol_tvs
-      , "rho (pretty):"
-      , pretty rho
+      [ ("skol_tvs", pretty' skol_tvs)
+      , ("rho", pretty' rho)
       ]
-    expr' <- checkRho expr rho
-    env_tys <- getEnvTypes
-    esc_tvs <- getFreeTyVars (sigma : env_tys)
-    let bad_tvs = filter (`elem` esc_tvs) skol_tvs
-    check
-      (null bad_tvs)
-      ("Type not polymorphic enough")
-    pure expr'
-
-------------------------------------------
 --      Subsumption checking            --
 ------------------------------------------
 
@@ -350,8 +350,14 @@ subsCheckRho thing (Type'Fun a1 r1) rho2 = do
   -- `unifyFun` already called unify with `thing`
   subsCheckFun Nothing a1 r1 a2 r2
 -- Rule MONO
-subsCheckRho thing tau1 tau2 =
+subsCheckRho thing tau1 tau2 = do
   -- Revert to ordinary unification
+  debug'
+    "subsCheckRho"
+    [ ("thing", pretty' thing)
+    , ("tau1", pretty' tau1)
+    , ("tau2", pretty' tau2)
+    ]
   unify thing tau1 tau2
 
 subsCheckFun :: Maybe TypedThing -> Sigma -> Rho -> Sigma -> Rho -> TcM ()
@@ -365,11 +371,30 @@ instSigma :: Maybe TypedThing -> Sigma -> Expected Rho -> TcM ()
 -- Invariant: if the second argument is (Check rho),
 --            then rho is in weak-prenex form
 instSigma thing tyActual (Check tyExpected) = do
-instSigma thing ty1 (Check rho) = subsCheckRho thing ty1 rho
-instSigma _thing sigma (Infer rho_ref) = do
-  withTcError TcError'UnexpectedType{thing, expected = tyExpected, actual = tyActual} $
-    subsCheckRho thing tyActual tyExpected
+  debug'
+    "instSigma Check"
+    [ ("thing", pretty' thing)
+    , ("tyActual", pretty' tyActual)
+    , ("tyExpected", pretty' tyExpected)
+    ]
+  withTcError
+    TcError'UnexpectedType
+      { thing
+      , expected = tyExpected
+      , actual = tyActual
+      }
+    $ subsCheckRho thing tyActual tyExpected
 instSigma thing sigma (Infer tyExpected) = do
+  debug'
+    "instSigma Infer before instantiate"
+    [ ("thing", pretty' thing)
+    , ("sigma", pretty' sigma)
+    ]
   rho <- instantiate sigma
-  writeTcRef rho_ref rho
-  writeTcRef tyExpected rho
+  debug'
+    "instSigma Infer after instantiate"
+    [ ("thing", pretty' thing)
+    , ("sigma", pretty' sigma)
+    , ("rho", pretty' rho)
+    ]
+  writeIORef tyExpected rho
