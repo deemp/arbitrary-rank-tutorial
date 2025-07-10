@@ -338,50 +338,13 @@ readTv (TcTyVar{varDetails = MetaTv{metaTvRef = ref}}) = do
     Indirect ty -> Just ty
 readTv _ = pure Nothing
 
--- ---------------------------------
--- --      Substitution
--- ---------------------------------
+-- ==============================================
+-- Instantiation
+-- ==============================================
 
-type Env = Map.Map TcBoundVar TcType
-
-substTy :: [TcBoundVar] -> [TcTypeMeta] -> TcType -> TcM TcType
--- Replace the specified quantified type variables by given meta type variables
--- No worries about capture, because the two kinds of type variable are distinct
-substTy tvs tys ty = subst_ty (Map.fromList (tvs `zip` tys)) ty
-
-subst_ty :: Env -> TcType -> TcM TcType
-subst_ty env (Type'Fun arg res) =
-  Type'Fun <$> (subst_ty env arg) <*> (subst_ty env res)
-subst_ty env (Type'Var n@TcTyVar{varDetails = BoundTv{}}) =
-  pure $ fromMaybe (Type'Var n) (Map.lookup n env)
-subst_ty _ (Type'Var n@TcTyVar{varDetails = MetaTv{}}) =
-  -- Just like in the paper
-  pure $ Type'Var n
--- TODO should we panic if skolem?
-subst_ty _ (Type'Var n@TcTyVar{}) =
-  die (TcError'UnboundVariable n)
-subst_ty _ (Type'Concrete tc) =
-  pure $ Type'Concrete tc
-subst_ty env (Type'ForAll ns rho) = do
-  let ns' = Set.fromList ns
-      -- TODO works correctly?
-      env' = Map.withoutKeys env ns'
-  -- It's not skolemisation
-  -- so I think we can leave these variables as they are now
-  Type'ForAll ns <$> (subst_ty env' rho)
-
-------------------------------------------
---      Instantiation                   --
-------------------------------------------
-
--- TODO explore call sequence from tcRho
--- and decide on types
-
--- We don't have deep instantiation (p. 28)
--- Hence, we should be able to store `RnVar`s along with `TcTyVar`s
+-- | Instantiate the topmost 'forall's of the argument type
+-- with flexible type variables.
 instantiate :: Sigma -> TcM Rho
--- Instantiate the topmost for-alls of the argument type
--- with flexible type variables
 instantiate (Type'ForAll tvs ty) = do
   tvs' <- forM tvs tyVarToMetaTyVar
   debug'
@@ -416,6 +379,40 @@ skolemise (Type'Fun arg_ty res_ty) = do
 -- Rule PRMONO
 skolemise ty = pure ([], ty)
 
+-- | Replace the specified quantified (introduced in a 'forall') type variables by given meta type variables.
+--
+-- No worries about capture, because the two kinds of type variable are distinct.
+substTy :: [TcBoundVar] -> [TcTypeMeta] -> TcType -> TcM TcType
+substTy tvs tys ty = subst_ty (Map.fromList (tvs `zip` tys)) ty
+
+type SubstitutionEnv = Map.Map TcBoundVar TcType
+
+subst_ty :: SubstitutionEnv -> TcType -> TcM TcType
+subst_ty env (Type'Fun arg res) =
+  Type'Fun <$> (subst_ty env arg) <*> (subst_ty env res)
+subst_ty env (Type'Var n@TcTyVar{varDetails = BoundTv{}}) = do
+  let res = fromMaybe (Type'Var n) (Map.lookup n env)
+  debug'
+    "subst_ty Type'Var BoundTv"
+    [ ("env", pretty' (Map.toAscList env))
+    , ("res", pretty' res)
+    ]
+  pure res
+subst_ty _ (Type'Var n@TcTyVar{varDetails = MetaTv{}}) =
+  -- Just like in the paper
+  pure $ Type'Var n
+-- TODO should we panic if skolem?
+subst_ty _ (Type'Var var@TcTyVar{}) =
+  die TcError'UnboundVariable{var}
+subst_ty _ (Type'Concrete tc) =
+  pure $ Type'Concrete tc
+subst_ty env (Type'ForAll ns rho) = do
+  let ns' = Set.fromList ns
+      -- TODO works correctly?
+      env' = Map.withoutKeys env ns'
+  -- It's not skolemisation
+  -- so we can leave these variables as they are now
+  Type'ForAll ns <$> (subst_ty env' rho)
 
 -- ==============================================
 -- Quantification
