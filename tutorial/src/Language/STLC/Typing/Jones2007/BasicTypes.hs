@@ -1,4 +1,3 @@
-
 module Language.STLC.Typing.Jones2007.BasicTypes where
 
 -- This module defines the basic types used by the type checker
