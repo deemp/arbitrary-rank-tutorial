@@ -12,14 +12,14 @@ import Language.STLC.Common ()
 import Prettyprinter
 import Prelude hiding ((<>))
 
------------------------------------
---      Architecture             --
------------------------------------
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core.hs#L138
+-- ==============================================
+-- [AST]
+-- ==============================================
 
------------------------------------
---      Expressions             --
------------------------------------
+-- | Terms AST in the TTG representation.
+--
+-- Similar to 'HsExpr' in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L332
 data SynTerm x
   = -- | x
@@ -38,24 +38,24 @@ data SynTerm x
   | -- | (f x) :: Int
     SynTerm'Ann (XSynTerm'Ann' x) (XSynTerm'Ann'Term x) (XSynTerm'Ann'Type x)
 
--- TODO add parenthesized expressions
+-- TODO make each constructor a record?
+
+-- TODO add parentheses?
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L382
+-- https://github.com/ghc/ghc/blob/ef03d8b8851a1cace5f792fe5a91b6b227198aa2/compiler/Language/Haskell/Syntax/Expr.hs#L585
 
--- TODO are concrete types represented as `Name`s?
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Pat.hs#L181
+-- TODO add type extension field
 
--- TODO
--- In SynTerm GhcTc, XSynTerm'Var' x resolves to NoFieldExt
--- For other fields, the extension field is used to store the inferred type
-
--- TODO add extension field
+-- TODO add add extension point to support Trees That Grow
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L537
 -- TODO explain what it can be used for
--- XXExprGhcRn
--- XXExprGhcTc
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Expr.hs#L1294
 
--- TODO uncomment
--- -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
+-- | Type AST in TTG representation
+--
+-- Similar to 'HsType' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
 data SynType x
   = -- | Type variable
     --
@@ -74,16 +74,20 @@ data SynType x
     -- @String@
     SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
 
+-- | A literal.
+-- 
+-- Its constructors don't have extension points
+-- because 'SynLit' is wrapped into 'SynType'Concrete' that does.
+-- 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Lit.hs#L48
 data SynLit
   = SynLit'Num Integer
   | SynLit'Bool Bool
   | SynLit'Str FastString
 
--- TODO add case to support Trees That Grow
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L537
-
----------------- Terms ---------------------
+-- ==============================================
+-- [Type families for Term AST nodes]
+-- ==============================================
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Extension.hs#L412
 type family XSynTerm'Var' x
@@ -114,15 +118,56 @@ type family XSynTerm'Ann' x
 type family XSynTerm'Ann'Term x
 type family XSynTerm'Ann'Type x
 
----------------- Literals ---------------------
+type family XSynTerm'VarCommon x
+type family XSynTerm'AnnoCommon x
 
-type family XSynLit'Num' x
-type family XSynLit'Num x
+type instance XSynTerm'VarCommon CompRn = Name
+type instance XSynTerm'VarCommon CompTc = TcTermVar
+type instance XSynTerm'VarCommon CompZn = ZnTermVar
 
-type family XSynLit'Str' x
-type family XSynLit'Str x
+type instance XSynTerm'AnnoCommon CompRn = SrcSpan
+type instance XSynTerm'AnnoCommon CompTc = TcAnno
+type instance XSynTerm'AnnoCommon CompZn = ZnAnno
 
----------------- Types (syntactic) ---------------------
+-- In GHC, the extension field for the variable AST node constructor
+-- is set to NoExtField.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Expr.hs#L238
+--
+-- We set it to () and use the extension field
+-- in other constructors for annotations.
+
+type instance XSynTerm'Var' x = ()
+type instance XSynTerm'Var x = XSynTerm'VarCommon x
+
+type instance XSynTerm'Lit' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'Lit x = SynLit
+
+type instance XSynTerm'App' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'App'Fun x = SynTerm x
+type instance XSynTerm'App'Arg x = SynTerm x
+
+type instance XSynTerm'Lam' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'Lam'Var x = XSynTerm'VarCommon x
+type instance XSynTerm'Lam'Body x = SynTerm x
+
+type instance XSynTerm'ALam' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'ALam'Var x = XSynTerm'VarCommon x
+type instance XSynTerm'ALam'Type x = SynType x
+type instance XSynTerm'ALam'Body x = SynTerm x
+
+type instance XSynTerm'Let' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'Let'Name x = XSynTerm'VarCommon x
+type instance XSynTerm'Let'AssignedTerm x = SynTerm x
+type instance XSynTerm'Let'InTerm x = SynTerm x
+
+type instance XSynTerm'Ann' x = XSynTerm'AnnoCommon x
+type instance XSynTerm'Ann'Term x = SynTerm x
+type instance XSynTerm'Ann'Type x = SynType x
+
+-- ==============================================
+-- [Type families for Type AST nodes]
+-- ==============================================
 
 type family XSynType'Var' x
 type family XSynType'Var x
@@ -138,12 +183,65 @@ type family XSynType'Fun'Res x
 type family XSynType'Concrete' x
 type family XSynType'Concrete x
 
+-- We use different representations for term and type variables.
+--
+-- In our calculus, term variables don't have types, while in GHC they do.
+--
+-- GHC uses the same 'LIdP p' type to represent type and term variables in the AST.
+--
+-- Term variables:
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L334
+--
+-- Type variables:
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L828
+
+type instance XSynType'Var' x = ()
+type instance XSynType'Var CompRn = Name
+type instance XSynType'Var CompTc = TcTyVar
+type instance XSynType'Var CompZn = ZnTyVar
+
+type instance XSynType'ForAll' x = SrcSpan
+type instance XSynType'ForAll'Vars CompRn = [Name]
+type instance XSynType'ForAll'Vars CompTc = [TcTyVar]
+type instance XSynType'ForAll'Vars CompZn = [ZnTyVar]
+type instance XSynType'ForAll'Body x = SynType x
+
+type instance XSynType'Fun' x = SrcSpan
+type instance XSynType'Fun'Arg x = SynType x
+type instance XSynType'Fun'Res x = SynType x
+
+-- TODO explain when to use annotations and when not to
+type instance XSynType'Concrete' x = ()
+type instance XSynType'Concrete CompRn = Name
+type instance XSynType'Concrete CompTc = Concrete
+type instance XSynType'Concrete CompZn = Concrete
+
+-- ==============================================
+-- [Type family for variables]
+-- ==============================================
+
+type family XVar' p
+
+type instance XVar' CompRn = RnVar
+type instance XVar' CompTc = TcTyVar
+type instance XVar' CompZn = ZnTyVar
+
+-- ==============================================
+-- [Compiler pass]
+-- ==============================================
+-- [We don't implement a compiler (yet),]
+-- but still follow the naming used in GHC.
+
+-- | Pass of the compiler.
+--
+-- Similar to 'CompPass in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L169
 data Pass = Renamed | Typechecked | Zonked
   deriving stock (Data)
 
--- | Used as a data type index for the hsSyn AST; also serves
--- as a singleton type for Pass
+-- | Used as a data type index for the 'SynTerm', 'SynType', 'Type'.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L157
 data CompPass (c :: Pass) where
   CompRn :: CompPass 'Renamed
@@ -151,20 +249,24 @@ data CompPass (c :: Pass) where
   CompZn :: CompPass 'Zonked
 
 -- Type synonyms as a shorthand for tagging
+--
+-- Similar to 'GhcPs' in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L173
-type CompRn = CompPass 'Renamed -- Output of renamer
-type CompTc = CompPass 'Typechecked -- Output of typechecker
-type CompZn = CompPass 'Zonked -- Output of zonker that by construction doesn't contain metavariables
 
--- | Maps the "normal" id type for a given GHC pass
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
-type family IdCompP pass where
-  IdCompP 'Renamed = Name
-  IdCompP 'Typechecked = TcTyVar
-  IdCompP 'Zonked = Id
+-- | Output of renamer
+type CompRn = CompPass 'Renamed
+
+-- | Output of typechecker
+type CompTc = CompPass 'Typechecked
+
+-- | Output of zonker.
+--
+-- Doesn't contain metavariables by construction.
+type CompZn = CompPass 'Zonked
 
 -- ==============================================
--- Annotations in the AST
+-- [Annotations in the AST]
 -- ==============================================
 
 data TcAnno = TcAnno
@@ -209,6 +311,18 @@ type instance Anno TcTyVar = SrcSpan
 
 -- TODO Use the ping-pong approach with the following definitions.
 
+-- | Maps the "normal" id type for a given compiler pass.
+--
+-- Similar to 'IdGhcP' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
+type family IdCompP pass where
+  IdCompP 'Renamed = Name
+  IdCompP 'Typechecked = TcTyVar
+  -- GHC uses 'Id' here.
+  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L150
+  IdCompP 'Zonked = ZnTyVar
+
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L759
 data GenLocated l e = L l e
   deriving stock (Eq, Ord, Show, Data, Functor, Foldable, Traversable)
@@ -246,33 +360,54 @@ type XVar p = XRec p (IdP p)
 type instance IdP (CompPass p) = IdCompP p
 
 -- ==============================================
--- Names and positions in the source code
+-- [Names]
 -- ==============================================
+
+-- | A unique, unambiguous name for something, containing information about where that thing originated.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
+data Name = Name
+  { nameOcc :: OccName
+  , nameUnique :: {-# UNPACK #-} !Unique
+  , nameLoc :: !SrcSpan
+  -- , nameSort :: NameSort
+  -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L148
+  }
+  deriving stock (Generic)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
 data NameSpace
   = -- | Terms namespace.
-    NameSpace'Term
+    NameSpace'TermVar
   | -- | Types namespace.
-    NameSpace'Type'Var
+    NameSpace'TypeVar
   | -- | Built-in types namespace.
-    NameSpace'Type'Concrete
+    NameSpace'TypeConcrete
   deriving stock (Eq, Show)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/FastString.hs#L211
 type FastString = Text
 
--- | Occurrence Name
+-- | Occurrence Name.
 --
 -- In this context that means:
--- "classified (i.e. as a type name, value name, etc) but not qualified
--- and not yet resolved"
+--
+-- "classified (i.e. as a type name, value name, etc)
+-- but not qualified
+-- and not yet resolved".
+--
+-- Similar to 'OccName' in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L360
 data OccName = OccName
   { occNameSpace :: !NameSpace
   , occNameFS :: !FastString
   }
-  deriving stock (Show)
+  deriving stock (Show, Generic)
+
+-- ==============================================
+-- [Positions in the source code]
+-- ==============================================
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
 data UnhelpfulSpanReason
@@ -280,6 +415,9 @@ data UnhelpfulSpanReason
   | UnhelpfulGenerated
   | UnhelpfulOther !FastString
   deriving stock (Eq, Show)
+
+-- TODO How does BNFC represent empty span?
+-- Is its bound open on the right? Example : [start; finish)
 
 -- | Real Source Span
 --
@@ -308,30 +446,198 @@ data SrcSpan
   | UnhelpfulSpan UnhelpfulSpanReason
 
 -- ==============================================
--- Types
+-- [Variables]
 -- ==============================================
 
--- | The key type representing kinds in the compiler.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
-type Kind = Type
+-- TODO make a newtype
 
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L107
-type KindOrType = Type
+-- | Similar to 'Unique' in GHC
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
+type Unique = Int
+
+-- | Similar to 'TcLevel' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
+--
+-- Also see Note [TcLevel invariants] in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L705
+newtype TcLevel = TcLevel Int
+  deriving newtype (Show, Eq, Ord, Num)
+
+-- TODO might need TcLevel
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L418
+
+data Expected a = Infer (IORef a) | Check a
+
+-- | A term or a type variable produced by the renamer.
+--
+-- Similar to 'RdrName' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Reader.hs#L166
+data RnVar = RnVar
+  { varName :: !Name
+  }
+
+-- | A bound type variable that can only appear in a 'forall'.
+--
+-- @forall {bound tvs}. {type body}@
+--
+-- Such variables are either skolemised or instantiated and never appear in type bodies.
+type TcBoundVar = TcTyVar
+
+-- | A type variable.
+--
+-- For type safety, this is a separate type instead of a type synonym.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L169
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L268
+data TcTyVar
+  = -- | Used only during type inference
+    TcTyVar
+    { varName :: !Name
+    , varDetails :: TcTyVarDetails
+    }
+  deriving stock (Generic)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L163
 type TyVar = RnVar
 
-type Sigma = TcType
-type Rho = TcType -- No top-level ForAll
-type Tau = TcType -- No ForAlls anywhere
+-- | Type variable that is a metavariable.
+--
+-- Requires explicit checks in function definitions.
+type TcTyVarMeta = TcTyVar
 
-data TypeConcrete
-  = TypeConcrete'Int
-  | TypeConcrete'Bool
-  | TypeConcrete'String
-  deriving stock (Eq)
+type TcTyVarSkolem = TcTyVar
 
+-- | A term variable, possibly with a known type.
+data TcTermVar
+  = TcTermVar
+  { varName :: !Name
+  , varType :: Expected TcType
+  }
+
+-- | A zonked type variable.
+--
+-- Doesn't have a type, unlike 'Id' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L277
+data ZnTyVar
+  = -- | Variable identifier
+    -- Always local and vanilla.
+    ZnTyVar
+    { varName :: !Name
+    }
+
+data ZnTermVar
+  = -- | Variable identifier
+    -- Always local and vanilla.
+    ZnTermVar
+    { varName :: !Name
+    , varType :: Type CompZn
+    }
+
+-- TODO add another Indirect variant for types zonked during typechecking.
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
+--
+-- The issue was mentioned here:
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L260
+
+-- | Similar to 'MetaDetails' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
+data MetaDetails
+  = -- | Flexi type variables unify to become Indirects.
+    --
+    -- 'Flexi' means that the type variable is unfilled.
+    --
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
+    Flexi
+  | Indirect TcType
+
+-- | What restrictions are on this metavariable around unification?
+-- These are checked in GHC.Tc.Utils.Unify.checkTopShape
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L640
+data MetaInfo
+  = -- | This MetaTv is an ordinary unification variable
+    -- A TauTv is always filled in with a tau-type, which
+    -- never contains any ForAlls.
+    TauTv
+  | -- | A variant of TauTv, except that it should not be
+    --   unified with a type, only with a type variable
+    --
+    -- See Note [TyVarTv] in GHC.Tc.Utils.TcMType
+    --
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L698
+    TyVarTv
+
+-- | Details about a 'TyVar'
+--
+-- See Note [TyVars and TcTyVars during type checking]
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
+data TcTyVarDetails
+  = -- | A type variable always bound by an enclosing 'forall'.
+    --
+    -- See @Practical type inference for arbitrary-rank types@.
+    --
+    -- No well-formed Type ever has a free BoundTv. (p.42)
+    --
+    -- Deep skolemisation doesn't affect argument sigmas, only result ones (p. 24).
+    --
+    -- We don't have deep instantiation (p. 28).
+    --
+    -- The original definition of TyVar had a BoundTv constructor (p.41).
+    --
+    -- Hence, we should be able to represent bound type variables during typechecking.
+    --
+    -- Never a unification variable:
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1797
+    BoundTv
+      { tcLevel :: TcLevel
+      -- TODO store the info about the binding site, including the id of the binder?
+      -- , binderName :: Name
+      }
+  | -- | A skolem.
+    -- A constant of an unknown type. Never bound by a ForAll and can be free in a Type.
+    SkolemTv
+      { skolemInfo :: SkolemInfo
+      -- ^ See Note [Keeping SkolemInfo inside a SkolemTv]
+      , tcLevel :: TcLevel
+      -- ^ Level of the implication that binds it
+      -- See GHC.Tc.Utils.Unify Note [Deeper level on the left] for
+      --     how this level number is used
+      }
+  | -- | An unknown monotype.
+    -- Never quantified by a ForAll. (p. 42)
+    MetaTv
+      { metaTvInfo :: MetaInfo
+      , metaTvRef :: IORef MetaDetails
+      , tcLevel :: TcLevel
+      -- ^ See Note [TcLevel invariants]
+      }
+
+-- ==============================================
+-- [Types]
+-- ==============================================
+
+-- | Type of expressions parameterised over the compiler pass.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L124
+--
+-- For type safety, we need different representations of 'Type'
+-- during different passes. E.g., 'Type' may not contain
+-- mutable variables after zonking.
+--
+-- GHC authors also considered using different representations for different passes.
+--
+-- A proposal to move 'TcTyVar' from 'Var'.
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
+--
+-- See Note [TyVars and TcTyVars during type checking] in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L558
+--
+-- We use different representations of type variables via the 'XVar'' type family.
 data Type p
   = -- | Vanilla type variable
     Type'Var (XVar' p)
@@ -344,42 +650,50 @@ data Type p
   | -- | Type literals are similar to type constructors.
     Type'Concrete TypeConcrete
 
-instance (Pretty' (XVar' p)) => Pretty' (Type p) where
-  pretty' = \case
-    Type'Var var -> pretty' var
-    Type'ForAll vars body -> "forall " <> hsep (pretty' <$> vars) <> "." <+> pretty' body
-    Type'Fun arg res -> parens' arg' <+> "->" <+> pretty' res
-     where
-      arg' = pretty' arg
-      parens' =
-        case arg of
-          Type'Fun _ _ -> parens
-          Type'ForAll _ _ -> parens
-          _ -> id
-    Type'Concrete ty -> pretty' ty
+type Sigma = TcType
+type Rho = TcType -- No top-level ForAll
+type Tau = TcType -- No ForAlls anywhere
 
--- TODO separate Type from TcType
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L576
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L260
--- Possible design: two types of Indirects
--- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_158972
--- + Separate TcType from Type
--- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
-
+-- | A type that can have mutable type variables.
+--
+-- Similar to 'TcType' in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
+--
+-- GHC also has 'Kind's, but we don't have them.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L107
 type TcType = Type CompTc
 
 type RnType = Type CompRn
 
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
-type Unique = Int
-
 type ZnType = Type CompZn
 
--------------------------------------
+type TcTypeMeta = TcType
+
+-- ==============================================
+-- [Concrete types]
+-- ==============================================
+
+data Concrete = Concrete
+  { concreteName :: Name
+  , concreteType :: TypeConcrete
+  }
+
+data TypeConcrete
+  = TypeConcrete'Int
+  | TypeConcrete'Bool
+  | TypeConcrete'String
+  deriving stock (Eq)
+
+-- ==============================================
+-- [SkolemInfo]
+-- ==============================================
 
 -- | UserTypeCtxt describes the origin of the polymorphic type
--- in the places where we need an expression to have that type
+-- in the places where we need an expression to have that type.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L98
 data UserTypeCtxt
   = FunSigCtxt -- Function type signature, when checking the type
@@ -387,14 +701,6 @@ data UserTypeCtxt
   | InfSigCtxt Name -- Inferred type for function
   | ExprSigCtxt -- Expression type signature
   | TyVarBndrKindCtxt Name -- The kind of a type variable being bound
-
--- | Type variable that is a metavariable.
--- requires explicit checks in function definitions.
-type TcTyVarMeta = TcTyVar
-
-type TcTyVarSkolem = TcTyVar
-
-type TcTypeMeta = TcType
 
 -- | 'SkolemInfoAnon' stores the origin of a skolem type variable (e.g. bound by
 -- a user-written forall, the header of a data declaration, a deriving clause, ...).
@@ -444,269 +750,9 @@ data SkolemInfo
       -- | The information about the origin of the skolem type variable
       SkolemInfoAnon
 
-type family XVar' p
-
-type instance XVar' CompRn = RnVar
-type instance XVar' CompTc = TcTyVar
-type instance XVar' CompZn = ZnTyVar
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
-data MetaDetails
-  = -- | Flexi type variables unify to become Indirects
-    -- Means that the type variable is unfilled
-    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
-    Flexi
-  | Indirect TcType
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
-newtype TcLevel = TcLevel Int
-  deriving newtype (Show, Eq, Ord, Num)
-
--- | What restrictions are on this metavariable around unification?
--- These are checked in GHC.Tc.Utils.Unify.checkTopShape
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L640
-data MetaInfo
-  = -- | This MetaTv is an ordinary unification variable
-    -- A TauTv is always filled in with a tau-type, which
-    -- never contains any ForAlls.
-    TauTv
-  | -- | A variant of TauTv, except that it should not be
-    --   unified with a type, only with a type variable
-    --
-    -- See Note [TyVarTv] in GHC.Tc.Utils.TcMType
-    --
-    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L698
-    TyVarTv
-
--- | Details about a 'TyVar'
---
--- See Note [TyVars and TcTyVars during type checking]
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
-data TcTyVarDetails
-  = -- Always bound by an enclosing ForAll. No well-formed Type ever has a free BoundTv. (p.42)
-
-    -- TODO -- A tyvar binder is never a unification variable (TauTv),
-    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1797
-
-    -- | Deep skolemisation doesn't affect argument sigmas, only result ones (p. 24).
-    -- We don't have deep instantiation (p. 28).
-    -- The original definition of TyVar had a BoundTv constructor (p.41).
-    -- Hence, we should be able to represent bound tyvars during typechecking.
-    BoundTv
-      { tcLevel :: TcLevel
-      -- TODO store the info about the binding site, including the id of the binder?
-      -- , binderName :: Name
-      }
-  | -- A skolem
-    -- A constant of an unknown type. Never bound by a ForAll and can be free in a Type.
-    SkolemTv
-      { skolemInfo :: SkolemInfo
-      -- ^ See Note [Keeping SkolemInfo inside a SkolemTv]
-      , tcLevel :: TcLevel
-      -- ^ Level of the implication that binds it
-      -- See GHC.Tc.Utils.Unify Note [Deeper level on the left] for
-      --     how this level number is used
-      }
-  | -- An unknown monotype.
-    -- Never quantified by a ForAll. (p. 42)
-    MetaTv
-      { metaTvInfo :: MetaInfo
-      , metaTvRef :: IORef MetaDetails
-      , tcLevel :: TcLevel
-      -- ^ See Note [TcLevel invariants]
-      }
-
--- | Identifier
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L150
-type Id = ZnTyVar
-
--- | A unique, unambiguous name for something, containing information about where that thing originated.
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
-data Name = Name
-  { nameOcc :: OccName
-  , nameUnique :: {-# UNPACK #-} !Unique
-  , nameLoc :: !SrcSpan
-  -- , nameSort :: NameSort
-  -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L148
-  }
-  deriving stock (Generic)
-
--- | A term or a type variable produced by the renamer.
---
--- Similar to 'RdrName' in GHC.
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Reader.hs#L166
-data RnVar = RnVar
-  { varName :: !Name
-  }
-
--- | A bound type variable that can only appear in a 'forall'.
---
--- @forall {bound tvs}. {type body}@
---
--- Such variables are either skolemised or instantiated and never appear in type bodies.
-type TcBoundVar = TcTyVar
-
--- | A type variable.
---
--- For type safety, this is a separate type instead of a type synonym.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L169
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L268
-data TcTyVar
-  = -- | Used only during type inference
-    TcTyVar
-    { varName :: !Name
-    , varDetails :: TcTyVarDetails
-    }
-
--- | A term variable, possibly with a known type.
-data TcTermVar
-  = TcTermVar
-  { varName :: !Name
-  , varType :: Expected TcType
-  }
-
--- | A zonked type variable.
---
--- Doesn't have a type, unlike 'Id' in GHC.
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L277
-data ZnTyVar
-  = -- | Variable identifier
-    -- Always local and vanilla.
-    ZnTyVar
-    { varName :: !Name
-    }
-
-data ZnTermVar
-  = -- | Variable identifier
-    -- Always local and vanilla.
-    ZnTermVar
-    { varName :: !Name
-    , varType :: Type CompZn
-    }
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Module/Name.hs#L13
-newtype ModuleName = ModuleName Text deriving newtype (Show, Eq)
-
--- TODO specify instances for each phase
--- TODO store instances in a separate module
-
----------------- Terms ---------------------
-
--- TODO might need TcLevel
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L418
-data Expected a = Infer (IORef a) | Check a
-
-data AnnoTc = AnnoTc
-  { annoSrcLoc :: SrcSpan
-  , annoType :: Expected TcType
-  }
-
-data AnnoZn = AnnoZn
-  { annoSrcLoc :: SrcSpan
-  , annoType :: ZnType
-  }
-
-data Concrete = Concrete
-  { concreteName :: Name
-  , concreteType :: TypeConcrete
-  }
-
--- TODO Assume we need the same equations for all variables
--- Then, we can use another to provide them in that family
-type family XSynTerm'VarCommon x
-type family XSynTerm'AnnoCommon x
-
-type instance XSynTerm'VarCommon CompRn = Name
-type instance XSynTerm'VarCommon CompTc = TcTermVar
-type instance XSynTerm'VarCommon CompZn = ZnTermVar
-
-type instance XSynTerm'AnnoCommon CompRn = SrcSpan
-type instance XSynTerm'AnnoCommon CompTc = AnnoTc
-type instance XSynTerm'AnnoCommon CompZn = AnnoZn
-
--- TODO move
-
--- TODO is this true?
--- Seems like we can use the same representation
--- for type-level and term-level variables
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L334
--- Answer: it's not true
--- In our calculus, term-level variables don't have types
-
--- TODO move instances to a separate module
-type instance XSynTerm'Var' x = ()
-type instance XSynTerm'Var x = XSynTerm'VarCommon x
-
-type instance XSynTerm'Lit' x = XSynTerm'AnnoCommon x
-type instance XSynTerm'Lit x = SynLit
-
-type instance XSynTerm'App' x = XSynTerm'AnnoCommon x
-type instance XSynTerm'App'Fun x = SynTerm x
-type instance XSynTerm'App'Arg x = SynTerm x
-
-type instance XSynTerm'Lam' x = XSynTerm'AnnoCommon x
-type instance XSynTerm'Lam'Var x = XSynTerm'VarCommon x
-type instance XSynTerm'Lam'Body x = SynTerm x
-
-type instance XSynTerm'ALam' x = XSynTerm'AnnoCommon x
-type instance XSynTerm'ALam'Var x = XSynTerm'VarCommon x
-type instance XSynTerm'ALam'Type x = SynType x
-type instance XSynTerm'ALam'Body x = SynTerm x
-
-type instance XSynTerm'Let' x = XSynTerm'AnnoCommon x
-type instance XSynTerm'Let'Name x = XSynTerm'VarCommon x
-type instance XSynTerm'Let'AssignedTerm x = SynTerm x
-type instance XSynTerm'Let'InTerm x = SynTerm x
-
-type instance XSynTerm'Ann' x = XSynTerm'AnnoCommon x
-type instance XSynTerm'Ann'Term x = SynTerm x
-type instance XSynTerm'Ann'Type x = SynType x
-
----------------- Literals ---------------------
-
-type instance XSynLit'Num' x = ()
-
----------------- Types (syntactic) ---------------------
-
-type instance XSynType'Var' x = ()
-
--- We use the same representation for term and type variables
--- following the approach used in GHC.
---
--- GHC uses the same 'LIdP p' type to represent type and term variables in the AST.
---
--- Term variables:
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L334
---
--- Type variables:
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L828
-type instance XSynType'Var CompRn = Name
-type instance XSynType'Var CompTc = TcTyVar
-type instance XSynType'Var CompZn = ZnTyVar
-
-type instance XSynType'ForAll' x = SrcSpan
-type instance XSynType'ForAll'Vars CompRn = [Name]
-type instance XSynType'ForAll'Vars CompTc = [TcTyVar]
-type instance XSynType'ForAll'Vars CompZn = [ZnTyVar]
-type instance XSynType'ForAll'Body x = SynType x
-
-type instance XSynType'Fun' x = SrcSpan
-type instance XSynType'Fun'Arg x = SynType x
-type instance XSynType'Fun'Res x = SynType x
-
--- TODO explain when to use annotations and when not to
-type instance XSynType'Concrete' x = ()
-type instance XSynType'Concrete CompRn = Name
-type instance XSynType'Concrete CompTc = Concrete
-type instance XSynType'Concrete CompZn = Concrete
-
-type NameFs = FastString
+-- ==============================================
+-- [Implicit parameters]
+-- ==============================================
 
 -- | A global counter used for creating globally unique names.
 --
@@ -715,15 +761,66 @@ type NameFs = FastString
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L67
 type IUniqueSupply = (?uniqueSupply :: IORef Int)
 
+-- | Current file path.
 type ICurrentFilePath = (?currentFilePath :: FastString)
 
+-- | Whether to output debug logs.
 type IDebug = (?debug :: Bool)
 
-instance Eq Name where
-  n1 == n2 = n1.nameUnique == n2.nameUnique
+-- ==============================================
+-- [Class for pretty printing]
+-- ==============================================
+-- Allows for configuring verbosity.
 
-instance Ord Name where
-  n1 <= n2 = n1.nameUnique <= n2.nameUnique
+data PrettyVerbosity
+  = PrettyVerbosity'Normal
+  | PrettyVerbosity'Detailed
+
+type IPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
+
+class Pretty' a where
+  pretty' :: (IPrettyVerbosity) => a -> Doc ann
+
+prettyCompact :: (Pretty' a) => a -> Doc ann
+prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Normal in pretty'
+
+prettyVerbose :: (Pretty' a) => a -> Doc ann
+prettyVerbose = let ?prettyVerbosity = PrettyVerbosity'Detailed in pretty'
+
+prettyIndent :: (IPrettyVerbosity, Pretty' a) => a -> Doc ann
+prettyIndent = indent 2 . pretty'
+
+vsep' :: [Doc ann] -> Doc ann
+vsep' xs = encloseSep "" "" line xs <> line
+
+instance {-# OVERLAPPABLE #-} (Pretty' a) => Show a where
+  show =
+    let ?prettyVerbosity = PrettyVerbosity'Detailed
+     in show . pretty'
+
+-- ==============================================
+-- [Miscellaneous instances]
+-- ==============================================
+
+instance (Pretty' (XVar' p)) => Pretty' (Type p) where
+  pretty' = \case
+    Type'Var var -> pretty' var
+    Type'ForAll vars body -> "forall " <> hsep (pretty' <$> vars) <> "." <+> pretty' body
+    Type'Fun arg res -> parens' arg' <+> "->" <+> pretty' res
+     where
+      arg' = pretty' arg
+      parens' =
+        case arg of
+          Type'Fun _ _ -> parens
+          Type'ForAll _ _ -> parens
+          _ -> id
+    Type'Concrete ty -> pretty' ty
+
+instance Pretty' SynLit where
+  pretty' = \case
+    SynLit'Num val -> pretty' val
+    SynLit'Str val -> "\"" <> pretty' val <> "\""
+    SynLit'Bool val -> pretty' val
 
 instance Pretty' RealSrcSpan where
   pretty' r =
@@ -731,14 +828,6 @@ instance Pretty' RealSrcSpan where
       <> (pretty' (r.srcSpanSLine + 1) <> ":" <> pretty' (r.srcSpanSCol + 1))
       <> "-"
       <> (pretty' (r.srcSpanELine + 1) <> ":" <> pretty' (r.srcSpanECol + 1))
-
-instance Pretty' SkolemInfoAnon where
-  pretty' = \case
-    SigSkol _ _ _ -> "SigSkol"
-    SigTypeSkol _ -> "SigTypeSkol"
-    ForAllSkol _ -> "ForAllSkol"
-    InferSkol _ -> "InferSkol"
-    UnifyForAllSkol _ -> "UnifyForAllSkol"
 
 instance Pretty' UnhelpfulSpanReason where
   pretty' = \case
@@ -751,18 +840,23 @@ instance Pretty' SrcSpan where
     RealSrcSpan sp -> pretty' sp
     UnhelpfulSpan reason -> "Unknown span:" <+> pretty' reason
 
-data PrettyVerbosity
-  = PrettyVerbosity'Normal
-  | PrettyVerbosity'Detailed
+instance Pretty' SkolemInfoAnon where
+  pretty' = \case
+    SigSkol _ _ _ -> "SigSkol"
+    SigTypeSkol _ -> "SigTypeSkol"
+    ForAllSkol _ -> "ForAllSkol"
+    InferSkol _ -> "InferSkol"
+    UnifyForAllSkol _ -> "UnifyForAllSkol"
 
-type IPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
+-- ==============================================
+-- [Instances for 'Name']
+-- ==============================================
 
-class Pretty' a where
-  pretty' :: (IPrettyVerbosity) => a -> Doc ann
-  prettyCompact :: a -> Doc ann
-  prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Normal in pretty'
-  prettyVerbose :: a -> Doc ann
-  prettyVerbose = let ?prettyVerbosity = PrettyVerbosity'Detailed in pretty'
+instance Eq Name where
+  n1 == n2 = n1.nameUnique == n2.nameUnique
+
+instance Ord Name where
+  n1 <= n2 = n1.nameUnique <= n2.nameUnique
 
 instance Pretty' Name where
   pretty' name =
@@ -775,11 +869,9 @@ instance Pretty' Name where
         pretty' name.nameOcc.occNameFS
           <> brackets ("ID" <+> pretty' name.nameUnique <> "," <+> pretty' name.nameLoc)
 
-instance Pretty' SynLit where
-  pretty' = \case
-    SynLit'Num val -> pretty' val
-    SynLit'Str val -> "\"" <> pretty' val <> "\""
-    SynLit'Bool val -> pretty' val
+-- ==============================================
+-- [Instances for Types]
+-- ==============================================
 
 instance Pretty' TypeConcrete where
   pretty' = \case
@@ -795,7 +887,7 @@ instance (Pretty' a) => Pretty' (Expected a) where
   pretty' (Check a) = "[Check]: " <> pretty' a
 
 -- ==============================================
--- Instances for Rn (renaming stage) things
+-- [Instances for CompRn types]
 -- ==============================================
 
 instance Eq RnVar where
@@ -825,7 +917,7 @@ instance Pretty' (SynTerm CompRn) where
     SynTerm'Ann _ term ty -> parens (parens (pretty' term) <+> "::" <+> pretty' ty)
 
 -- ==============================================
--- Instances for Tc (typechecking stage) things
+-- [Instances for CompTc types]
 -- ==============================================
 
 instance Eq TcTyVar where
@@ -836,12 +928,6 @@ instance Ord TcTyVar where
 
 instance Pretty' TcLevel where
   pretty' (TcLevel lvl) = "L" <+> pretty' lvl
-
-getTcTyVarKind :: (IsString a) => TcTyVarDetails -> a
-getTcTyVarKind = \case
-  BoundTv{} -> "Bound"
-  SkolemTv{} -> "Skolem"
-  MetaTv{} -> "Meta"
 
 instance Pretty' Int where
   pretty' = pretty
@@ -881,14 +967,15 @@ instance (Pretty' a, Pretty' b) => Pretty' (a, b) where
 instance Pretty' UInt where
   pretty' = pretty' . show
 
-instance {-# OVERLAPPABLE #-} (Pretty' a) => Show a where
-  show =
-    let ?prettyVerbosity = PrettyVerbosity'Detailed
-     in show . pretty'
+getTcTyVarDetails :: TcTyVarDetails -> Text
+getTcTyVarDetails = \case
+  BoundTv{} -> "Bound"
+  SkolemTv{} -> "Skolem"
+  MetaTv{} -> "Meta"
 
 instance Pretty' TcTyVar where
   pretty' var =
-    pretty' var.varName.nameOcc.occNameFS
+    prettyCompact var.varName
       <> encloseSep
         lbracket
         rbracket
@@ -896,12 +983,12 @@ instance Pretty' TcTyVar where
         ( case ?prettyVerbosity of
             PrettyVerbosity'Normal ->
               [ pretty' var.varDetails.tcLevel
-              , getTcTyVarKind var.varDetails
+              , pretty' $ getTcTyVarDetails var.varDetails
               ]
             PrettyVerbosity'Detailed ->
               [ "ID" <+> pretty' var.varName.nameUnique
               , pretty' var.varDetails.tcLevel
-              , getTcTyVarKind var.varDetails
+              , pretty' $ getTcTyVarDetails var.varDetails
               , pretty' var.varName.nameLoc
               ]
         )
@@ -1007,7 +1094,7 @@ instance Pretty' (SynTerm CompTc) where
         ]
 
 -- ==============================================
--- Instances for Zn (zonking stage) things
+-- [Instances for Zn (zonking pass) things]
 -- ==============================================
 
 instance Eq ZnTyVar where
