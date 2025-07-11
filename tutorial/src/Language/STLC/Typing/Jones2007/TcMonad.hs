@@ -476,13 +476,6 @@ getThingStart (HsExprRnThing thing) =
     SynTerm'Let anno _ _ _ -> anno
     SynTerm'Ann anno _ _ -> anno
 
-prettyDefinedAt :: (IPrettyVerbosity) => TypedThing -> Doc ann
-prettyDefinedAt thing =
-  vsep'
-    [ "defined at:"
-    , prettyIndent (getThingStart thing)
-    ]
-
 instance Pretty' TcError where
   pretty' = \case
     TcError'UndefinedVariable{varName} ->
@@ -496,21 +489,21 @@ instance Pretty' TcError where
         , prettyIndent var
         ]
     TcError'UnexpectedType{expected, actual, thing} ->
-      vsep'
+      vsep' $
         [ "Expected the type:"
         , prettyIndent expected
         , "but got the type:"
         , prettyIndent actual
-        , prettyThingLocation thing
         ]
+          <> prettyThingLocation thing
     TcError'UnifyingBoundTypes{ty1, ty2, thing} ->
-      vsep'
+      vsep' $
         [ "Trying to unify type:"
         , prettyIndent ty1
         , "with type:"
         , prettyIndent ty2
-        , prettyThingLocation thing
         ]
+          <> prettyThingLocation thing
     TcError'ExpectedFlexiVariables{tvs} ->
       vsep'
         [ "Expected all variables to be Flexi, but these are not:"
@@ -527,23 +520,27 @@ instance Pretty' TcError where
         , prettyIndent tvs
         ]
     TcError'CannotUnify{ty1, ty2, thing} ->
-      vsep'
+      vsep' $
         [ "Cannot unify type:"
         , prettyIndent ty1
         , "with type:"
         , prettyIndent ty2
-        , prettyThingLocation thing
         ]
+          <> prettyThingLocation thing
    where
-    prettyThingLocation :: Maybe TypedThing -> Doc ann
+    prettyThingLocation :: Maybe TypedThing -> [Doc ann]
     prettyThingLocation = \case
       Nothing -> mempty
       Just thing ->
-        vsep'
-          [ "in the expression:"
-          , prettyIndent thing
-          , prettyDefinedAt thing
-          ]
+        [ "in the expression:"
+        , prettyIndent thing
+        ]
+          <> prettyDefinedAt thing
+    prettyDefinedAt :: (IPrettyVerbosity) => TypedThing -> [Doc ann]
+    prettyDefinedAt thing =
+      [ "defined at:"
+      , prettyIndent (getThingStart thing)
+      ]
 
 instance Pretty' TcErrorWithCallStack where
   pretty' (TcErrorWithCallStack err) =
