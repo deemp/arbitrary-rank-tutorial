@@ -280,18 +280,19 @@ isMetaTv _ = False
 --
 -- So, perhaps yes, it should use 'BoundTv'.
 
--- | Quantify over given type variables.
+-- | Solve constraints and quantify over type variables.
 --
--- Should be used only in 'inferSigma'.
+-- Similar to 'simplifyInfer' in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver.hs#L878
 --
--- Note [quantifyTyVars]
+-- Note [quantifyTyVars] in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1677
 --
--- Note [Deciding quantification]
+-- Note [Deciding quantification] in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver.hs#L1138
-quantify :: [TcTyVarMeta] -> Rho -> TcM Sigma
+quantify :: TcLevel -> [TcTyVarMeta] -> Rho -> WantedConstraints -> TcM Sigma
 -- Quantify over the specified type variables (all flexible)
-quantify _ _ = error "Not implemented"
+quantify = error "Not implemented!"
 
 -- ==============================================
 -- Dealing with the type environment
