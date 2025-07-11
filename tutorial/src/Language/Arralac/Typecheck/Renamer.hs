@@ -2,22 +2,15 @@ module Language.Arralac.Typecheck.Renamer where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (forM)
-import Data.Char (isDigit)
-import Data.Function ((&))
 import Data.IORef (readIORef, writeIORef)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text qualified as T
-import Data.Text.IO qualified as T
 import GHC.Base (when)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
-import Language.Arralac.Parse.Arralac.Lex (Token)
-import Language.Arralac.Parse.Arralac.Par (myLexer, pProgram)
-import Language.Arralac.Parser.Abs (BNFC'Position)
-import Language.Arralac.Parser.Abs qualified as Abs
+import Language.Arralac.Parser.Internal.Abs qualified as Abs
 import Language.Arralac.Typecheck.Jones2007.BasicTypes as BT
-import Prettyprinter (indent)
 
 -- | A name.
 type NameFs = FastString
@@ -71,7 +64,7 @@ getVarId ns k = Map.lookup k (selectScope ns)
 getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Int
 getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
 
-getExistingUnique :: NameSpace -> BNFC'Position -> NameFs -> RnM Int
+getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Int
 getExistingUnique ns pos name =
   case getVarId ns name of
     Nothing ->

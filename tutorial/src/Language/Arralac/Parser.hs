@@ -1,4 +1,4 @@
-module Language.Arralac.Parser.Parse where
+module Language.Arralac.Parser where
 
 import Control.Exception (Exception, throw)
 import Data.Char (isDigit)
@@ -7,9 +7,9 @@ import Data.Text as T (Text, pack)
 import Data.Text.IO.Utf8 as TIO
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
-import Language.Arralac.Parser.Arralac.Abs
 import Language.Arralac.Parser.Arralac.Lex (Token)
 import Language.Arralac.Parser.Arralac.Par
+import Language.Arralac.Parser.Internal.Abs as Abs
 import Language.Arralac.Typecheck.Jones2007.BasicTypes
 import Prettyprinter (indent)
 

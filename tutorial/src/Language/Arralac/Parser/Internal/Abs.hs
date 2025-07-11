@@ -10,7 +10,7 @@
 
 -- | The abstract syntax of language Arralac.
 
-module Language.Arralac.Parser.Arralac.Abs where
+module Language.Arralac.Parser.Internal.Abs where
 
 import Prelude (Integer, String)
 import qualified Prelude as C

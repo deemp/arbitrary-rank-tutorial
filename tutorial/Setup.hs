@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
@@ -44,19 +45,19 @@ main =
                 intercalate
                   "; "
                   [ "set -ex"
-                  , "bnfc --haskell --functor --text -d -p Language.Arralac --generic -o src/ grammar/Arralac/Syntax.cf"
-                  , "cd src/Language/Arralac/Syntax"
+                  , "bnfc --haskell --functor --text -d -p Language.Arralac.Parser.Internal --generic -o src/ grammar/Arralac.cf"
+                  , "cd src/Language/Arralac/Parser/Internal"
                   , "alex Lex.x"
                   , "happy --ghc Par.y"
                   , "rm -f {ErrM,Skel,Test,Layout,Print}.hs *.bak *.txt"
                   , "true"
                   ]
 
-              fullCommand = "bash -c ' " <> command <> " '"
+              command' = "bash -c ' " <> command <> " '"
 
-            putStrLn fullCommand
+            putStrLn command'
 
-            _ <- callCommand fullCommand
+            callCommand command'
 
             postConf simpleUserHooks args flags packageDesc localBuildInfo
         }

@@ -48,11 +48,10 @@ library
       Language.Arralac.Interpreter.Main
       Language.Arralac.LanguageServer.IntervalMap
       Language.Arralac.LanguageServer.Main
-      Language.Arralac.Parser.Abs
-      Language.Arralac.Parser.Arralac.Abs
-      Language.Arralac.Parser.Arralac.Lex
-      Language.Arralac.Parser.Arralac.Par
-      Language.Arralac.Parser.Parse
+      Language.Arralac.Parser
+      Language.Arralac.Parser.Internal.Abs
+      Language.Arralac.Parser.Internal.Lex
+      Language.Arralac.Parser.Internal.Par
       Language.Arralac.Typecheck.Jones2007.Bag
       Language.Arralac.Typecheck.Jones2007.BasicTypes
       Language.Arralac.Typecheck.Jones2007.Constraints
