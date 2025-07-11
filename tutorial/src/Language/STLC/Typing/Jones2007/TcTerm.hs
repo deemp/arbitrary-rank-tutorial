@@ -64,6 +64,7 @@ convertSynTy = \case
 
 mkTypedThingIfCheck :: SynTerm CompRn -> Expected a -> Maybe TypedThing
 mkTypedThingIfCheck thing = \case
+  -- TODO should we provide typed thing during inference?
   Infer _ -> Nothing
   Check _ -> Just (HsExprRnThing thing)
 

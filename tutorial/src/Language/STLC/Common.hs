@@ -22,6 +22,7 @@ import Data.Text (Text, pack, unpack)
 instance IsString Exp where fromString = unsafeParseWith pExp . pack
 instance IsString Type where fromString = unsafeParseWith pType . pack
 instance IsString Program where fromString = unsafeParseWith pProgram . pack
+
 -- instance IsString Statement where fromString = unsafeParseWith pStatement . pack
 
 parseWith :: ([Token] -> Either String a) -> Text -> Either String a
