@@ -1,10 +1,10 @@
-module Language.Arralac.Typecheck.Jones2007.TcTerm where
+module Language.Arralac.Typecheck.TcTerm where
 
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Language.Arralac.Typecheck.Jones2007.Bag (unitBag)
-import Language.Arralac.Typecheck.Jones2007.BasicTypes
-import Language.Arralac.Typecheck.Jones2007.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
-import Language.Arralac.Typecheck.Jones2007.TcMonad
+import Language.Arralac.Typecheck.Bag (unitBag)
+import Language.Arralac.Typecheck.BasicTypes
+import Language.Arralac.Typecheck.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
+import Language.Arralac.Typecheck.TcMonad
 import Prettyprinter (line)
 
 checkRho :: SynTerm CompRn -> Rho -> TcM (SynTerm CompTc)

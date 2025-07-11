@@ -10,7 +10,7 @@ import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Parser.Arralac.Lex (Token)
 import Language.Arralac.Parser.Arralac.Par
 import Language.Arralac.Parser.Internal.Abs as Abs
-import Language.Arralac.Typecheck.Jones2007.BasicTypes
+import Language.Arralac.Typecheck.BasicTypes
 import Prettyprinter (indent)
 
 type ParserM a = (ICurrentFilePath) => IO a

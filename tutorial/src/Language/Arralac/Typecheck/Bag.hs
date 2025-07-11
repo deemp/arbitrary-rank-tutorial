@@ -1,7 +1,7 @@
-module Language.Arralac.Typecheck.Jones2007.Bag where
+module Language.Arralac.Typecheck.Bag where
 
 import Data.List (intersperse)
-import Language.Arralac.Typecheck.Jones2007.BasicTypes (Pretty' (..))
+import Language.Arralac.Typecheck.BasicTypes (Pretty' (..))
 import Prettyprinter (indent, vsep)
 
 -- | A list of something.

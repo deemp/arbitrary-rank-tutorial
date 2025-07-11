@@ -5,8 +5,8 @@ import Control.Monad.Foil.Internal (DExt, Name (..), NameBinder (..), Scope (..)
 import Data.IntMap qualified as IntMap
 import Data.IntSet qualified as IntSet
 import Generics.Kind.TH
-import Language.Arralac.Typecheck.Jones2007.BasicTypes (Pretty' (..))
-import Language.Arralac.Typecheck.Jones2007.BasicTypes qualified as BT
+import Language.Arralac.Typecheck.BasicTypes (Pretty' (..))
+import Language.Arralac.Typecheck.BasicTypes qualified as BT
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | A wrapper around 'NameBinder' that stores additional information.

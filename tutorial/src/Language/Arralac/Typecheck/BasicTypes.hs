@@ -1,4 +1,4 @@
-module Language.Arralac.Typecheck.Jones2007.BasicTypes where
+module Language.Arralac.Typecheck.BasicTypes where
 
 -- This module defines the basic types used by the type checker
 -- Everything defined in here is exported

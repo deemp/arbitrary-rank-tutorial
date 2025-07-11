@@ -10,7 +10,7 @@ import GHC.Base (when)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Parser.Internal.Abs qualified as Abs
-import Language.Arralac.Typecheck.Jones2007.BasicTypes as BT
+import Language.Arralac.Typecheck.BasicTypes as BT
 
 -- | A name.
 type NameFs = FastString
