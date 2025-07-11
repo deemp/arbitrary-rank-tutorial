@@ -1,14 +1,14 @@
-module Language.Arralac.Typing.Jones2007.Main where
+module Language.Arralac.Typecheck.Jones2007.Main where
 
 import Control.Monad.Foil (emptyScope)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Language.Arralac.Interpreter.Main (convertASTToCore, whnf)
-import Language.Arralac.Typing.Jones2007.BasicTypes (Pretty' (..), PrettyVerbosity (PrettyVerbosity'Normal), prettyUser)
-import Language.Arralac.Typing.Jones2007.Solver (SolverErrorWithCallStack)
-import Language.Arralac.Typing.Jones2007.TcMonad (TcErrorWithCallStack)
-import Language.Arralac.Typing.Renamer (RnErrorWithCallStack)
-import Language.Arralac.Typing.Run (runTypechecker')
+import Language.Arralac.Typecheck.Jones2007.BasicTypes (Pretty' (..), PrettyVerbosity (PrettyVerbosity'Normal), prettyUser)
+import Language.Arralac.Typecheck.Jones2007.Solver (SolverErrorWithCallStack)
+import Language.Arralac.Typecheck.Jones2007.TcMonad (TcErrorWithCallStack)
+import Language.Arralac.Typecheck.Renamer (RnErrorWithCallStack)
+import Language.Arralac.Typecheck.Run (runTypechecker')
 import Prettyprinter (line)
 import Prettyprinter.Render.Text (putDoc)
 import Prettyprinter.Util (putDocW)

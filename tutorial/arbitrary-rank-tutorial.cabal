@@ -20,7 +20,7 @@ build-type:     Custom
 extra-source-files:
     README.md
     CHANGELOG.md
-    grammar/STLC/Syntax.cf
+    grammar/Arralac.cf
 
 source-repository head
   type: git
@@ -31,7 +31,9 @@ custom-setup
       Cabal >=2.4.0.1 && <4.0
     , base >=4.11.0.0 && <5.0
     , code-page
+    , directory
     , process >=1.6.3.0
+    , text
     , with-utf8
 
 flag nix
@@ -42,25 +44,26 @@ flag nix
 library
   exposed-modules:
       BluefinImplicit
-      Language.Arralac.Common
       Language.Arralac.Interpreter.FreeFoil
       Language.Arralac.Interpreter.Main
       Language.Arralac.LanguageServer.IntervalMap
       Language.Arralac.LanguageServer.Main
-      Language.Arralac.Syntax.Abs
-      Language.Arralac.Syntax.Lex
-      Language.Arralac.Syntax.Par
-      Language.Arralac.Typing.Jones2007.Bag
-      Language.Arralac.Typing.Jones2007.BasicTypes
-      Language.Arralac.Typing.Jones2007.Constraints
-      Language.Arralac.Typing.Jones2007.Main
-      Language.Arralac.Typing.Jones2007.Pretty
-      Language.Arralac.Typing.Jones2007.Solver
-      Language.Arralac.Typing.Jones2007.TcMonad
-      Language.Arralac.Typing.Jones2007.TcTerm
-      Language.Arralac.Typing.Renamer
-      Language.Arralac.Typing.Run
-      Language.Arralac.Typing.Zonker
+      Language.Arralac.Parser.Abs
+      Language.Arralac.Parser.Arralac.Abs
+      Language.Arralac.Parser.Arralac.Lex
+      Language.Arralac.Parser.Arralac.Par
+      Language.Arralac.Parser.Parse
+      Language.Arralac.Typecheck.Jones2007.Bag
+      Language.Arralac.Typecheck.Jones2007.BasicTypes
+      Language.Arralac.Typecheck.Jones2007.Constraints
+      Language.Arralac.Typecheck.Jones2007.Main
+      Language.Arralac.Typecheck.Jones2007.Pretty
+      Language.Arralac.Typecheck.Jones2007.Solver
+      Language.Arralac.Typecheck.Jones2007.TcMonad
+      Language.Arralac.Typecheck.Jones2007.TcTerm
+      Language.Arralac.Typecheck.Renamer
+      Language.Arralac.Typecheck.Run
+      Language.Arralac.Typecheck.Zonker
   other-modules:
       Paths_arbitrary_rank_tutorial
   hs-source-dirs:

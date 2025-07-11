@@ -1,4 +1,4 @@
-module Language.Arralac.Typing.Jones2007.TcMonad where
+module Language.Arralac.Typecheck.Jones2007.TcMonad where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (when)
@@ -8,11 +8,11 @@ import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Traversable (forM)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Language.Arralac.Typing.Jones2007.Bag (Bag (..))
-import Language.Arralac.Typing.Jones2007.BasicTypes
-import Language.Arralac.Typing.Jones2007.Constraints (Ct (..), CtEvidence (..), CtLoc (..), CtOrigin (..), EqCt (..), TypedThing (..), WantedConstraints (..), WantedCtEvidence (..))
-import Language.Arralac.Typing.Renamer
-import Prettyprinter ( Doc, indent, line, vsep )
+import Language.Arralac.Typecheck.Jones2007.Bag (Bag (..))
+import Language.Arralac.Typecheck.Jones2007.BasicTypes
+import Language.Arralac.Typecheck.Jones2007.Constraints (Ct (..), CtEvidence (..), CtLoc (..), CtOrigin (..), EqCt (..), TypedThing (..), WantedConstraints (..), WantedCtEvidence (..))
+import Language.Arralac.Typecheck.Renamer
+import Prettyprinter (Doc, indent, line, vsep)
 import Prettyprinter.Util (putDocW)
 
 -- ==============================================

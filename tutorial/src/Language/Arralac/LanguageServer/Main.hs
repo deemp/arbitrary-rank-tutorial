@@ -15,6 +15,9 @@ import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
+import Language.Arralac.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
+import Language.Arralac.Typecheck.Jones2007.BasicTypes (FastString, IPrettyVerbosity, Pretty' (..), PrettyVerbosity (..))
+import Language.Arralac.Typecheck.Run (runTypechecker')
 import Language.LSP.Logging (defaultClientLogger)
 import Language.LSP.Protocol.Lens qualified as L
 import Language.LSP.Protocol.Message (SMethod (..), TRequestMessage (..))
@@ -23,9 +26,6 @@ import Language.LSP.Protocol.Types qualified as L
 import Language.LSP.Protocol.Types qualified as LSP
 import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getConfig, getVirtualFile, notificationHandler, requestHandler, runLspT, runServer, sendNotification, type (<~>) (Iso))
 import Language.LSP.VFS (virtualFileText)
-import Language.Arralac.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
-import Language.Arralac.Typing.Jones2007.BasicTypes (FastString, IPrettyVerbosity, Pretty' (..), PrettyVerbosity (..))
-import Language.Arralac.Typing.Run (runTypechecker')
 import Prettyprinter (Doc, defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
 import System.Environment (lookupEnv)

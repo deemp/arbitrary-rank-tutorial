@@ -1,4 +1,4 @@
-module Language.Arralac.Typing.Zonker where
+module Language.Arralac.Typecheck.Zonker where
 
 import Control.Lens ((%~))
 import Control.Monad (forM)
@@ -8,8 +8,8 @@ import Data.Generics.Labels ()
 import Data.Generics.Product ()
 import Data.IORef (readIORef)
 import GHC.Stack (HasCallStack)
-import Language.Arralac.Typing.Jones2007.BasicTypes
-import Language.Arralac.Typing.Jones2007.TcMonad (debug')
+import Language.Arralac.Typecheck.Jones2007.BasicTypes
+import Language.Arralac.Typecheck.Jones2007.TcMonad (debug')
 
 -- Substitute metavariables with their Indirect types after typechecking
 -- to produce a term without metavariables.

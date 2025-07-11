@@ -4,8 +4,8 @@ import Control.Monad.Foil.Internal (DExt, Distinct, Name (..), Scope (..), ident
 import Control.Monad.Free.Foil (AST (..), ScopedAST (..), substitute)
 import Data.Bifunctor.TH (deriveBifunctor)
 import Language.Arralac.Interpreter.FreeFoil (CoreNameBinder (..), PrettyName (..), addSubst, extendScope, withFreshUsingUnique)
-import Language.Arralac.Typing.Jones2007.BasicTypes (CompZn, Pretty' (..), SynLit, SynTerm (..))
-import Language.Arralac.Typing.Jones2007.BasicTypes qualified as BT
+import Language.Arralac.Typecheck.Jones2007.BasicTypes (CompZn, Pretty' (..), SynLit, SynTerm (..))
+import Language.Arralac.Typecheck.Jones2007.BasicTypes qualified as BT
 import Prettyprinter
 
 -- TODO Delayed substitution and Normalization by Evaluation

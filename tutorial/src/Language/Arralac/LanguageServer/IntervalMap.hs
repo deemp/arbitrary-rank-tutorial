@@ -2,8 +2,8 @@ module Language.Arralac.LanguageServer.IntervalMap where
 
 import Control.Lens (traversed, (%~), (&), _1)
 import Data.IntervalMap.Generic.Strict qualified as IM
+import Language.Arralac.Typecheck.Jones2007.BasicTypes (CompZn, Concrete (..), FastString, IPrettyVerbosity, Name (..), Pretty' (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnAnno (..), ZnTermVar (..), ZnTyVar (..), ZnType)
 import Language.LSP.Protocol.Types (Position (..), Range (..))
-import Language.Arralac.Typing.Jones2007.BasicTypes (CompZn, Concrete (..), FastString, IPrettyVerbosity, Name (..), Pretty' (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnAnno (..), ZnTermVar (..), ZnTyVar (..), ZnType)
 import Prettyprinter (Doc)
 
 newtype IMPosition

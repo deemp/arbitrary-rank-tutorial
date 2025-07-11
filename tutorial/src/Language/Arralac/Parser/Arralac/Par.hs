@@ -14,7 +14,7 @@
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns #-}
 {-# LANGUAGE PatternSynonyms #-}
 
-module Language.Arralac.Syntax.Par
+module Language.Arralac.Parser.Arralac.Par
   ( happyError
   , myLexer
   , pProgram
@@ -42,8 +42,8 @@ module Language.Arralac.Syntax.Par
 
 import Prelude
 
-import qualified Language.Arralac.Syntax.Abs
-import Language.Arralac.Syntax.Lex
+import qualified Language.Arralac.Parser.Arralac.Abs
+import Language.Arralac.Parser.Arralac.Lex
 import qualified Data.Text
 import qualified Data.Function as Happy_Prelude
 import qualified Data.Bool as Happy_Prelude
@@ -68,18 +68,18 @@ import Control.Monad (ap)
 data HappyAbsSyn 
         = HappyTerminal (Token)
         | HappyErrorToken Happy_Prelude.Int
-        | HappyAbsSyn25 ((Language.Arralac.Syntax.Abs.BNFC'Position, Integer))
-        | HappyAbsSyn26 ((Language.Arralac.Syntax.Abs.BNFC'Position, String))
-        | HappyAbsSyn27 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.NameLowerCase))
-        | HappyAbsSyn28 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.NameUpperCase))
-        | HappyAbsSyn29 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.Program))
-        | HappyAbsSyn30 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.Var))
-        | HappyAbsSyn31 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.Con))
-        | HappyAbsSyn32 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.Bool))
-        | HappyAbsSyn33 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.Exp))
-        | HappyAbsSyn43 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.Type))
-        | HappyAbsSyn46 ((Language.Arralac.Syntax.Abs.BNFC'Position, Language.Arralac.Syntax.Abs.TypeVariable))
-        | HappyAbsSyn48 ((Language.Arralac.Syntax.Abs.BNFC'Position, [Language.Arralac.Syntax.Abs.TypeVariable]))
+        | HappyAbsSyn25 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Integer))
+        | HappyAbsSyn26 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, String))
+        | HappyAbsSyn27 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.NameLowerCase))
+        | HappyAbsSyn28 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.NameUpperCase))
+        | HappyAbsSyn29 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.Program))
+        | HappyAbsSyn30 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.Var))
+        | HappyAbsSyn31 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.Con))
+        | HappyAbsSyn32 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.Bool))
+        | HappyAbsSyn33 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.Exp))
+        | HappyAbsSyn43 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.Type))
+        | HappyAbsSyn46 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, Language.Arralac.Parser.Arralac.Abs.TypeVariable))
+        | HappyAbsSyn48 ((Language.Arralac.Parser.Arralac.Abs.BNFC'Position, [Language.Arralac.Parser.Arralac.Abs.TypeVariable]))
 
 {-# NOINLINE happyTokenStrings #-}
 happyTokenStrings = ["'('","')'","'->'","'.'","'::'","'='","'False'","'True'","'\\\\'","'forall'","'in'","'let'","L_integ","L_quoted","L_NameLowerCase","L_NameUpperCase","%eof"]
@@ -164,98 +164,98 @@ happy_n_starts = 21 :: Happy_Prelude.Int
 happyReduce_21 = happySpecReduce_1  0# happyReduction_21
 happyReduction_21 (HappyTerminal happy_var_1)
          =  HappyAbsSyn25
-                 ((uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), (read (Data.Text.unpack (tokenText happy_var_1))) :: Integer)
+                 ((uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1), (read (Data.Text.unpack (tokenText happy_var_1))) :: Integer)
         )
 happyReduction_21 _  = notHappyAtAll 
 
 happyReduce_22 = happySpecReduce_1  1# happyReduction_22
 happyReduction_22 (HappyTerminal happy_var_1)
          =  HappyAbsSyn26
-                 ((uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), (Data.Text.unpack ((\(PT _ _ (TL s)) -> s) happy_var_1)))
+                 ((uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1), (Data.Text.unpack ((\(PT _ _ (TL s)) -> s) happy_var_1)))
         )
 happyReduction_22 _  = notHappyAtAll 
 
 happyReduce_23 = happySpecReduce_1  2# happyReduction_23
 happyReduction_23 (HappyTerminal happy_var_1)
          =  HappyAbsSyn27
-                 ((uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), Language.Arralac.Syntax.Abs.NameLowerCase (tokenText happy_var_1))
+                 ((uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1), Language.Arralac.Parser.Arralac.Abs.NameLowerCase (tokenText happy_var_1))
         )
 happyReduction_23 _  = notHappyAtAll 
 
 happyReduce_24 = happySpecReduce_1  3# happyReduction_24
 happyReduction_24 (HappyTerminal happy_var_1)
          =  HappyAbsSyn28
-                 ((uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1), Language.Arralac.Syntax.Abs.NameUpperCase (tokenText happy_var_1))
+                 ((uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1), Language.Arralac.Parser.Arralac.Abs.NameUpperCase (tokenText happy_var_1))
         )
 happyReduction_24 _  = notHappyAtAll 
 
 happyReduce_25 = happySpecReduce_1  4# happyReduction_25
 happyReduction_25 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn29
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.Program (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.Program (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_25 _  = notHappyAtAll 
 
 happyReduce_26 = happySpecReduce_1  5# happyReduction_26
 happyReduction_26 (HappyAbsSyn27  happy_var_1)
          =  HappyAbsSyn30
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.Var (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.Var (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_26 _  = notHappyAtAll 
 
 happyReduce_27 = happySpecReduce_1  6# happyReduction_27
 happyReduction_27 (HappyAbsSyn28  happy_var_1)
          =  HappyAbsSyn31
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.Con (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.Con (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_27 _  = notHappyAtAll 
 
 happyReduce_28 = happySpecReduce_1  7# happyReduction_28
 happyReduction_28 (HappyTerminal happy_var_1)
          =  HappyAbsSyn32
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)), Language.Arralac.Syntax.Abs.BoolTrue (Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1))))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)), Language.Arralac.Parser.Arralac.Abs.BoolTrue (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1))))
         )
 happyReduction_28 _  = notHappyAtAll 
 
 happyReduce_29 = happySpecReduce_1  7# happyReduction_29
 happyReduction_29 (HappyTerminal happy_var_1)
          =  HappyAbsSyn32
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)), Language.Arralac.Syntax.Abs.BoolFalse (Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1))))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)), Language.Arralac.Parser.Arralac.Abs.BoolFalse (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1))))
         )
 happyReduction_29 _  = notHappyAtAll 
 
 happyReduce_30 = happySpecReduce_1  8# happyReduction_30
 happyReduction_30 (HappyAbsSyn30  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.ExpVar (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.ExpVar (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_30 _  = notHappyAtAll 
 
 happyReduce_31 = happySpecReduce_1  9# happyReduction_31
 happyReduction_31 (HappyAbsSyn25  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.ExpInt (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.ExpInt (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_31 _  = notHappyAtAll 
 
 happyReduce_32 = happySpecReduce_1  9# happyReduction_32
 happyReduction_32 (HappyAbsSyn26  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.ExpString (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.ExpString (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_32 _  = notHappyAtAll 
 
 happyReduce_33 = happySpecReduce_1  9# happyReduction_33
 happyReduction_33 (HappyAbsSyn32  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.ExpBool (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.ExpBool (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_33 _  = notHappyAtAll 
 
 happyReduce_34 = happySpecReduce_1  9# happyReduction_34
 happyReduction_34 (HappyAbsSyn31  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.ExpCon (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.ExpCon (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_34 _  = notHappyAtAll 
 
@@ -266,7 +266,7 @@ happyReduction_35 ((HappyAbsSyn33  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4), Language.Arralac.Syntax.Abs.ExpAbs (Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4)) (snd happy_var_2) (snd happy_var_4))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4), Language.Arralac.Parser.Arralac.Abs.ExpAbs (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_36 = happyReduce 8# 11# happyReduction_36
@@ -280,14 +280,14 @@ happyReduction_36 ((HappyAbsSyn33  happy_var_8) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_8), Language.Arralac.Syntax.Abs.ExpAbsAnno (Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_8)) (snd happy_var_3) (snd happy_var_5) (snd happy_var_8))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_8), Language.Arralac.Parser.Arralac.Abs.ExpAbsAnno (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_8)) (snd happy_var_3) (snd happy_var_5) (snd happy_var_8))
         ) `HappyStk` happyRest
 
 happyReduce_37 = happySpecReduce_2  12# happyReduction_37
 happyReduction_37 (HappyAbsSyn33  happy_var_2)
         (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2), Language.Arralac.Syntax.Abs.ExpApp (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2)) (snd happy_var_1) (snd happy_var_2))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2), Language.Arralac.Parser.Arralac.Abs.ExpApp (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2)) (snd happy_var_1) (snd happy_var_2))
         )
 happyReduction_37 _ _  = notHappyAtAll 
 
@@ -300,7 +300,7 @@ happyReduction_38 ((HappyAbsSyn33  happy_var_6) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_6), Language.Arralac.Syntax.Abs.ExpLet (Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_6)) (snd happy_var_2) (snd happy_var_4) (snd happy_var_6))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_6), Language.Arralac.Parser.Arralac.Abs.ExpLet (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_6)) (snd happy_var_2) (snd happy_var_4) (snd happy_var_6))
         ) `HappyStk` happyRest
 
 happyReduce_39 = happySpecReduce_3  14# happyReduction_39
@@ -308,56 +308,56 @@ happyReduction_39 (HappyAbsSyn43  happy_var_3)
         _
         (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3), Language.Arralac.Syntax.Abs.ExpAnno (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3)) (snd happy_var_1) (snd happy_var_3))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3), Language.Arralac.Parser.Arralac.Abs.ExpAnno (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3)) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_39 _ _ _  = notHappyAtAll 
 
 happyReduce_40 = happySpecReduce_1  15# happyReduction_40
 happyReduction_40 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_40 _  = notHappyAtAll 
 
 happyReduce_41 = happySpecReduce_1  15# happyReduction_41
 happyReduction_41 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_41 _  = notHappyAtAll 
 
 happyReduce_42 = happySpecReduce_1  15# happyReduction_42
 happyReduction_42 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_42 _  = notHappyAtAll 
 
 happyReduce_43 = happySpecReduce_1  15# happyReduction_43
 happyReduction_43 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_43 _  = notHappyAtAll 
 
 happyReduce_44 = happySpecReduce_1  15# happyReduction_44
 happyReduction_44 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_44 _  = notHappyAtAll 
 
 happyReduce_45 = happySpecReduce_1  15# happyReduction_45
 happyReduction_45 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_45 _  = notHappyAtAll 
 
 happyReduce_46 = happySpecReduce_1  15# happyReduction_46
 happyReduction_46 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_46 _  = notHappyAtAll 
 
@@ -366,21 +366,21 @@ happyReduction_47 (HappyTerminal happy_var_3)
         (HappyAbsSyn33  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_47 _ _ _  = notHappyAtAll 
 
 happyReduce_48 = happySpecReduce_1  16# happyReduction_48
 happyReduction_48 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_48 _  = notHappyAtAll 
 
 happyReduce_49 = happySpecReduce_1  16# happyReduction_49
 happyReduction_49 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_49 _  = notHappyAtAll 
 
@@ -389,21 +389,21 @@ happyReduction_50 (HappyTerminal happy_var_3)
         (HappyAbsSyn33  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_50 _ _ _  = notHappyAtAll 
 
 happyReduce_51 = happySpecReduce_1  17# happyReduction_51
 happyReduction_51 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_51 _  = notHappyAtAll 
 
 happyReduce_52 = happySpecReduce_1  17# happyReduction_52
 happyReduction_52 (HappyAbsSyn33  happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_52 _  = notHappyAtAll 
 
@@ -412,21 +412,21 @@ happyReduction_53 (HappyTerminal happy_var_3)
         (HappyAbsSyn33  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn33
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_53 _ _ _  = notHappyAtAll 
 
 happyReduce_54 = happySpecReduce_1  18# happyReduction_54
 happyReduction_54 (HappyAbsSyn28  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.TypeConcrete (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.TypeConcrete (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_54 _  = notHappyAtAll 
 
 happyReduce_55 = happySpecReduce_1  19# happyReduction_55
 happyReduction_55 (HappyAbsSyn27  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.TypeVariable (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.TypeVariable (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_55 _  = notHappyAtAll 
 
@@ -435,28 +435,28 @@ happyReduction_56 (HappyAbsSyn43  happy_var_3)
         _
         (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3), Language.Arralac.Syntax.Abs.TypeFunc (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3)) (snd happy_var_1) (snd happy_var_3))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3), Language.Arralac.Parser.Arralac.Abs.TypeFunc (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_3)) (snd happy_var_1) (snd happy_var_3))
         )
 happyReduction_56 _ _ _  = notHappyAtAll 
 
 happyReduce_57 = happySpecReduce_1  20# happyReduction_57
 happyReduction_57 (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_57 _  = notHappyAtAll 
 
 happyReduce_58 = happySpecReduce_1  20# happyReduction_58
 happyReduction_58 (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_58 _  = notHappyAtAll 
 
 happyReduce_59 = happySpecReduce_1  20# happyReduction_59
 happyReduction_59 (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_59 _  = notHappyAtAll 
 
@@ -465,14 +465,14 @@ happyReduction_60 (HappyTerminal happy_var_3)
         (HappyAbsSyn43  happy_var_2)
         (HappyTerminal happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_3)), (snd happy_var_2))
         )
 happyReduction_60 _ _ _  = notHappyAtAll 
 
 happyReduce_61 = happySpecReduce_1  21# happyReduction_61
 happyReduction_61 (HappyAbsSyn27  happy_var_1)
          =  HappyAbsSyn46
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Syntax.Abs.TypeVariableName (Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), Language.Arralac.Parser.Arralac.Abs.TypeVariableName (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1)) (snd happy_var_1))
         )
 happyReduction_61 _  = notHappyAtAll 
 
@@ -483,47 +483,47 @@ happyReduction_62 ((HappyAbsSyn43  happy_var_4) `HappyStk`
         (HappyTerminal happy_var_1) `HappyStk`
         happyRest)
          = HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4), Language.Arralac.Syntax.Abs.TypeForall (Language.Arralac.Syntax.Abs.spanBNFC'Position (uncurry Language.Arralac.Syntax.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4)) (snd happy_var_2) (snd happy_var_4))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4), Language.Arralac.Parser.Arralac.Abs.TypeForall (Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (uncurry Language.Arralac.Parser.Arralac.Abs.BNFC'Position (tokenSpan happy_var_1)) (fst happy_var_4)) (snd happy_var_2) (snd happy_var_4))
         ) `HappyStk` happyRest
 
 happyReduce_63 = happySpecReduce_0  23# happyReduction_63
 happyReduction_63  =  HappyAbsSyn48
-                 ((Language.Arralac.Syntax.Abs.BNFC'NoPosition, [])
+                 ((Language.Arralac.Parser.Arralac.Abs.BNFC'NoPosition, [])
         )
 
 happyReduce_64 = happySpecReduce_2  23# happyReduction_64
 happyReduction_64 (HappyAbsSyn48  happy_var_2)
         (HappyAbsSyn46  happy_var_1)
          =  HappyAbsSyn48
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2), (:) (snd happy_var_1) (snd happy_var_2))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_2), (:) (snd happy_var_1) (snd happy_var_2))
         )
 happyReduction_64 _ _  = notHappyAtAll 
 
 happyReduce_65 = happySpecReduce_1  24# happyReduction_65
 happyReduction_65 (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_65 _  = notHappyAtAll 
 
 happyReduce_66 = happySpecReduce_1  24# happyReduction_66
 happyReduction_66 (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_66 _  = notHappyAtAll 
 
 happyReduce_67 = happySpecReduce_1  24# happyReduction_67
 happyReduction_67 (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_67 _  = notHappyAtAll 
 
 happyReduce_68 = happySpecReduce_1  24# happyReduction_68
 happyReduction_68 (HappyAbsSyn43  happy_var_1)
          =  HappyAbsSyn43
-                 ((Language.Arralac.Syntax.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
+                 ((Language.Arralac.Parser.Arralac.Abs.spanBNFC'Position (fst happy_var_1) (fst happy_var_1), (snd happy_var_1))
         )
 happyReduction_68 _  = notHappyAtAll 
 
@@ -653,67 +653,67 @@ myLexer = tokens
 
 -- Entrypoints
 
-pProgram :: [Token] -> Err Language.Arralac.Syntax.Abs.Program
+pProgram :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Program
 pProgram = fmap snd . pProgram_internal
 
-pVar :: [Token] -> Err Language.Arralac.Syntax.Abs.Var
+pVar :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Var
 pVar = fmap snd . pVar_internal
 
-pCon :: [Token] -> Err Language.Arralac.Syntax.Abs.Con
+pCon :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Con
 pCon = fmap snd . pCon_internal
 
-pBool :: [Token] -> Err Language.Arralac.Syntax.Abs.Bool
+pBool :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Bool
 pBool = fmap snd . pBool_internal
 
-pExp1 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp1 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp1 = fmap snd . pExp1_internal
 
-pExp2 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp2 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp2 = fmap snd . pExp2_internal
 
-pExp3 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp3 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp3 = fmap snd . pExp3_internal
 
-pExp4 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp4 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp4 = fmap snd . pExp4_internal
 
-pExp5 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp5 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp5 = fmap snd . pExp5_internal
 
-pExp6 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp6 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp6 = fmap snd . pExp6_internal
 
-pExp7 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp7 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp7 = fmap snd . pExp7_internal
 
-pExp :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp = fmap snd . pExp_internal
 
-pExp10 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp10 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp10 = fmap snd . pExp10_internal
 
-pExp11 :: [Token] -> Err Language.Arralac.Syntax.Abs.Exp
+pExp11 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Exp
 pExp11 = fmap snd . pExp11_internal
 
-pType1 :: [Token] -> Err Language.Arralac.Syntax.Abs.Type
+pType1 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Type
 pType1 = fmap snd . pType1_internal
 
-pType2 :: [Token] -> Err Language.Arralac.Syntax.Abs.Type
+pType2 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Type
 pType2 = fmap snd . pType2_internal
 
-pType3 :: [Token] -> Err Language.Arralac.Syntax.Abs.Type
+pType3 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Type
 pType3 = fmap snd . pType3_internal
 
-pTypeVariable :: [Token] -> Err Language.Arralac.Syntax.Abs.TypeVariable
+pTypeVariable :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.TypeVariable
 pTypeVariable = fmap snd . pTypeVariable_internal
 
-pType4 :: [Token] -> Err Language.Arralac.Syntax.Abs.Type
+pType4 :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Type
 pType4 = fmap snd . pType4_internal
 
-pListTypeVariable :: [Token] -> Err [Language.Arralac.Syntax.Abs.TypeVariable]
+pListTypeVariable :: [Token] -> Err [Language.Arralac.Parser.Arralac.Abs.TypeVariable]
 pListTypeVariable = fmap snd . pListTypeVariable_internal
 
-pType :: [Token] -> Err Language.Arralac.Syntax.Abs.Type
+pType :: [Token] -> Err Language.Arralac.Parser.Arralac.Abs.Type
 pType = fmap snd . pType_internal
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 

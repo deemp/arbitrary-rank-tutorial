@@ -8,9 +8,9 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 
--- | The abstract syntax of language Syntax.
+-- | The abstract syntax of language Arralac.
 
-module Language.Arralac.Syntax.Abs where
+module Language.Arralac.Parser.Arralac.Abs where
 
 import Prelude (Integer, String)
 import qualified Prelude as C

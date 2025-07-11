@@ -10,7 +10,7 @@ copyright: "2024 Danila Danko, Nickolay Kudasov"
 extra-source-files:
   - README.md
   - CHANGELOG.md
-  - grammar/Arralac/Syntax.cf
+  - grammar/Arralac.cf
 
 verbatim:
   cabal-version: 1.24
@@ -57,12 +57,16 @@ custom-setup:
     - code-page
     - process >= 1.6.3.0
     - with-utf8
+    - text
+    - directory
 
 dependencies:
   - aeson
   - array >= 0.5.5.0
   - base >= 4.7 && < 5
   - bifunctors
+  - bluefin
+  - bluefin-internal
   - generic-lens
   - containers
   - free-foil
