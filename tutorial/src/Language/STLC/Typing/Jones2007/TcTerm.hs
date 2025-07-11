@@ -32,45 +32,45 @@ inferRho expr =
     ref' <- readIORef ref
     pure (expr', ref')
 
--- TODO optimize
-parseTypeConcrete :: Name -> TcM TypeConcrete
-parseTypeConcrete name = do
-  let name' = T.unpack name.nameOcc.occNameFS
-  if
-    | name' == show TypeConcrete'Bool -> pure TypeConcrete'Bool
-    | name' == show TypeConcrete'String -> pure TypeConcrete'String
-    | name' == show TypeConcrete'Int -> pure TypeConcrete'Int
-    | otherwise -> die TcError'UnknownConcreteType{name}
-
 -- TODO Levels
 convertSynTy :: SynType CompRn -> TcM (SynType CompTc, TcType)
 convertSynTy = \case
   SynType'Var _ var -> do
     -- TODO correct tcLevel?
     var' <- pure TcTyVar{varName = var, varDetails = BoundTv{tcLevel = ?tcLevel}}
-    pure $ (SynType'Var () var', Type'Var var')
+    pure $
+      ( SynType'Var () var'
+      , Type'Var var'
+      )
   SynType'ForAll srcLoc tvs body -> do
     -- TODO correct tcLevel?
     let tvs' = (\varName -> TcTyVar{varName, varDetails = BoundTv{tcLevel = ?tcLevel}}) <$> tvs
     (body', body'ty) <- convertSynTy body
-    pure $ (SynType'ForAll srcLoc tvs' body', Type'ForAll tvs' body'ty)
+    pure $
+      ( SynType'ForAll srcLoc tvs' body'
+      , Type'ForAll tvs' body'ty
+      )
   SynType'Fun srcLoc arg res -> do
     (arg', arg'ty) <- convertSynTy arg
     (res', res'ty) <- convertSynTy res
-    pure $ (SynType'Fun srcLoc arg' res', Type'Fun arg'ty res'ty)
+    pure $
+      ( SynType'Fun srcLoc arg' res'
+      , Type'Fun arg'ty res'ty
+      )
   -- TODO handle more correctly?
-  SynType'Concrete srcLoc lit -> do
-    concreteType <- parseTypeConcrete lit.nameOcc.occNameFS
-    pure $ (SynType'Concrete srcLoc Concrete{concreteName = lit, concreteType}, Type'Concrete concreteType)
+  SynType'Concrete srcLoc concrete -> do
+    pure $
+      ( SynType'Concrete srcLoc concrete
+      , Type'Concrete concrete.concreteType
+      )
 
--- TODO should we provide typed thing during inference?
 mkTypedThingIfCheck :: SynTerm CompRn -> Expected a -> Maybe TypedThing
 mkTypedThingIfCheck thing = \case
   Infer _ -> Nothing
   Check _ -> Just (HsExprRnThing thing)
 
 -- | Similar to `tcCheckPolyExpr` in GHC.
--- 
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L100
 tcRho :: SynTerm CompRn -> Expected Rho -> TcM (SynTerm CompTc)
 -- Invariant: if the second argument is (Check rho),
@@ -81,6 +81,7 @@ tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
           SynLit'Num{} -> TypeConcrete'Int
           SynLit'Bool{} -> TypeConcrete'Bool
           SynLit'Str{} -> TypeConcrete'String
+          SynLit'Con conName -> TypeConcrete'Con conName
   instSigma (mkTypedThingIfCheck t exp_ty) (Type'Concrete ty) exp_ty
   pure $
     SynTerm'Lit

@@ -75,15 +75,16 @@ data SynType x
     SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
 
 -- | A literal.
--- 
+--
 -- Its constructors don't have extension points
 -- because 'SynLit' is wrapped into 'SynType'Concrete' that does.
--- 
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Lit.hs#L48
 data SynLit
   = SynLit'Num Integer
   | SynLit'Bool Bool
   | SynLit'Str FastString
+  | SynLit'Con FastString
 
 -- ==============================================
 -- [Type families for Term AST nodes]
@@ -210,11 +211,10 @@ type instance XSynType'Fun' x = SrcSpan
 type instance XSynType'Fun'Arg x = SynType x
 type instance XSynType'Fun'Res x = SynType x
 
--- TODO explain when to use annotations and when not to
+-- We record the type inside the 'Concrete',
+-- not in the annotation.
 type instance XSynType'Concrete' x = ()
-type instance XSynType'Concrete CompRn = Name
-type instance XSynType'Concrete CompTc = Concrete
-type instance XSynType'Concrete CompZn = Concrete
+type instance XSynType'Concrete x = Concrete
 
 -- ==============================================
 -- [Type family for variables]
@@ -685,6 +685,7 @@ data TypeConcrete
   = TypeConcrete'Int
   | TypeConcrete'Bool
   | TypeConcrete'String
+  | TypeConcrete'Con FastString
   deriving stock (Eq)
 
 -- ==============================================
@@ -821,6 +822,7 @@ instance Pretty' SynLit where
     SynLit'Num val -> pretty' val
     SynLit'Str val -> "\"" <> pretty' val <> "\""
     SynLit'Bool val -> pretty' val
+    SynLit'Con val -> pretty' val
 
 instance Pretty' RealSrcSpan where
   pretty' r =
@@ -873,11 +875,15 @@ instance Pretty' Name where
 -- [Instances for Types]
 -- ==============================================
 
+typeConcreteName :: TypeConcrete -> FastString
+typeConcreteName = \case
+  TypeConcrete'Int -> "Int"
+  TypeConcrete'Bool -> "Bool"
+  TypeConcrete'String -> "String"
+  TypeConcrete'Con name -> name
+
 instance Pretty' TypeConcrete where
-  pretty' = \case
-    TypeConcrete'Int -> "Int"
-    TypeConcrete'Bool -> "Bool"
-    TypeConcrete'String -> "String"
+  pretty' = pretty' . typeConcreteName
 
 instance Pretty' Concrete where
   pretty' c = pretty' c.concreteType

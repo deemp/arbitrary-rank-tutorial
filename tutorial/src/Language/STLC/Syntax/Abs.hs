@@ -33,11 +33,21 @@ type Var = Var' BNFC'Position
 data Var' a = Var a NameLowerCase
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
 
+type Con = Con' BNFC'Position
+data Con' a = Con a NameUpperCase
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
+type Bool = Bool' BNFC'Position
+data Bool' a = BoolTrue a | BoolFalse a
+  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable, C.Data, C.Typeable, C.Generic)
+
 type Exp = Exp' BNFC'Position
 data Exp' a
     = ExpVar a (Var' a)
     | ExpInt a Integer
     | ExpString a String
+    | ExpBool a (Bool' a)
+    | ExpCon a (Con' a)
     | ExpAbs a (Var' a) (Exp' a)
     | ExpAbsAnno a (Var' a) (Type' a) (Exp' a)
     | ExpApp a (Exp' a) (Exp' a)
@@ -100,11 +110,22 @@ instance HasPosition Var where
   hasPosition = \case
     Var p _ -> p
 
+instance HasPosition Con where
+  hasPosition = \case
+    Con p _ -> p
+
+instance HasPosition Bool where
+  hasPosition = \case
+    BoolTrue p -> p
+    BoolFalse p -> p
+
 instance HasPosition Exp where
   hasPosition = \case
     ExpVar p _ -> p
     ExpInt p _ -> p
     ExpString p _ -> p
+    ExpBool p _ -> p
+    ExpCon p _ -> p
     ExpAbs p _ _ -> p
     ExpAbsAnno p _ _ _ -> p
     ExpApp p _ _ -> p

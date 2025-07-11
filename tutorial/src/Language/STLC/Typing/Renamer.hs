@@ -261,6 +261,14 @@ instance ConvertAbsToBT Abs.TypeVariable where
         , nameLoc = (convertPositionToSrcSpan pos)
         }
 
+parseTypeConcrete :: NameFs -> TypeConcrete
+parseTypeConcrete name = do
+  if
+    | name == typeConcreteName TypeConcrete'Bool -> TypeConcrete'Bool
+    | name == typeConcreteName TypeConcrete'String -> TypeConcrete'String
+    | name == typeConcreteName TypeConcrete'Int -> TypeConcrete'Int
+    | otherwise -> TypeConcrete'Con name
+
 instance ConvertAbsToBT Abs.Type where
   type To Abs.Type = IO (SynType CompRn)
   convertAbsToBT = \case
@@ -268,18 +276,24 @@ instance ConvertAbsToBT Abs.Type where
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
       -- TODO should all mentions of a type have the same uniques?
       let ns = NameSpace'TypeConcrete
+          srcSpan = convertPositionToSrcSpan pos
+          concreteType = parseTypeConcrete name
       nameUnique <- getExistingOrNewUnique ns name
       pure $
         SynType'Concrete
           ()
-          Name
-            { nameOcc =
-                OccName
-                  { occNameSpace = ns
-                  , occNameFS = name
+          Concrete
+            { concreteType
+            , concreteName =
+                Name
+                  { nameOcc =
+                      OccName
+                        { occNameSpace = ns
+                        , occNameFS = name
+                        }
+                  , nameUnique
+                  , nameLoc = srcSpan
                   }
-            , nameUnique
-            , nameLoc = (convertPositionToSrcSpan pos)
             }
     Abs.TypeVariable pos (Abs.NameLowerCase name) -> do
       let ns = NameSpace'TypeVar

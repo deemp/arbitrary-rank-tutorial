@@ -10,6 +10,8 @@ module Language.STLC.Syntax.Par
   , myLexer
   , pProgram
   , pVar
+  , pCon
+  , pBool
   , pExp1
   , pExp2
   , pExp3
@@ -39,6 +41,8 @@ import qualified Data.Text
 
 %name pProgram_internal Program
 %name pVar_internal Var
+%name pCon_internal Con
+%name pBool_internal Bool
 %name pExp1_internal Exp1
 %name pExp2_internal Exp2
 %name pExp3_internal Exp3
@@ -66,10 +70,12 @@ import qualified Data.Text
   '.'             { PT _ _ (TS _ 4)            }
   '::'            { PT _ _ (TS _ 5)            }
   '='             { PT _ _ (TS _ 6)            }
-  '\\'            { PT _ _ (TS _ 7)            }
-  'forall'        { PT _ _ (TS _ 8)            }
-  'in'            { PT _ _ (TS _ 9)            }
-  'let'           { PT _ _ (TS _ 10)           }
+  'False'         { PT _ _ (TS _ 7)            }
+  'True'          { PT _ _ (TS _ 8)            }
+  '\\'            { PT _ _ (TS _ 9)            }
+  'forall'        { PT _ _ (TS _ 10)           }
+  'in'            { PT _ _ (TS _ 11)           }
+  'let'           { PT _ _ (TS _ 12)           }
   L_integ         { PT _ _ (TI _)              }
   L_quoted        { PT _ _ (TL _)              }
   L_NameLowerCase { PT _ _ (T_NameLowerCase _) }
@@ -97,6 +103,15 @@ Var :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Var) 
 Var
   : NameLowerCase { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.Var (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
+Con :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Con) }
+Con
+  : NameUpperCase { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.Con (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
+
+Bool :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Bool) }
+Bool
+  : 'True' { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)), Language.STLC.Syntax.Abs.BoolTrue (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)))) }
+  | 'False' { (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)), Language.STLC.Syntax.Abs.BoolFalse (Language.STLC.Syntax.Abs.spanBNFC'Position (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)) (uncurry Language.STLC.Syntax.Abs.BNFC'Position (tokenSpan $1)))) }
+
 Exp1 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp1
   : Var { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpVar (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
@@ -105,6 +120,8 @@ Exp2 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp)
 Exp2
   : Integer { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpInt (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
   | String { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpString (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
+  | Bool { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpBool (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
+  | Con { (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1), Language.STLC.Syntax.Abs.ExpCon (Language.STLC.Syntax.Abs.spanBNFC'Position (fst $1) (fst $1)) (snd $1)) }
 
 Exp3 :: { (Language.STLC.Syntax.Abs.BNFC'Position, Language.STLC.Syntax.Abs.Exp) }
 Exp3
@@ -207,6 +224,12 @@ pProgram = fmap snd . pProgram_internal
 
 pVar :: [Token] -> Err Language.STLC.Syntax.Abs.Var
 pVar = fmap snd . pVar_internal
+
+pCon :: [Token] -> Err Language.STLC.Syntax.Abs.Con
+pCon = fmap snd . pCon_internal
+
+pBool :: [Token] -> Err Language.STLC.Syntax.Abs.Bool
+pBool = fmap snd . pBool_internal
 
 pExp1 :: [Token] -> Err Language.STLC.Syntax.Abs.Exp
 pExp1 = fmap snd . pExp1_internal
