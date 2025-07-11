@@ -4,8 +4,10 @@ import Data.List (intersperse)
 import Language.Arralac.Typecheck.Jones2007.BasicTypes (Pretty' (..))
 import Prettyprinter (indent, vsep)
 
--- GHC uses a tree-like structure for the `Bag`.
--- A list will be enough in our case.
+-- | A list of something.
+--
+-- Similar to 'Bag' in GHC.
+-- However, GHC uses a tree-like structure for the `Bag`.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/Bag.hs#L48
 newtype Bag a = Bag {bag :: [a]}
   deriving newtype (Functor, Semigroup, Monoid)
