@@ -988,22 +988,26 @@ getTcTyVarDetails = \case
 instance Pretty' TcTyVar where
   pretty' var =
     prettyCompact var.varName
-      <> encloseSep
-        lbracket
-        rbracket
-        (comma <> space)
-        ( case ?prettyVerbosity of
-            PrettyVerbosity'Normal ->
-              [ pretty' var.varDetails.tcLevel
-              , pretty' $ getTcTyVarDetails var.varDetails
-              ]
-            PrettyVerbosity'Detailed ->
-              [ "ID" <+> pretty' var.varName.nameUnique
-              , pretty' var.varDetails.tcLevel
-              , pretty' $ getTcTyVarDetails var.varDetails
-              , pretty' var.varName.nameLoc
-              ]
-        )
+      <> case ?prettyVerbosity of
+        PrettyVerbosity'User -> mempty
+        _ ->
+          encloseSep
+            lbracket
+            rbracket
+            (comma <> space)
+            ( case ?prettyVerbosity of
+                PrettyVerbosity'Normal ->
+                  [ pretty' var.varDetails.tcLevel
+                  , pretty' $ getTcTyVarDetails var.varDetails
+                  ]
+                PrettyVerbosity'Detailed ->
+                  [ "ID" <+> pretty' var.varName.nameUnique
+                  , pretty' var.varDetails.tcLevel
+                  , pretty' $ getTcTyVarDetails var.varDetails
+                  , pretty' var.varName.nameLoc
+                  ]
+                PrettyVerbosity'User -> []
+            )
 
 instance Pretty' TcTermVar where
   pretty' var =
