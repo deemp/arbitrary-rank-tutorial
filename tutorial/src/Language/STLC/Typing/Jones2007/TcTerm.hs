@@ -273,31 +273,60 @@ annotateTc s = \case
   SynTerm'Ann TcAnno{annoSrcLoc} body ty ->
     SynTerm'Ann TcAnno{annoSrcLoc, annoType = Check s} body ty
 
+
+-- | Similar to simplifyInfer
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
 inferSigma e =
   do
+    -- TODO use in the
+    constraints <- newIORef emptyWantedConstraints
+    let ?constraints = constraints
     (e', exp_ty) <- inferRho e
-    env_tys <- getEnvTypes
-    env_tvs <- getMetaTyVars env_tys
-    res_tvs <- getMetaTyVars [exp_ty]
-    let forall_tvs = res_tvs \\ env_tvs
-    debug'
-      "inferSigma"
-      [ "env_tvs (pretty):"
-      , pretty env_tvs
-      , "res_tvs (pretty):"
-      , pretty res_tvs
-      , "forall_tvs (pretty):"
-      , pretty forall_tvs
-      , "exp_ty (pretty): "
-      , pretty exp_ty
-      , "exp_ty"
-      , pretty (show exp_ty)
-      ]
-    ty' <- quantify forall_tvs exp_ty
-    let e'' = annotateTc ty' e'
-    pure (e'', ty')
+    constraintsNew <- readIORef ?constraints
+    _ <- solveIteratively constraintsNew
+    pure (e', exp_ty)
 
+-- | Like 'pushLevelAndCaptureConstraints'
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L1909
+pushLevelAndCaptureConstraints ::
+  -- | skolems
+  [TcTyVar] ->
+  TcM a ->
+  TcM a
+pushLevelAndCaptureConstraints skol_tvs act = do
+  constraints <- newIORef emptyWantedConstraints
+
+  let tcLevelNew = ?tcLevel + fromInteger 1
+
+  expr' <- do
+    let ?constraints = constraints
+        ?tcLevel = tcLevelNew
+     in act
+
+  constraintsSkol' <- readIORef constraints
+
+  let implicationCt =
+        Implic
+          { ic_tclvl = tcLevelNew
+          , ic_skols = skol_tvs
+          , ic_env = Nothing
+          , ic_wanted = constraintsSkol'
+          , ic_status = IC_Unsolved
+          }
+
+  constraintsLocal <- readIORef ?constraints
+
+  let constraintsLocal' =
+        constraintsLocal
+          { wc_impl = unitBag implicationCt <> constraintsLocal.wc_impl
+          }
+
+  writeIORef ?constraints constraintsLocal'
+
+  pure expr'
+
+-- | Similar to `tcCheckPolyLExpr`
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L115
 checkSigma :: SynTerm CompRn -> Sigma -> TcM (SynTerm CompTc)
 checkSigma expr sigma =
   do
@@ -311,29 +340,35 @@ checkSigma expr sigma =
       [ ("skol_tvs", pretty' skol_tvs)
       , ("rho", pretty' rho)
       ]
---      Subsumption checking            --
-------------------------------------------
+
+    -- Skolem escape will be checked in the solver
+    -- using levels of type variables.
+
+    -- > implication constraints check for the skolem escape.
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Bind.hs#L1774
+
+    -- Skolemisation builds an implication constraint.
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L372
+    --
+    -- Also see 'buildImplicationFor' in GHC
+    --
+
+    -- Now:
+    -- - emit an implication constraint with skolems
+    -- - collect other constraints
+    -- - put them into that implication constraint as wanteds
+
+    pushLevelAndCaptureConstraints skol_tvs (checkRho expr rho)
+
+-- ==============================================
+-- Subsumption checking
+-- ==============================================
 
 subsCheck :: Maybe TypedThing -> Sigma -> Sigma -> TcM ()
--- (subsCheck args off exp) checks that
---     'off' is at least as polymorphic as 'args -> exp'
-
 -- Rule DEEP-SKOL
 subsCheck thing sigma1 sigma2 = do
   (skol_tvs, rho2) <- skolemise sigma2
-  subsCheckRho thing sigma1 rho2
-  esc_tvs <- getFreeTyVars [sigma1, sigma2]
-  -- TODO levels?
-  let bad_tvs = filter (`elem` esc_tvs) skol_tvs
-  check
-    (null bad_tvs)
-    ( vcat
-        [ "Subsumption check failed:"
-        , nest 2 (pretty sigma1)
-        , "is not as polymorphic as"
-        , nest 2 (pretty sigma2)
-        ]
-    )
+  pushLevelAndCaptureConstraints skol_tvs (subsCheckRho thing sigma1 rho2)
 
 subsCheckRho :: Maybe TypedThing -> Sigma -> Rho -> TcM ()
 -- Invariant: the second argument is in weak-prenex form
