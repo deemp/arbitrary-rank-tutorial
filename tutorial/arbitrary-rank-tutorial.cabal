@@ -41,36 +41,90 @@ flag nix
 
 library
   exposed-modules:
-      Language.STLC.Common
-      Language.STLC.LanguageServer.Main
-      Language.STLC.Syntax.Abs
-      Language.STLC.Syntax.Lex
-      Language.STLC.Syntax.Par
-      Language.STLC.Syntax.Print
-      Language.STLC.Typing.Jones2007.Bag
-      Language.STLC.Typing.Jones2007.BasicTypes
-      Language.STLC.Typing.Jones2007.ConstraintTypes
-      Language.STLC.Typing.Jones2007.Main
-      Language.STLC.Typing.Jones2007.Pretty
-      Language.STLC.Typing.Jones2007.Solver
-      Language.STLC.Typing.Jones2007.TcMonad
-      Language.STLC.Typing.Jones2007.TcTerm
+      BluefinImplicit
+      Language.Arralac.Common
+      Language.Arralac.Interpreter.FreeFoil
+      Language.Arralac.Interpreter.Main
+      Language.Arralac.LanguageServer.IntervalMap
+      Language.Arralac.LanguageServer.Main
+      Language.Arralac.Syntax.Abs
+      Language.Arralac.Syntax.Lex
+      Language.Arralac.Syntax.Par
+      Language.Arralac.Typing.Jones2007.Bag
+      Language.Arralac.Typing.Jones2007.BasicTypes
+      Language.Arralac.Typing.Jones2007.Constraints
+      Language.Arralac.Typing.Jones2007.Main
+      Language.Arralac.Typing.Jones2007.Pretty
+      Language.Arralac.Typing.Jones2007.Solver
+      Language.Arralac.Typing.Jones2007.TcMonad
+      Language.Arralac.Typing.Jones2007.TcTerm
+      Language.Arralac.Typing.Renamer
+      Language.Arralac.Typing.Run
+      Language.Arralac.Typing.Zonker
   other-modules:
       Paths_arbitrary_rank_tutorial
   hs-source-dirs:
       src
   default-extensions:
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DuplicateRecordFields
+      ExplicitNamespaces
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImplicitParams
       ImportQualifiedPost
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      MonoLocalBinds
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedLabels
+      OverloadedRecordDot
+      OverloadedStrings
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      RankNTypes
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
-      aeson
+      IntervalMap
+    , aeson
     , array >=0.5.5.0
     , base >=4.7 && <5
     , bifunctors
+    , bluefin
+    , bluefin-internal
     , co-log-core
     , containers
+    , deepseq
     , free-foil
+    , generic-lens
     , kind-generics
+    , kind-generics-th
     , lens
     , lsp
     , lsp-types
@@ -78,6 +132,7 @@ library
     , prettyprinter
     , stm
     , text
+    , unliftio
     , validation
   default-language: Haskell2010
   if !flag(nix)
@@ -94,18 +149,66 @@ executable arralac
   hs-source-dirs:
       app
   default-extensions:
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DuplicateRecordFields
+      ExplicitNamespaces
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImplicitParams
       ImportQualifiedPost
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      MonoLocalBinds
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedLabels
+      OverloadedRecordDot
+      OverloadedStrings
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      RankNTypes
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      IntervalMap
+    , aeson
     , arbitrary-rank-tutorial
     , array >=0.5.5.0
     , base >=4.7 && <5
     , bifunctors
+    , bluefin
+    , bluefin-internal
     , co-log-core
     , containers
+    , deepseq
     , free-foil
+    , generic-lens
     , kind-generics
+    , kind-generics-th
     , lens
     , lsp
     , lsp-types
@@ -113,6 +216,7 @@ executable arralac
     , prettyprinter
     , stm
     , text
+    , unliftio
     , validation
     , with-utf8
   default-language: Haskell2010
