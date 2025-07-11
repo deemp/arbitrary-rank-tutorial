@@ -108,56 +108,11 @@ withNamesInScope ns names act = do
   runWithScope ns scope act
 
 convertProgram :: Abs.Program -> RnM (BT.SynTerm BT.CompRn)
-convertProgram (Abs.Program _ program) = convertAbsToBT program
+convertProgram (Abs.Program _ program) = convertRename program
 
-parseInputText :: T.Text -> RnM (BT.SynTerm BT.CompRn)
-parseInputText input = do
-  let
-    parsed = parseWith pProgram input
-  case parsed of
-    -- TODO parse error message
-    Left err -> do
-      let lexerError = getLineAndColumnFromError err
-      dieRn $ case lexerError of
-        Just (lineNumber, columnNumber) ->
-          RnError'LexerError
-            { lineNumber = lineNumber - 1
-            , columnNumber = columnNumber - 1
-            , currentFilePath = ?currentFilePath
-            }
-        Nothing -> RnError'Unknown{message = err}
-    Right prog -> convertProgram prog
-
-parseInput :: Either String T.Text -> RnM (BT.SynTerm BT.CompRn)
-parseInput input = do
-  input' <- either T.readFile pure input
-  parseInputText input'
-
-parseFile :: String -> RnM (BT.SynTerm BT.CompRn)
-parseFile filename = parseInput (Left filename)
-
-parseString :: T.Text -> RnM (BT.SynTerm BT.CompRn)
-parseString input = parseInput (Right input)
-
--- TODO use different annotations in different phases
--- TODO throw exceptions when encounter conversion errors
--- e.g. forall without variables, shadowing
-
--- TODO use megaparsec
-getLineAndColumnFromError :: String -> Maybe (Int, Int)
-getLineAndColumnFromError s =
-  s
-    & filter (/= ',')
-    & words
-    & filter (isDigit . head)
-    & \x -> case x of
-      [lineNumber, columnNumber] ->
-        pure (read lineNumber, read columnNumber)
-      _ -> Nothing
-
-class ConvertAbsToBT a where
-  type To a
-  convertAbsToBT :: (IRnConstraints) => a -> (To a)
+class ConvertRename a where
+  type ConvertRenameTo a
+  convertRename :: (IRnConstraints) => a -> (ConvertRenameTo a)
 
 convertPositionToSrcSpan :: (ICurrentFilePath) => Abs.BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
@@ -173,11 +128,11 @@ convertPositionToSrcSpan = \case
   Nothing ->
     UnhelpfulSpan UnhelpfulNoLocationInfo
 
-instance ConvertAbsToBT Abs.Exp where
-  type To Abs.Exp = IO (SynTerm CompRn)
-  convertAbsToBT = \case
+instance ConvertRename Abs.Exp where
+  type ConvertRenameTo Abs.Exp = IO (SynTerm CompRn)
+  convertRename = \case
     Abs.ExpVar _pos var -> do
-      var' <- convertAbsToBT var False
+      var' <- convertRename var False
       pure $ SynTerm'Var () var'
     Abs.ExpInt pos val ->
       pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Num val)
@@ -191,33 +146,33 @@ instance ConvertAbsToBT Abs.Exp where
     Abs.ExpCon _ (Abs.Con pos (Abs.NameUpperCase name)) ->
       pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Con name)
     Abs.ExpApp pos term1 term2 -> do
-      term1' <- convertAbsToBT term1
-      term2' <- convertAbsToBT term2
+      term1' <- convertRename term1
+      term2' <- convertRename term2
       pure $ SynTerm'App (convertPositionToSrcSpan pos) term1' term2'
     Abs.ExpAbs pos var term -> do
-      var' <- convertAbsToBT var True
-      term' <- withNameInScope NameSpace'TermVar var' (convertAbsToBT term)
+      var' <- convertRename var True
+      term' <- withNameInScope NameSpace'TermVar var' (convertRename term)
       pure $ SynTerm'Lam (convertPositionToSrcSpan pos) var' term'
     Abs.ExpAbsAnno pos var ty term -> do
-      var' <- convertAbsToBT var True
-      ty' <- convertAbsToBT ty
-      term' <- withNameInScope NameSpace'TermVar var' (convertAbsToBT term)
+      var' <- convertRename var True
+      ty' <- convertRename ty
+      term' <- withNameInScope NameSpace'TermVar var' (convertRename term)
       pure $ SynTerm'ALam (convertPositionToSrcSpan pos) var' ty' term'
     Abs.ExpLet pos var term1 term2 -> do
-      var' <- convertAbsToBT var True
+      var' <- convertRename var True
       -- TODO should the let-expression be recursive
       -- and the var be brought into scope of the assigned term?
-      term1' <- convertAbsToBT term1
-      term2' <- withNameInScope NameSpace'TermVar var' (convertAbsToBT term2)
+      term1' <- convertRename term1
+      term2' <- withNameInScope NameSpace'TermVar var' (convertRename term2)
       pure $ SynTerm'Let (convertPositionToSrcSpan pos) var' term1' term2'
     Abs.ExpAnno pos term ty -> do
-      term' <- convertAbsToBT term
-      ty' <- convertAbsToBT ty
+      term' <- convertRename term
+      ty' <- convertRename ty
       pure $ SynTerm'Ann (convertPositionToSrcSpan pos) term' ty'
 
-instance ConvertAbsToBT Abs.Var where
-  type To Abs.Var = Bool -> IO Name
-  convertAbsToBT (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
+instance ConvertRename Abs.Var where
+  type ConvertRenameTo Abs.Var = Bool -> IO Name
+  convertRename (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
     let ns = NameSpace'TermVar
     nameUnique <-
       if needUnique
@@ -234,9 +189,9 @@ instance ConvertAbsToBT Abs.Var where
         , nameLoc = (convertPositionToSrcSpan pos)
         }
 
-instance ConvertAbsToBT Abs.TypeVariable where
-  type To Abs.TypeVariable = IO Name
-  convertAbsToBT (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
+instance ConvertRename Abs.TypeVariable where
+  type ConvertRenameTo Abs.TypeVariable = IO Name
+  convertRename (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
     -- Each type variable in a `forall`
     -- must have a globally unique identifier.
     nameUnique <- newUnique
@@ -259,9 +214,9 @@ parseTypeConcrete name = do
     | name == typeConcreteName TypeConcrete'Int -> TypeConcrete'Int
     | otherwise -> TypeConcrete'Con name
 
-instance ConvertAbsToBT Abs.Type where
-  type To Abs.Type = IO (SynType CompRn)
-  convertAbsToBT = \case
+instance ConvertRename Abs.Type where
+  type ConvertRenameTo Abs.Type = IO (SynType CompRn)
+  convertRename = \case
     -- TODO not a variable
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
       -- TODO should all mentions of a type have the same uniques?
@@ -308,13 +263,18 @@ instance ConvertAbsToBT Abs.Type where
           RnError'ForallBindsNoTvs
             { srcSpan = convertPositionToSrcSpan pos
             }
-      tys' <- forM tys convertAbsToBT
-      ty' <- withNamesInScope NameSpace'TypeVar tys' (convertAbsToBT ty)
+      tys' <- forM tys convertRename
+      ty' <- withNamesInScope NameSpace'TypeVar tys' (convertRename ty)
       pure $ SynType'ForAll (convertPositionToSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 ->
       SynType'Fun (convertPositionToSrcSpan pos)
-        <$> (convertAbsToBT ty1)
-        <*> (convertAbsToBT ty2)
+        <$> (convertRename ty1)
+        <*> (convertRename ty2)
+
+instance ConvertRename Abs.Program where
+  type ConvertRenameTo Abs.Program = IO (SynTerm CompRn)
+  convertRename (Abs.Program _ program) =
+    convertRename program
 
 -- ==============================================
 -- Renamer errors
@@ -323,37 +283,21 @@ instance ConvertAbsToBT Abs.Type where
 -- | A renamer exception.
 data RnError
   = -- TODO make a parser error
-    RnError'LexerError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
-  | RnError'Unknown {message :: String}
-  | RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
+    RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
   | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
 
--- | A renamer exception that can capture the 'callStack'
--- at the 'throw' side.
+-- | A renamer exception that can capture the 'callStack' at the 'throw' site.
 --
 -- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
 data RnErrorWithCallStack where
   RnErrorWithCallStack :: (HasCallStack) => RnError -> RnErrorWithCallStack
 
--- | Fail unconditionally with a renamer exception.
+-- | Fail unconditionally with a 'RnErrorWithCallStack'.
 dieRn :: (HasCallStack) => RnError -> IO a
 dieRn rnError = throw (RnErrorWithCallStack rnError)
 
 instance Pretty' RnError where
   pretty' = \case
-    RnError'LexerError{currentFilePath, lineNumber, columnNumber} ->
-      vsep'
-        [ "Lexer error at:"
-        , indent 2 $
-            (pretty' currentFilePath <> ":")
-              <> (pretty' (lineNumber + 1) <> ":")
-              <> (pretty' (columnNumber + 1))
-        ]
-    RnError'Unknown{message} ->
-      vsep'
-        [ "Unknown error:"
-        , prettyIndent message
-        ]
     RnError'ForallBindsNoTvs{srcSpan} ->
       vsep'
         [ "`forall' binds no type variables at:"
