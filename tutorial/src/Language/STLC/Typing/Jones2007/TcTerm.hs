@@ -166,6 +166,7 @@ tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
       var_ty_syn
       body'
 tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
+  -- TODO call inferSigma here
   (rhs', var_ty) <- inferRho rhs
   body' <- extendVarEnv varName var_ty (tcRho body exp_ty)
   pure $
@@ -191,41 +192,19 @@ tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
       body'
       ann_ty_syn
 
--- ==============================================
--- inferSigma and checkSigma
--- ==============================================
-
-annotateTc :: Sigma -> SynTerm CompTc -> SynTerm CompTc
-annotateTc s = \case
-  SynTerm'Var anno v ->
-    SynTerm'Var anno v
-  SynTerm'Lit anno l ->
-    SynTerm'Lit anno l
-  SynTerm'App TcAnno{annoSrcLoc} arg res ->
-    SynTerm'App TcAnno{annoSrcLoc, annoType = Check s} arg res
-  SynTerm'Lam TcAnno{annoSrcLoc} var body ->
-    SynTerm'Lam TcAnno{annoSrcLoc, annoType = Check s} var body
-  SynTerm'ALam TcAnno{annoSrcLoc} var ty body ->
-    SynTerm'ALam TcAnno{annoSrcLoc, annoType = Check s} var ty body
-  SynTerm'Let TcAnno{annoSrcLoc} var val term ->
-    SynTerm'Let TcAnno{annoSrcLoc, annoType = Check s} var val term
-  SynTerm'Ann TcAnno{annoSrcLoc} body ty ->
-    SynTerm'Ann TcAnno{annoSrcLoc, annoType = Check s} body ty
-
-
--- | Similar to simplifyInfer
+-- | Similar to 'tcInferSigma' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/App.hs#L174
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
-inferSigma e =
-  do
-    -- TODO use in the
-    constraints <- newIORef emptyWantedConstraints
-    let ?constraints = constraints
-    (e', exp_ty) <- inferRho e
-    constraintsNew <- readIORef ?constraints
-    _ <- solveIteratively constraintsNew
-    pure (e', exp_ty)
+inferSigma = error "Not implemented!"
 
--- | Like 'pushLevelAndCaptureConstraints'
+-- ==============================================
+-- Capture constraints
+-- ==============================================
+
+-- | Capture constraints at a deeper level.
+--
+-- Similar to 'pushLevelAndCaptureConstraints' in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L1909
 pushLevelAndCaptureConstraints ::
   -- | skolems
@@ -263,6 +242,10 @@ pushLevelAndCaptureConstraints skol_tvs act = do
   writeIORef ?constraints constraintsLocal'
 
   pure expr'
+
+-- ==============================================
+-- checkSigma
+-- ==============================================
 
 -- | Similar to `tcCheckPolyLExpr`
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L115
@@ -304,13 +287,13 @@ checkSigma expr sigma =
 -- ==============================================
 
 subsCheck :: Maybe TypedThing -> Sigma -> Sigma -> TcM ()
--- Rule DEEP-SKOL
 subsCheck thing sigma1 sigma2 = do
+  -- Rule DEEP-SKOL from the paper.
   (skol_tvs, rho2) <- skolemise sigma2
   pushLevelAndCaptureConstraints skol_tvs (subsCheckRho thing sigma1 rho2)
 
 subsCheckRho :: Maybe TypedThing -> Sigma -> Rho -> TcM ()
--- Invariant: the second argument is in weak-prenex form
+-- Invariant: the third argument is in weak-prenex form
 
 -- Rule SPEC
 subsCheckRho thing sigma1@(Type'ForAll _ _) rho2 = do
