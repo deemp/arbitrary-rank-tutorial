@@ -11,7 +11,7 @@ module Language.STLC.LanguageServer.IntervalMap where
 import Control.Lens (traversed, (%~), (&), _1)
 import Data.IntervalMap.Generic.Strict qualified as IM
 import Language.LSP.Protocol.Types (Position (..), Range (..))
-import Language.STLC.Typing.Jones2007.BasicTypes (AnnoZn (..), CompZn, Concrete (..), FastString, IPrettyVerbosity, Name (..), Pretty' (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnTermVar (..), ZnTyVar (..), ZnType)
+import Language.STLC.Typing.Jones2007.BasicTypes (CompZn, Concrete (..), FastString, IPrettyVerbosity, Name (..), Pretty' (..), RealSrcSpan (..), SrcSpan (..), SynTerm (..), SynType (..), ZnAnno (..), ZnTermVar (..), ZnTyVar (..), ZnType)
 import Prettyprinter (Doc)
 
 newtype IMPosition

@@ -9,7 +9,8 @@ import Data.Generics.Product ()
 import Data.IORef (readIORef)
 import GHC.Stack (HasCallStack)
 import Language.STLC.Typing.Jones2007.BasicTypes
-import Language.STLC.Typing.Jones2007.TcMonad (debug)
+import Language.STLC.Typing.Jones2007.TcMonad (debug')
+
 
 type ZnM a = (HasCallStack, IDebug, IPrettyVerbosity) => IO a
 
@@ -78,11 +79,11 @@ instance Zonk TcType where
     Type'Concrete ty -> do
       pure $ Type'Concrete ty
 
-instance Zonk AnnoTc where
-  type To AnnoTc = AnnoZn
-  zonk AnnoTc{annoSrcLoc, annoType} = do
+instance Zonk TcAnno where
+  type To TcAnno = ZnAnno
+  zonk TcAnno{annoSrcLoc, annoType} = do
     annoType' <- zonk annoType
-    pure AnnoZn{annoSrcLoc, annoType = annoType'}
+    pure ZnAnno{annoSrcLoc, annoType = annoType'}
 
 instance Zonk TcTermVar where
   type To TcTermVar = ZnTermVar

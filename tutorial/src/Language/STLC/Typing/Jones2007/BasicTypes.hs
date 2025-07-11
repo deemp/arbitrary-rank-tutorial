@@ -4,11 +4,9 @@ module Language.STLC.Typing.Jones2007.BasicTypes where
 -- Everything defined in here is exported
 
 import Data.Data (Data (..))
-import Data.Function ((&))
 import Data.IORef
-import Data.Map (Map)
-import Data.String (IsString)
 import Data.Text (Text)
+import GHC.Generics (Generic)
 import Language.LSP.Protocol.Types (UInt)
 import Language.STLC.Common ()
 import Prettyprinter
@@ -168,6 +166,16 @@ type family IdCompP pass where
 -- ==============================================
 -- Annotations in the AST
 -- ==============================================
+
+data TcAnno = TcAnno
+  { annoSrcLoc :: SrcSpan
+  , annoType :: Expected TcType
+  }
+
+data ZnAnno = ZnAnno
+  { annoSrcLoc :: SrcSpan
+  , annoType :: ZnType
+  }
 
 -- Note [Ping-pong in TTG]
 -- ~~~~~~~~~~~~~~~~~~~~~~

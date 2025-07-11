@@ -1,21 +1,16 @@
 module Language.STLC.Typing.Jones2007.TcMonad where
-  
 
 import Control.Exception (Exception, throw)
 import Control.Monad (when)
-import Data.Containers.ListUtils (nubOrd)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.List (nub, partition, (\\))
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
-import Data.Text (pack)
 import Data.Traversable (forM)
-import GHC.Records (HasField)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Language.STLC.Syntax.Abs qualified as Abs
 import Language.STLC.Typing.Jones2007.Bag (Bag (..))
 import Language.STLC.Typing.Jones2007.BasicTypes
+import Language.STLC.Typing.Jones2007.Constraints (Ct (..), CtEvidence (..), CtLoc (..), CtOrigin (..), EqCt (..), TypedThing (..), WantedConstraints (..), WantedCtEvidence (..))
 import Language.STLC.Typing.Renamer
 import Prettyprinter
 import Prettyprinter.Util (putDocW)

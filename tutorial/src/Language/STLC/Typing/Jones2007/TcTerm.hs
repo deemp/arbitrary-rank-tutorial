@@ -1,17 +1,20 @@
 module Language.STLC.Typing.Jones2007.TcTerm where
 
-import Control.Exception.Base (catch)
+import Data.Foldable (Foldable (..))
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map qualified as Map
 import Data.Text qualified as T
-import GHC.IORef (newIORef)
-import Language.STLC.Typing.Jones2007.Bag (emptyBag, unitBag)
+import GHC.Stack (HasCallStack)
+import Language.STLC.Typing.Jones2007.Bag (unitBag)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
-import Language.STLC.Typing.Jones2007.Solver (Solve (..))
+import Language.STLC.Typing.Jones2007.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
+import Language.STLC.Typing.Jones2007.Solver (Solve (..), toListWc)
 import Language.STLC.Typing.Jones2007.TcMonad
 import Language.STLC.Typing.Renamer (parseInputText)
 import Language.STLC.Typing.Zonker (Zonk (..))
+import Prettyprinter (line, (<+>))
+import UnliftIO.Exception (finally)
 
 -- ==============================================
 --      The top-level wrapper
@@ -143,7 +146,7 @@ tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
   instSigma (mkTypedThingIfCheck t exp_ty) (Type'Concrete ty) exp_ty
   pure $
     SynTerm'Lit
-      AnnoTc{annoSrcLoc, annoType = exp_ty}
+      TcAnno{annoSrcLoc, annoType = exp_ty}
       lit
 tcRho t@(SynTerm'Var _ varName) exp_ty = do
   v_sigma <- lookupVar varName
@@ -174,7 +177,7 @@ tcRho t@(SynTerm'App annoSrcLoc fun arg) exp_ty = do
   instSigma (mkTypedThingIfCheck t exp_ty) res_ty exp_ty
   pure $
     SynTerm'App
-      AnnoTc{annoSrcLoc, annoType = exp_ty}
+      TcAnno{annoSrcLoc, annoType = exp_ty}
       fun'
       arg'
 tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
@@ -188,7 +191,7 @@ tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
   body' <- extendVarEnv varName var_ty (checkRho body body_ty)
   pure $
     SynTerm'Lam
-      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcAnno{annoSrcLoc, annoType = modeTy}
       TcTermVar{varName, varType = Check var_ty}
       body'
 tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
@@ -197,7 +200,7 @@ tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
   writeIORef ref (Type'Fun var_ty body_ty)
   pure $
     SynTerm'Lam
-      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcAnno{annoSrcLoc, annoType = modeTy}
       TcTermVar{varName, varType = Check var_ty}
       body'
 tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
@@ -208,7 +211,7 @@ tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
   body' <- extendVarEnv varName var_ty' (checkRho body body_ty)
   pure $
     SynTerm'ALam
-      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcAnno{annoSrcLoc, annoType = modeTy}
       TcTermVar{varName, varType = Check var_ty'}
       var_ty_syn
       body'
@@ -219,7 +222,7 @@ tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
   -- TODO is it correct to use Check here?
   pure $
     SynTerm'ALam
-      AnnoTc{annoSrcLoc, annoType = modeTy}
+      TcAnno{annoSrcLoc, annoType = modeTy}
       TcTermVar{varName, varType = Check var_ty'}
       var_ty_syn
       body'
@@ -228,7 +231,7 @@ tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
   body' <- extendVarEnv varName var_ty (tcRho body exp_ty)
   pure $
     SynTerm'Let
-      AnnoTc{annoType = exp_ty, annoSrcLoc}
+      TcAnno{annoType = exp_ty, annoSrcLoc}
       -- TODO is it correct to use Check here?
       TcTermVar{varName, varType = Check var_ty}
       rhs'
@@ -245,7 +248,7 @@ tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
   instSigma (mkTypedThingIfCheck t exp_ty) ann_ty' exp_ty
   pure $
     SynTerm'Ann
-      AnnoTc{annoSrcLoc, annoType = exp_ty}
+      TcAnno{annoSrcLoc, annoType = exp_ty}
       body'
       ann_ty_syn
 
@@ -259,16 +262,16 @@ annotateTc s = \case
     SynTerm'Var anno v
   SynTerm'Lit anno l ->
     SynTerm'Lit anno l
-  SynTerm'App AnnoTc{annoSrcLoc} arg res ->
-    SynTerm'App AnnoTc{annoSrcLoc, annoType = Check s} arg res
-  SynTerm'Lam AnnoTc{annoSrcLoc} var body ->
-    SynTerm'Lam AnnoTc{annoSrcLoc, annoType = Check s} var body
-  SynTerm'ALam AnnoTc{annoSrcLoc} var ty body ->
-    SynTerm'ALam AnnoTc{annoSrcLoc, annoType = Check s} var ty body
-  SynTerm'Let AnnoTc{annoSrcLoc} var val term ->
-    SynTerm'Let AnnoTc{annoSrcLoc, annoType = Check s} var val term
-  SynTerm'Ann AnnoTc{annoSrcLoc} body ty ->
-    SynTerm'Ann AnnoTc{annoSrcLoc, annoType = Check s} body ty
+  SynTerm'App TcAnno{annoSrcLoc} arg res ->
+    SynTerm'App TcAnno{annoSrcLoc, annoType = Check s} arg res
+  SynTerm'Lam TcAnno{annoSrcLoc} var body ->
+    SynTerm'Lam TcAnno{annoSrcLoc, annoType = Check s} var body
+  SynTerm'ALam TcAnno{annoSrcLoc} var ty body ->
+    SynTerm'ALam TcAnno{annoSrcLoc, annoType = Check s} var ty body
+  SynTerm'Let TcAnno{annoSrcLoc} var val term ->
+    SynTerm'Let TcAnno{annoSrcLoc, annoType = Check s} var val term
+  SynTerm'Ann TcAnno{annoSrcLoc} body ty ->
+    SynTerm'Ann TcAnno{annoSrcLoc, annoType = Check s} body ty
 
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
 inferSigma e =

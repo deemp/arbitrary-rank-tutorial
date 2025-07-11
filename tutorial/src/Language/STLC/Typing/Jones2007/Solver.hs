@@ -11,8 +11,7 @@ import GHC.Stack (HasCallStack, callStack)
 import Language.STLC.Typing.Jones2007.Bag
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.Constraints
-import Language.STLC.Typing.Jones2007.TcMonad (IConstraints, ITcErrorPropagated, TcError (..), TcM, badType, debug, die, readTcRef, writeTcRef)
-import Prettyprinter (indent)
+import Language.STLC.Typing.Jones2007.TcMonad (IConstraints, ITcErrorPropagated, TcError (..), TcM, badType, debug', die)
 
 data SolverError
   = SolverError'CannotUnifySkolemVar {ct :: Ct}
