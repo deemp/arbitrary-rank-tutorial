@@ -10,7 +10,7 @@
 
 -- | The abstract syntax of language Syntax.
 
-module Language.STLC.Syntax.Abs where
+module Language.Arralac.Syntax.Abs where
 
 import Prelude (Integer, String)
 import qualified Prelude as C

@@ -7,7 +7,7 @@
 
 {-# LANGUAGE PatternSynonyms #-}
 
-module Language.STLC.Syntax.Lex where
+module Language.Arralac.Syntax.Lex where
 
 import Prelude
 
