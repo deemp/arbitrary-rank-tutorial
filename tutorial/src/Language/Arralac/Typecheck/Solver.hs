@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 module Language.Arralac.Typecheck.Solver where
 
 import Control.Exception (Exception, throw)
@@ -7,10 +8,13 @@ import Data.IORef (readIORef, writeIORef)
 import Data.Set qualified as Set
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
+import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typecheck.Bag
-import Language.Arralac.Typecheck.BasicTypes
 import Language.Arralac.Typecheck.Constraints
 import Language.Arralac.Typecheck.TcMonad (badType, debug')
+import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types
 import Prettyprinter ((<+>))
 
 -- Constraint solver.

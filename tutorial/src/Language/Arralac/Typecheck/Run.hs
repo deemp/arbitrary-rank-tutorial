@@ -3,15 +3,19 @@ module Language.Arralac.Typecheck.Run where
 import Data.IORef (newIORef, readIORef)
 import Data.Map qualified as Map
 import Data.Text qualified as T
-import GHC.Stack (HasCallStack)
-import Language.Arralac.Parser (parseInputText)
-import Language.Arralac.Typecheck.BasicTypes
-import Language.Arralac.Typecheck.BasicTypes qualified as BT
+import GHC.Stack
+import Language.Arralac.Parser
+import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Typecheck.Constraints (emptyWantedConstraints)
+import Language.Arralac.Typecheck.Pass
+import Language.Arralac.Typecheck.Renamer (ConvertRename (convertRename))
 import Language.Arralac.Typecheck.Solver (solveIteratively)
 import Language.Arralac.Typecheck.TcMonad
 import Language.Arralac.Typecheck.TcTerm (inferRho)
 import Language.Arralac.Typecheck.Zonker (Zonk (..))
+import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types
 import UnliftIO.Exception (finally)
 
 -- ==============================================
@@ -41,19 +45,19 @@ typecheck term =
         [ ("constraints", pretty' constraints)
         ]
 
-runTypechecker :: (IDebug, IUniqueSupply, IPrettyVerbosity, ISolverIterations) => SynTerm BT.CompRn -> IO (SynTerm BT.CompZn)
+runTypechecker :: (HasCallStack, IDebug, IUniqueSupply, IPrettyVerbosity, ISolverIterations) => SynTerm CompRn -> IO (SynTerm CompZn)
 runTypechecker program = do
   constraints <- newIORef emptyWantedConstraints
   tcError <- newIORef Nothing
   let
-    ?tcLevel = BT.TcLevel 0
+    ?tcLevel = TcLevel 0
     ?tcTyVarEnv = emptyTcTyVarEnv
     ?constraints = constraints
     ?tcErrorPropagated = tcError
   typecheck program
 
 -- TODO use filepath from implicit params
-runTypechecker' :: (HasCallStack, IDebug, IPrettyVerbosity, ISolverIterations) => BT.FastString -> T.Text -> IO (SynTerm CompZn)
+runTypechecker' :: (HasCallStack, IDebug, IPrettyVerbosity, ISolverIterations) => FastString -> T.Text -> IO (SynTerm CompZn)
 runTypechecker' filePath content = do
   uniqueSupply <- newIORef 0
   let ?uniqueSupply = uniqueSupply
@@ -64,5 +68,5 @@ runTypechecker' filePath content = do
       ?tyVarScope = Map.empty
       -- TODO put existing types here
       ?tyConcreteScope = Map.empty
-    parseInputText content
+    parseText content >>= convertRename
   runTypechecker program

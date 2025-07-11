@@ -1,10 +1,15 @@
 module Language.Arralac.Typecheck.TcTerm where
 
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.TTG.SynTerm
+import Language.Arralac.Syntax.TTG.SynType
+import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typecheck.Bag (unitBag)
-import Language.Arralac.Typecheck.BasicTypes
 import Language.Arralac.Typecheck.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
+import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Typecheck.TcMonad
+import Language.Arralac.Utils.Pretty
 import Prettyprinter (line)
 
 checkRho :: SynTerm CompRn -> Rho -> TcM (SynTerm CompTc)

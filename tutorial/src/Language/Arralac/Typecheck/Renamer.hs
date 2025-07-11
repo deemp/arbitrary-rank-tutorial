@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 module Language.Arralac.Typecheck.Renamer where
 
 import Control.Exception (Exception, throw)
@@ -9,8 +10,16 @@ import Data.Text qualified as T
 import GHC.Base (when)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
-import Language.Arralac.Parser.Internal.Abs qualified as Abs
-import Language.Arralac.Typecheck.BasicTypes as BT
+import Language.Arralac.Parser.Abs qualified as Abs
+import Language.Arralac.Syntax.Local.Name
+import Language.Arralac.Syntax.Local.SynTerm ()
+import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.TTG.SynTerm
+import Language.Arralac.Syntax.TTG.SynType
+import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Typecheck.Pass
+import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types
 
 -- | A name.
 type NameFs = FastString
@@ -39,7 +48,15 @@ type ITyConcreteScope = (?tyConcreteScope :: Scope)
 -- TODO add built-in types to the scope
 -- TODO Forbid shadowing?
 
-type IRnConstraints = (HasCallStack, BT.IUniqueSupply, ITermVarScope, ITyVarScope, ITyConcreteScope, BT.ICurrentFilePath, BT.IDebug)
+type IRnConstraints =
+  ( HasCallStack
+  , IUniqueSupply
+  , ITermVarScope
+  , ITyVarScope
+  , ITyConcreteScope
+  , ICurrentFilePath
+  , IDebug
+  )
 
 type RnM a = (IRnConstraints) => IO a
 
@@ -100,7 +117,7 @@ withNamesInScope ns names act = do
           $ (selectScope ns)
   runWithScope ns scope act
 
-convertProgram :: Abs.Program -> RnM (BT.SynTerm BT.CompRn)
+convertProgram :: Abs.Program -> RnM (SynTerm CompRn)
 convertProgram (Abs.Program _ program) = convertRename program
 
 class ConvertRename a where

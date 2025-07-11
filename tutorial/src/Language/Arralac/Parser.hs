@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-partial-fields #-}
+
 module Language.Arralac.Parser where
 
 import Control.Exception (Exception, throw)
@@ -7,10 +9,11 @@ import Data.Text as T (Text, pack)
 import Data.Text.IO.Utf8 as TIO
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
-import Language.Arralac.Parser.Arralac.Lex (Token)
-import Language.Arralac.Parser.Arralac.Par
-import Language.Arralac.Parser.Internal.Abs as Abs
-import Language.Arralac.Typecheck.BasicTypes
+import Language.Arralac.Parser.Abs as Abs
+import Language.Arralac.Parser.Lex (Token)
+import Language.Arralac.Parser.Par
+import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types
 import Prettyprinter (indent)
 
 type ParserM a = (ICurrentFilePath) => IO a
@@ -32,7 +35,7 @@ getLineAndColumnFromError s =
         pure (read lineNumber, read columnNumber)
       _ -> Nothing
 
-parseText :: (ICurrentFilePath) => Text -> IO Program
+parseText :: Text -> ParserM Program
 parseText input = do
   let
     parsed = parseWith pProgram input
@@ -57,9 +60,6 @@ parseInput input = do
 
 parseFile :: String -> ParserM Program
 parseFile filename = parseInput (Left filename)
-
-parseString :: Text -> ParserM Program
-parseString input = parseInput (Right input)
 
 -- | A parser exception.
 data ParserError

@@ -4,11 +4,11 @@ import Control.Monad.Foil (emptyScope)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Language.Arralac.Interpreter.Main (convertASTToCore, whnf)
-import Language.Arralac.Typecheck.BasicTypes (Pretty' (..), PrettyVerbosity (PrettyVerbosity'Normal), prettyUser)
 import Language.Arralac.Typecheck.Renamer (RnErrorWithCallStack)
 import Language.Arralac.Typecheck.Run (runTypechecker')
 import Language.Arralac.Typecheck.Solver (SolverErrorWithCallStack)
 import Language.Arralac.Typecheck.TcMonad (TcErrorWithCallStack)
+import Language.Arralac.Utils.Pretty
 import Prettyprinter (line)
 import Prettyprinter.Render.Text (putDoc)
 import Prettyprinter.Util (putDocW)

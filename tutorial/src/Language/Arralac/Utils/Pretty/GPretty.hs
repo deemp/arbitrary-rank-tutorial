@@ -1,7 +1,7 @@
-module Language.Arralac.Typecheck.Pretty where
+module Language.Arralac.Utils.Pretty.GPretty where
 
 import GHC.Generics (C, Constructor (..), D, Generic (Rep, from), K1 (..), M1 (..), R, S, Selector (..), U1 (..), (:*:) (..), type (:+:) (..))
-import Language.Arralac.Typecheck.BasicTypes (IPrettyVerbosity, Pretty' (..))
+import Language.Arralac.Utils.Pretty.Class (IPrettyVerbosity, Pretty' (..))
 import Prettyprinter (Doc, indent, line, vsep, (<+>))
 
 prettyField :: (IPrettyVerbosity, Pretty' a) => a -> Doc ann

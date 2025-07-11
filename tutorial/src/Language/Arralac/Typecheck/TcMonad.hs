@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 module Language.Arralac.Typecheck.TcMonad where
 
 import Control.Exception (Exception, throw)
@@ -8,12 +9,17 @@ import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Traversable (forM)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Language.Arralac.Typecheck.Bag (Bag (..))
-import Language.Arralac.Typecheck.BasicTypes
-import Language.Arralac.Typecheck.Constraints (Ct (..), CtEvidence (..), CtLoc (..), CtOrigin (..), EqCt (..), TypedThing (..), WantedConstraints (..), WantedCtEvidence (..))
+import Language.Arralac.Syntax.Local.Name
+import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.TTG.SynTerm
+import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Typecheck.Bag
+import Language.Arralac.Typecheck.Constraints
 import Language.Arralac.Typecheck.Renamer
-import Prettyprinter (Doc, indent, line, vsep)
-import Prettyprinter.Util (putDocW)
+import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types
+import Prettyprinter
+import Prettyprinter.Util
 
 -- ==============================================
 -- The Type Checking Monad
