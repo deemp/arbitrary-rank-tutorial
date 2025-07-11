@@ -1,13 +1,11 @@
 module Language.STLC.Typing.Jones2007.TcTerm where
 
-import Data.Foldable (Foldable (..))
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Language.STLC.Typing.Jones2007.Bag (unitBag)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
-import Language.STLC.Typing.Jones2007.Solver (Solve (..), toListWc)
 import Language.STLC.Typing.Jones2007.TcMonad
-import Prettyprinter (line, (<+>))
+import Prettyprinter (line)
 
 checkRho :: SynTerm CompRn -> Rho -> TcM (SynTerm CompTc)
 -- Invariant: the Rho is always in weak-prenex form

@@ -7,8 +7,9 @@ import GHC.Stack (HasCallStack)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
 import Language.STLC.Typing.Jones2007.Constraints (emptyWantedConstraints)
+import Language.STLC.Typing.Jones2007.Solver (solveIteratively)
 import Language.STLC.Typing.Jones2007.TcMonad
-import Language.STLC.Typing.Jones2007.TcTerm (inferRho, solveIteratively)
+import Language.STLC.Typing.Jones2007.TcTerm (inferRho)
 import Language.STLC.Typing.Renamer (parseInputText)
 import Language.STLC.Typing.Zonker (Zonk (..))
 import UnliftIO.Exception (finally)
@@ -28,11 +29,9 @@ typecheck term =
     constraints <- newIORef emptyWantedConstraints
     let ?constraints = constraints
     -- TODO run inferSigma
-    -- 
-    -- 
     (tcTerm, _) <- inferRho term
     constraintsNew <- readIORef ?constraints
-    _ <- solveIteratively constraintsNew
+    _ <- solveIteratively ?solverIterations constraintsNew
 
     zonk tcTerm
     `finally` do

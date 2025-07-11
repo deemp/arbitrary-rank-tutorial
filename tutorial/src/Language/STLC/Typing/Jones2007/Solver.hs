@@ -11,75 +11,10 @@ import GHC.Stack (HasCallStack, callStack)
 import Language.STLC.Typing.Jones2007.Bag
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.Constraints
-import Language.STLC.Typing.Jones2007.TcMonad (IConstraints, ITcErrorPropagated, TcError (..), TcM, badType, debug', die)
+import Language.STLC.Typing.Jones2007.TcMonad (badType, debug')
+import Prettyprinter ((<+>))
 
-data SolverError
-  = SolverError'CannotUnifySkolemVar {ct :: Ct}
-  | SolverError'CannotUnifyBoundVar {tv :: TcTyVar, ty :: TcType, ct :: Ct}
-  | SolverError'CannotUnify {ty1 :: TcType, ty2 :: TcType, ct :: Ct}
-  | SolverError'SkolemEscape {tv :: TcTyVar, ty :: TcType, tvTcLevel :: TcLevel, tyTcLevel :: TcLevel, ct :: Ct}
-
-data SolverErrorWithCallStack where
-  SolverErrorWithCallStack :: (HasCallStack) => SolverError -> SolverErrorWithCallStack
-
--- | Fail unconditionally
-dieSolver :: (HasCallStack) => SolverError -> IO a
-dieSolver err = throw (SolverErrorWithCallStack err)
-
-type SolveM a b = a -> TcM b
-
-toListWc :: WantedConstraints -> [WantedConstraints]
-toListWc = \case
-  WantedCts{wc_simple = Bag [], wc_impl = Bag []} -> []
-  x -> [x]
-
-fromListWc :: [WantedConstraints] -> WantedConstraints
-fromListWc = fold
-
-unify :: (ITcErrorPropagated, IConstraints) => Ct -> Tau -> Tau -> IO [Ct]
--- Invariant:
--- The first type is "expected",
--- the second one is "actual"
-unify ct tv'@(Type'Var tv) ty
-  | badType tv' =
-      dieSolver SolverError'CannotUnifyBoundVar{tv, ty, ct}
-unify ct ty tv'@(Type'Var tv)
-  | badType tv' =
-      dieSolver SolverError'CannotUnifyBoundVar{tv, ty, ct}
-unify
-  _ct
-  (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}})
-  (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}})
-    | tv1 == tv2 = pure []
--- TODO Pass info about swapping?
-unify ct (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) ty =
-  pure $ unifyVar ct tv ty
-unify ct ty (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) =
-  pure $ unifyVar ct tv ty
--- TODO is equality defined correctly?
-unify _ct (Type'Var tv1@TcTyVar{}) (Type'Var tv2@TcTyVar{})
-  | tv1 == tv2 = pure []
-unify ct (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
-  -- TODO should we inspect thing?
-  cts1 <- unify ct arg1 arg2
-  cts2 <- unify ct res1 res2
-  pure $ cts1 <> cts2
-unify _ct (Type'Concrete tc1) (Type'Concrete tc2)
-  | tc1 == tc2 = pure []
-unify ct ty1 ty2 =
-  dieSolver SolverError'CannotUnify{ty1, ty2, ct}
-
-unifyVar :: Ct -> TcTyVar -> Tau -> [Ct]
-unifyVar ct tv@TcTyVar{varDetails = MetaTv{}} ty = do
-  pure $
-    ct
-      { ct_eq_can =
-          ct.ct_eq_can
-            { eq_lhs = tv
-            , eq_rhs = ty
-            }
-      }
-unifyVar _ct _tv _ty = []
+type SolveM a = (IDebug, IPrettyVerbosity) => IO a
 
 class MaxTcLevel a where
   getMaxTcLevel :: a -> TcLevel
@@ -97,8 +32,8 @@ instance MaxTcLevel TcType where
 
 class Solve a where
   type Ret a
-  solve :: SolveM a (Ret a)
-  occursCheck :: SolveM a ()
+  solve :: a -> SolveM (Ret a)
+  occursCheck :: a -> SolveM ()
 
 instance Solve Ct where
   type Ret Ct = [Ct]
@@ -151,7 +86,7 @@ instance Solve Ct where
           Type'ForAll vars body -> var `elem` vars || var `occursIn` body
           Type'Fun arg res -> var `occursIn` arg || var `occursIn` res
           Type'Concrete _ -> False
-    when (lhs `occursIn` rhs) $ die TcError'OccursCheck{ct}
+    when (lhs `occursIn` rhs) $ dieSolver SolverError'OccursCheck{ct}
 
 instance Solve Cts where
   type Ret Cts = [Ct]
@@ -182,6 +117,107 @@ instance Solve WantedConstraints where
   occursCheck wcs = do
     occursCheck wcs.wc_simple
     occursCheck wcs.wc_impl
+
+toListWc :: WantedConstraints -> [WantedConstraints]
+toListWc = \case
+  WantedCts{wc_simple = Bag [], wc_impl = Bag []} -> []
+  x -> [x]
+
+fromListWc :: [WantedConstraints] -> WantedConstraints
+fromListWc = fold
+
+unify :: Ct -> Tau -> Tau -> IO [Ct]
+-- Invariant:
+-- The first type is "expected",
+-- the second one is "actual"
+unify ct tv'@(Type'Var tv) ty
+  | badType tv' =
+      dieSolver SolverError'CannotUnifyBoundVar{tv, ty, ct}
+unify ct ty tv'@(Type'Var tv)
+  | badType tv' =
+      dieSolver SolverError'CannotUnifyBoundVar{tv, ty, ct}
+unify
+  _ct
+  (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}})
+  (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv2}})
+    | tv1 == tv2 = pure []
+-- TODO Pass info about swapping?
+unify ct (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) ty =
+  pure $ unifyVar ct tv ty
+unify ct ty (Type'Var tv@TcTyVar{varDetails = MetaTv{}}) =
+  pure $ unifyVar ct tv ty
+-- TODO is equality defined correctly?
+unify _ct (Type'Var tv1@TcTyVar{}) (Type'Var tv2@TcTyVar{})
+  | tv1 == tv2 = pure []
+unify ct (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
+  -- TODO should we inspect thing?
+  cts1 <- unify ct arg1 arg2
+  cts2 <- unify ct res1 res2
+  pure $ cts1 <> cts2
+unify _ct (Type'Concrete tc1) (Type'Concrete tc2)
+  | tc1 == tc2 = pure []
+unify ct ty1 ty2 =
+  dieSolver SolverError'CannotUnify{ty1, ty2, ct}
+
+unifyVar :: Ct -> TcTyVar -> Tau -> [Ct]
+unifyVar ct tv@TcTyVar{varDetails = MetaTv{}} ty = do
+  pure $
+    ct
+      { ct_eq_can =
+          ct.ct_eq_can
+            { eq_lhs = tv
+            , eq_rhs = ty
+            }
+      }
+unifyVar _ct _tv _ty = []
+
+solveIteratively :: Int -> WantedConstraints -> SolveM WantedConstraints
+solveIteratively iterations constraints = do
+  constraints' <- go iterations constraints
+
+  -- TODO run occursCheck
+
+  -- All unification variables are in the initial constraints.
+  -- We need to check that these variables don't occur in their types.
+
+  -- occursCheck constraints
+
+  pure constraints'
+ where
+  go :: Int -> WantedConstraints -> SolveM WantedConstraints
+  go _ constraintsCurrent
+    | [] <- toListWc constraintsCurrent =
+        pure constraintsCurrent
+  go 0 constraintsCurrent = pure constraintsCurrent
+  go n constraintsCurrent = do
+    debug'
+      ("go" <+> pretty' n)
+      [ ("constraintsCurrent", prettyVerbose constraintsCurrent)
+      ]
+    constraintsNew <- fold <$> solve constraintsCurrent
+    debug'
+      ("go" <+> pretty' n)
+      [ ("constraintsNew", prettyVerbose constraintsNew)
+      ]
+    go (n - 1) constraintsNew
+
+-- ==============================================
+-- Renamer errors
+-- ==============================================
+
+data SolverError
+  = SolverError'CannotUnifySkolemVar {ct :: Ct}
+  | SolverError'CannotUnifyBoundVar {tv :: TcTyVar, ty :: TcType, ct :: Ct}
+  | SolverError'CannotUnify {ty1 :: TcType, ty2 :: TcType, ct :: Ct}
+  | SolverError'SkolemEscape {tv :: TcTyVar, ty :: TcType, tvTcLevel :: TcLevel, tyTcLevel :: TcLevel, ct :: Ct}
+  | SolverError'OccursCheck {ct :: Ct}
+
+data SolverErrorWithCallStack where
+  SolverErrorWithCallStack :: (HasCallStack) => SolverError -> SolverErrorWithCallStack
+
+-- | Fail unconditionally
+dieSolver :: (HasCallStack) => SolverError -> IO a
+dieSolver err = throw (SolverErrorWithCallStack err)
 
 instance Pretty' SolverError where
   pretty' = \case
@@ -223,6 +259,16 @@ instance Pretty' SolverError where
         , prettyIndent ty
         , "has a larger TcLevel:"
         , prettyIndent tyTcLevel
+        , "in the constraint:"
+        , prettyIndent ct
+        ]
+    SolverError'OccursCheck{ct} ->
+      vsep'
+        [ "Occurs check failed!"
+        , "Type variable:"
+        , prettyIndent ct.ct_eq_can.eq_lhs
+        , "occurs in the type:"
+        , prettyIndent ct.ct_eq_can.eq_rhs
         , "in the constraint:"
         , prettyIndent ct
         ]

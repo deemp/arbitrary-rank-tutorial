@@ -452,7 +452,6 @@ data TcError
   = TcError'UndefinedVariable {varName :: Name}
   | TcError'UnboundVariable {var :: TcTyVar}
   | TcError'UnexpectedType {expected :: TcType, actual :: TcType, thing :: Maybe TypedThing}
-  | TcError'OccursCheck {ct :: Ct}
   | -- TODO specify which type(s) are bound
     TcError'UnifyingBoundTypes {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
   | TcError'ExpectedFlexiVariables {tvs :: [TcTyVar]}
@@ -502,14 +501,6 @@ instance Pretty' TcError where
         , "but got the type:"
         , prettyIndent actual
         , prettyThingLocation thing
-        ]
-    TcError'OccursCheck{ct} ->
-      vsep'
-        [ "Occurs check failed!"
-        , "Type variable:"
-        , prettyIndent ct.ct_eq_can.eq_lhs
-        , "occurs in the type:"
-        , prettyIndent ct.ct_eq_can.eq_rhs
         ]
     TcError'UnifyingBoundTypes{ty1, ty2, thing} ->
       vsep'
