@@ -17,25 +17,10 @@ import Language.STLC.Syntax.Abs (BNFC'Position)
 import Language.STLC.Syntax.Abs qualified as Abs
 import Language.STLC.Syntax.Par (pProgram)
 import Language.STLC.Typing.Jones2007.BasicTypes as BT
-import Prettyprinter (indent, vsep)
+import Prettyprinter (indent)
 
--- | A renamer exception.
-data RnError
-  = RnError'LexerError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
-  | RnError'Unknown {message :: String}
-  | RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
-  | RnError'UnboundTypeVariable {srcSpan :: SrcSpan}
-
--- | A renamer exception that can capture the 'callStack'
--- at the 'throw' side.
---
--- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
-data RnErrorWithCallStack where
-  RnErrorWithCallStack :: (HasCallStack) => RnError -> RnErrorWithCallStack
-
--- | Fail unconditionally with a renamer exception.
-dieRn :: (HasCallStack) => RnError -> IO a
-dieRn rnError = throw (RnErrorWithCallStack rnError)
+-- | A name.
+type NameFs = FastString
 
 -- | Variables scope.
 --
@@ -92,7 +77,8 @@ getExistingUnique ns pos name =
     Nothing ->
       dieRn
         RnError'UnboundTypeVariable
-          { srcSpan = convertPositionToSrcSpan pos
+          { name
+          , srcSpan = convertPositionToSrcSpan pos
           }
     Just u -> pure u
 
@@ -197,6 +183,13 @@ instance ConvertAbsToBT Abs.Exp where
       pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Num val)
     Abs.ExpString pos val ->
       pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Str (T.pack val))
+    Abs.ExpBool pos val -> do
+      let val' = case val of
+            Abs.BoolTrue _ -> True
+            Abs.BoolFalse _ -> False
+      pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Bool val')
+    Abs.ExpCon _ (Abs.Con pos (Abs.NameUpperCase name)) ->
+      pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Con name)
     Abs.ExpApp pos term1 term2 -> do
       term1' <- convertAbsToBT term1
       term2' <- convertAbsToBT term2
@@ -221,9 +214,6 @@ instance ConvertAbsToBT Abs.Exp where
       term' <- convertAbsToBT term
       ty' <- convertAbsToBT ty
       pure $ SynTerm'Ann (convertPositionToSrcSpan pos) term' ty'
-
--- TODO create unique only for new binders
--- TODO what to do with free variables? Report error?
 
 instance ConvertAbsToBT Abs.Var where
   type To Abs.Var = Bool -> IO Name
@@ -326,6 +316,29 @@ instance ConvertAbsToBT Abs.Type where
         <$> (convertAbsToBT ty1)
         <*> (convertAbsToBT ty2)
 
+-- ==============================================
+-- Renamer errors
+-- ==============================================
+
+-- | A renamer exception.
+data RnError
+  = -- TODO make a parser error
+    RnError'LexerError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
+  | RnError'Unknown {message :: String}
+  | RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
+  | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
+
+-- | A renamer exception that can capture the 'callStack'
+-- at the 'throw' side.
+--
+-- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
+data RnErrorWithCallStack where
+  RnErrorWithCallStack :: (HasCallStack) => RnError -> RnErrorWithCallStack
+
+-- | Fail unconditionally with a renamer exception.
+dieRn :: (HasCallStack) => RnError -> IO a
+dieRn rnError = throw (RnErrorWithCallStack rnError)
+
 instance Pretty' RnError where
   pretty' = \case
     RnError'LexerError{currentFilePath, lineNumber, columnNumber} ->
@@ -342,13 +355,15 @@ instance Pretty' RnError where
         , prettyIndent message
         ]
     RnError'ForallBindsNoTvs{srcSpan} ->
-      vsep
+      vsep'
         [ "`forall' binds no type variables at:"
         , prettyIndent srcSpan
         ]
-    RnError'UnboundTypeVariable{srcSpan} ->
-      vsep
-        [ "Unbound type variable at:"
+    RnError'UnboundTypeVariable{srcSpan, name} ->
+      vsep'
+        [ "Unbound type variable:"
+        , prettyIndent name
+        , "at:"
         , prettyIndent srcSpan
         ]
 
