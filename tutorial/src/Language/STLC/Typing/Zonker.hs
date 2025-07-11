@@ -11,6 +11,12 @@ import GHC.Stack (HasCallStack)
 import Language.STLC.Typing.Jones2007.BasicTypes
 import Language.STLC.Typing.Jones2007.TcMonad (debug')
 
+-- Substitute metavariables with their Indirect types after typechecking
+-- to produce a term without metavariables.
+--
+-- See Note [What is zonking?] in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L106
 
 type ZnM a = (HasCallStack, IDebug, IPrettyVerbosity) => IO a
 
