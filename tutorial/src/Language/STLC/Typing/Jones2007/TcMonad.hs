@@ -446,6 +446,28 @@ newSkolemTyVar _ x =
   die (TcError'UnboundVariable x)
 
 -- ==============================================
+-- Debugging utilities
+-- ==============================================
+
+debug :: (IDebug, IPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
+debug label xs = when ?debug do
+  putDocW
+    1000
+    ( vsep
+        [ "[" <> label <> "]"
+        , foldMap (\x -> "$ " <> x <> line) xs
+        , pretty' (prettyCallStack callStack)
+        , line
+        ]
+    )
+
+debug' :: (IDebug, IPrettyVerbosity) => Doc ann -> [(Doc ann, Doc ann)] -> IO ()
+debug' label xs = debug label (prettyVarVal <$> xs)
+ where
+  prettyVarVal :: (Doc ann, Doc ann) -> Doc ann
+  prettyVarVal (var, val) = var <> ":" <> line <> indent 4 val
+
+-- ==============================================
 -- Type checking errors
 -- ==============================================
 
@@ -577,25 +599,3 @@ die tcErrorCurrent = do
           Nothing -> tcErrorCurrent
           Just err -> err
   throw (TcErrorWithCallStack error')
-
--- ==============================================
--- Debugging utilities
--- ==============================================
-
-debug :: (IDebug, IPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
-debug label xs = when ?debug do
-  putDocW
-    1000
-    ( vsep
-        [ "[" <> label <> "]"
-        , foldMap (\x -> "$ " <> x <> line) xs
-        , pretty' (prettyCallStack callStack)
-        , line
-        ]
-    )
-
-debug' :: (IDebug, IPrettyVerbosity) => Doc ann -> [(Doc ann, Doc ann)] -> IO ()
-debug' label xs = debug label (prettyVarVal <$> xs)
- where
-  prettyVarVal :: (Doc ann, Doc ann) -> Doc ann
-  prettyVarVal (var, val) = var <> ":" <> line <> indent 4 val
