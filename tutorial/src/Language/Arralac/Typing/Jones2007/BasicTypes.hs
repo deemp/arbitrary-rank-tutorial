@@ -1,4 +1,4 @@
-module Language.STLC.Typing.Jones2007.BasicTypes where
+module Language.Arralac.Typing.Jones2007.BasicTypes where
 
 -- This module defines the basic types used by the type checker
 -- Everything defined in here is exported
@@ -7,8 +7,8 @@ import Data.Data (Data (..))
 import Data.IORef
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import Language.Arralac.Common ()
 import Language.LSP.Protocol.Types (UInt)
-import Language.STLC.Common ()
 import Prettyprinter
 import Prelude hiding ((<>))
 

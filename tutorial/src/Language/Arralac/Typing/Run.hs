@@ -1,17 +1,17 @@
-module Language.STLC.Typing.Run where
+module Language.Arralac.Typing.Run where
 
 import Data.IORef (newIORef, readIORef)
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import GHC.Stack (HasCallStack)
-import Language.STLC.Typing.Jones2007.BasicTypes
-import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
-import Language.STLC.Typing.Jones2007.Constraints (emptyWantedConstraints)
-import Language.STLC.Typing.Jones2007.Solver (solveIteratively)
-import Language.STLC.Typing.Jones2007.TcMonad
-import Language.STLC.Typing.Jones2007.TcTerm (inferRho)
-import Language.STLC.Typing.Renamer (parseInputText)
-import Language.STLC.Typing.Zonker (Zonk (..))
+import Language.Arralac.Typing.Jones2007.BasicTypes
+import Language.Arralac.Typing.Jones2007.BasicTypes qualified as BT
+import Language.Arralac.Typing.Jones2007.Constraints (emptyWantedConstraints)
+import Language.Arralac.Typing.Jones2007.Solver (solveIteratively)
+import Language.Arralac.Typing.Jones2007.TcMonad
+import Language.Arralac.Typing.Jones2007.TcTerm (inferRho)
+import Language.Arralac.Typing.Renamer (parseInputText)
+import Language.Arralac.Typing.Zonker (Zonk (..))
 import UnliftIO.Exception (finally)
 
 -- ==============================================

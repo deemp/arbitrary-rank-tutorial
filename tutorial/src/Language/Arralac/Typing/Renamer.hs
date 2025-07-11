@@ -1,4 +1,4 @@
-module Language.STLC.Typing.Renamer where
+module Language.Arralac.Typing.Renamer where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (forM)
@@ -12,11 +12,11 @@ import Data.Text.IO qualified as T
 import GHC.Base (when)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
-import Language.STLC.Common (parseWith)
-import Language.STLC.Syntax.Abs (BNFC'Position)
-import Language.STLC.Syntax.Abs qualified as Abs
-import Language.STLC.Syntax.Par (pProgram)
-import Language.STLC.Typing.Jones2007.BasicTypes as BT
+import Language.Arralac.Common (parseWith)
+import Language.Arralac.Syntax.Abs (BNFC'Position)
+import Language.Arralac.Syntax.Abs qualified as Abs
+import Language.Arralac.Syntax.Par (pProgram)
+import Language.Arralac.Typing.Jones2007.BasicTypes as BT
 import Prettyprinter (indent)
 
 -- | A name.

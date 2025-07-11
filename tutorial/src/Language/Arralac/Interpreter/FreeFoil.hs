@@ -1,12 +1,12 @@
-module Language.STLC.Interpreter.FreeFoil where
+module Language.Arralac.Interpreter.FreeFoil where
 
 import Control.Monad.Foil (CoSinkable (..), DistinctEvidence (..), ExtEvidence (..))
 import Control.Monad.Foil.Internal (DExt, Name (..), NameBinder (..), Scope (..), SinkableK, Substitution (..), unsafeDistinct, unsafeExt)
 import Data.IntMap qualified as IntMap
 import Data.IntSet qualified as IntSet
 import Generics.Kind.TH
-import Language.STLC.Typing.Jones2007.BasicTypes (Pretty' (..))
-import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
+import Language.Arralac.Typing.Jones2007.BasicTypes (Pretty' (..))
+import Language.Arralac.Typing.Jones2007.BasicTypes qualified as BT
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | A wrapper around 'NameBinder' that stores additional information.

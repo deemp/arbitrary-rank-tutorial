@@ -1,23 +1,11 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MonoLocalBinds #-}
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-
-module Language.STLC.Interpreter.Main where
+module Language.Arralac.Interpreter.Main where
 
 import Control.Monad.Foil.Internal (DExt, Distinct, Name (..), Scope (..), identitySubst)
 import Control.Monad.Free.Foil (AST (..), ScopedAST (..), substitute)
 import Data.Bifunctor.TH (deriveBifunctor)
-import Language.STLC.Interpreter.FreeFoil (CoreNameBinder (..), PrettyName (..), addSubst, extendScope, withFreshUsingUnique)
-import Language.STLC.Typing.Jones2007.BasicTypes (CompZn, Pretty' (..), SynLit, SynTerm (..))
-import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
+import Language.Arralac.Interpreter.FreeFoil (CoreNameBinder (..), PrettyName (..), addSubst, extendScope, withFreshUsingUnique)
+import Language.Arralac.Typing.Jones2007.BasicTypes (CompZn, Pretty' (..), SynLit, SynTerm (..))
+import Language.Arralac.Typing.Jones2007.BasicTypes qualified as BT
 import Prettyprinter
 
 -- TODO Delayed substitution and Normalization by Evaluation

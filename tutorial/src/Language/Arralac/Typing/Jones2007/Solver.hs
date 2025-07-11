@@ -1,6 +1,4 @@
-{-# LANGUAGE OverloadedLabels #-}
-
-module Language.STLC.Typing.Jones2007.Solver where
+module Language.Arralac.Typing.Jones2007.Solver where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (forM, forM_, when)
@@ -9,10 +7,10 @@ import Data.IORef (readIORef, writeIORef)
 import Data.Set qualified as Set
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
-import Language.STLC.Typing.Jones2007.Bag
-import Language.STLC.Typing.Jones2007.BasicTypes
-import Language.STLC.Typing.Jones2007.Constraints
-import Language.STLC.Typing.Jones2007.TcMonad (badType, debug')
+import Language.Arralac.Typing.Jones2007.Bag
+import Language.Arralac.Typing.Jones2007.BasicTypes
+import Language.Arralac.Typing.Jones2007.Constraints
+import Language.Arralac.Typing.Jones2007.TcMonad (badType, debug')
 import Prettyprinter ((<+>))
 
 -- Constraint solver.

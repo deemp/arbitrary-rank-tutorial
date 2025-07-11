@@ -1,17 +1,7 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
-
-module Language.STLC.Typing.Jones2007.Pretty where
+module Language.Arralac.Typing.Jones2007.Pretty where
 
 import GHC.Generics (C, Constructor (..), D, Generic (Rep, from), K1 (..), M1 (..), R, S, Selector (..), U1 (..), (:*:) (..), type (:+:) (..))
-import Language.STLC.Typing.Jones2007.BasicTypes (IPrettyVerbosity, Pretty' (..))
+import Language.Arralac.Typing.Jones2007.BasicTypes (IPrettyVerbosity, Pretty' (..))
 import Prettyprinter (Doc, indent, line, vsep, (<+>))
 
 prettyField :: (IPrettyVerbosity, Pretty' a) => a -> Doc ann

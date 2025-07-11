@@ -1,14 +1,9 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
-module Language.STLC.Common where
+module Language.Arralac.Common where
 
 import Data.String (IsString (..))
-import Language.STLC.Syntax.Abs
-import Language.STLC.Syntax.Lex (Token)
-import Language.STLC.Syntax.Par
+import Language.Arralac.Syntax.Abs
+import Language.Arralac.Syntax.Lex (Token)
+import Language.Arralac.Syntax.Par
 
 -- TODO import only in doctests
 

@@ -1,11 +1,7 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
-
-module Language.STLC.Typing.Jones2007.Bag where
+module Language.Arralac.Typing.Jones2007.Bag where
 
 import Data.List (intersperse)
-import Language.STLC.Typing.Jones2007.BasicTypes (Pretty' (..))
+import Language.Arralac.Typing.Jones2007.BasicTypes (Pretty' (..))
 import Prettyprinter (indent, vsep)
 
 -- GHC uses a tree-like structure for the `Bag`.

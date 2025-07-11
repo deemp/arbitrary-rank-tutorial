@@ -1,19 +1,10 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
-module Language.STLC.Typing.Jones2007.Constraints where
+module Language.Arralac.Typing.Jones2007.Constraints where
 
 import GHC.Generics (Generic)
-import Language.STLC.Typing.Jones2007.Bag (Bag (..), emptyBag)
-import Language.STLC.Typing.Jones2007.BasicTypes (CompRn, RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType, Pretty' (..))
-import Language.STLC.Typing.Jones2007.Pretty (genericPretty)
+import Language.Arralac.Typing.Jones2007.Bag (Bag (..), emptyBag)
+import Language.Arralac.Typing.Jones2007.BasicTypes (CompRn, Pretty' (..), RealSrcSpan, SynTerm, TcLevel, TcTyVar, TcType)
+import Language.Arralac.Typing.Jones2007.Pretty (genericPretty)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L123
 
