@@ -43,15 +43,23 @@ goType = \case
 
 goTerm :: SynTerm CompZn -> [(SrcSpan, SpanInfo)]
 goTerm = \case
-  SynTerm'Var _ var -> goTermVar var
-  SynTerm'Lit anno _ -> f anno
-  SynTerm'App anno fun arg -> f anno <> goTerm fun <> goTerm arg
-  SynTerm'Lam anno var body -> f anno <> goTermVar var <> goTerm body
-  SynTerm'ALam anno var ty body -> f anno <> goTermVar var <> goType ty <> goTerm body
-  SynTerm'Let anno var val body -> f anno <> goTermVar var <> goTerm val <> goTerm body
-  SynTerm'Ann anno body ty -> f anno <> goTerm body <> goType ty
+  SynTerm'Var _ var ->
+    goTermVar var
+  SynTerm'Lit anno _ ->
+    f anno
+  SynTerm'App anno fun arg ->
+    f anno <> goTerm fun <> goTerm arg
+  SynTerm'Lam anno var body ->
+    f anno <> goTermVar var <> goTerm body
+  SynTerm'ALam anno var ty body ->
+    f anno <> goTermVar var <> goType ty <> goTerm body
+  SynTerm'Let anno var val body ->
+    f anno <> goTermVar var <> goTerm val <> goTerm body
+  SynTerm'Ann anno body ty ->
+    f anno <> goTerm body <> goType ty
  where
-  f AnnoZn{annoSrcLoc, annoType} = [(annoSrcLoc, SpanInfo'ZnType annoType)]
+  f ZnAnno{annoSrcLoc, annoType} =
+    [(annoSrcLoc, SpanInfo'ZnType annoType)]
 
 partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
 partitionWith _ [] = ([], [])
