@@ -2,74 +2,12 @@ module Language.STLC.Typing.Jones2007.TcTerm where
 
 import Data.Foldable (Foldable (..))
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.Map qualified as Map
-import Data.Text qualified as T
-import GHC.Stack (HasCallStack)
 import Language.STLC.Typing.Jones2007.Bag (unitBag)
 import Language.STLC.Typing.Jones2007.BasicTypes
-import Language.STLC.Typing.Jones2007.BasicTypes qualified as BT
 import Language.STLC.Typing.Jones2007.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
 import Language.STLC.Typing.Jones2007.Solver (Solve (..), toListWc)
 import Language.STLC.Typing.Jones2007.TcMonad
-import Language.STLC.Typing.Renamer (parseInputText)
-import Language.STLC.Typing.Zonker (Zonk (..))
 import Prettyprinter (line, (<+>))
-import UnliftIO.Exception (finally)
-
--- ==============================================
---      The top-level wrapper
--- ==============================================
-
--- TODO Too much boilerplate...
-
--- TODO report many independent errors, not fail on the first error
-typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
-typecheck term =
-  do
-    tcResult <- inferSigma term
-    zonk (fst tcResult)
-    `finally` do
-      constraints <- readIORef ?constraints
-      debug'
-        "typecheck"
-        [ ("constraints", pretty' constraints)
-        ]
-
-runTypechecker :: (IDebug, IScope, IUniqueSupply, ICurrentFilePath) => SynTerm BT.CompRn -> IO (SynTerm BT.CompZn)
-runTypechecker program = do
-  constraints <-
-    newIORef
-      WantedCts
-        { wc_simple = emptyBag
-        , wc_impl = emptyBag
-        }
-  tcError <- newIORef Nothing
-  let
-    ?tcLevel = BT.TcLevel 0
-    ?tcTyVarEnv = emptyTcTyVarEnv
-    ?constraints = constraints
-    ?tcErrorPropagated = tcError
-    ?debug = ?debug
-    ?scope = ?scope
-    ?uniqueSupply = ?uniqueSupply
-    ?currentFilePath = ?currentFilePath
-  typecheck program
-  
--- TODO use filepath from implicit params
-runTypechecker' :: (HasCallStack, BT.IDebug, IPrettyVerbosity) => BT.FastString -> T.Text -> IO (SynTerm CompZn)
-runTypechecker' filePath content = do
-  uniqueSupply <- newIORef 0
-  let ?uniqueSupply = uniqueSupply
-      ?currentFilePath = filePath
-      ?scope = Map.empty
-      ?debug = ?debug
-      ?callStack = ?callStack
-  program <- parseInputText content
-  runTypechecker program
-
--- ==============================================
--- tcRho and its variants
--- ==============================================
 
 checkRho :: SynTerm CompRn -> Rho -> TcM (SynTerm CompTc)
 -- Invariant: the Rho is always in weak-prenex form
