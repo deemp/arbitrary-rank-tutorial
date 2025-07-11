@@ -10,9 +10,17 @@ Program. Program ::= Exp ;
 
 Var. Var ::= NameLowerCase ;
 
+-- A constructor
+Con. Con ::= NameUpperCase ;
+
+BoolTrue.  Bool ::= "True"  ;
+BoolFalse. Bool ::= "False" ;
+
 ExpVar.        Exp1 ::= Var ;
 ExpInt.        Exp2 ::= Integer ;
 ExpString.     Exp2 ::= String ;
+ExpBool.       Exp2 ::= Bool ;
+ExpCon.        Exp2 ::= Con ;
 ExpAbs.        Exp3 ::= "\\" Var "." Exp ;
 ExpAbsAnno.    Exp4 ::= "\\" "(" Var "::" Type ")" "." Exp ;
 ExpApp.        Exp5 ::= Exp11 Exp10 ;
