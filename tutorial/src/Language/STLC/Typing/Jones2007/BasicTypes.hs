@@ -776,6 +776,7 @@ type IDebug = (?debug :: Bool)
 data PrettyVerbosity
   = PrettyVerbosity'Normal
   | PrettyVerbosity'Detailed
+  | PrettyVerbosity'User
 
 type IPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
 
@@ -785,8 +786,11 @@ class Pretty' a where
 prettyCompact :: (Pretty' a) => a -> Doc ann
 prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Normal in pretty'
 
-prettyVerbose :: (Pretty' a) => a -> Doc ann
-prettyVerbose = let ?prettyVerbosity = PrettyVerbosity'Detailed in pretty'
+prettyDetailed :: (Pretty' a) => a -> Doc ann
+prettyDetailed = let ?prettyVerbosity = PrettyVerbosity'Detailed in pretty'
+
+prettyUser :: (Pretty' a) => a -> Doc ann
+prettyUser = let ?prettyVerbosity = PrettyVerbosity'User in pretty'
 
 prettyIndent :: (IPrettyVerbosity, Pretty' a) => a -> Doc ann
 prettyIndent = indent 2 . pretty'
@@ -870,6 +874,8 @@ instance Pretty' Name where
       PrettyVerbosity'Detailed ->
         pretty' name.nameOcc.occNameFS
           <> brackets ("ID" <+> pretty' name.nameUnique <> "," <+> pretty' name.nameLoc)
+      PrettyVerbosity'User ->
+        pretty' name.nameOcc.occNameFS
 
 -- ==============================================
 -- [Instances for Types]

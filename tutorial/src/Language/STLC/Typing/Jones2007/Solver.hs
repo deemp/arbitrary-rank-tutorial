@@ -54,14 +54,14 @@ instance Solve Ct where
                 Flexi -> do
                   debug'
                     "solve Ct - Flexi"
-                    [ ("ct", prettyVerbose ct)
+                    [ ("ct", prettyDetailed ct)
                     ]
                   writeIORef metaTvRef (Indirect rhs)
                   pure []
                 Indirect ty -> do
                   debug'
                     "solve Ct - Indirect"
-                    [ ("ct", prettyVerbose ct)
+                    [ ("ct", prettyDetailed ct)
                     ]
                   constraintsNew <- unify ct ty rhs
                   pure constraintsNew
@@ -192,12 +192,12 @@ solveIteratively iterations constraints = do
   go n constraintsCurrent = do
     debug'
       ("go" <+> pretty' n)
-      [ ("constraintsCurrent", prettyVerbose constraintsCurrent)
+      [ ("constraintsCurrent", prettyDetailed constraintsCurrent)
       ]
     constraintsNew <- fold <$> solve constraintsCurrent
     debug'
       ("go" <+> pretty' n)
-      [ ("constraintsNew", prettyVerbose constraintsNew)
+      [ ("constraintsNew", prettyDetailed constraintsNew)
       ]
     go (n - 1) constraintsNew
 

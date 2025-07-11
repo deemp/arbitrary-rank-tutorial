@@ -171,7 +171,7 @@ unify thing ty1 ty2
       do
         debug'
           "unify bound types"
-          [ ("?tcTyVarEnv", prettyVerbose (toAscListTcTyVarEnv ?tcTyVarEnv))
+          [ ("?tcTyVarEnv", prettyDetailed (toAscListTcTyVarEnv ?tcTyVarEnv))
           ]
         die (TcError'UnifyingBoundTypes ty1 ty2 thing)
 unify

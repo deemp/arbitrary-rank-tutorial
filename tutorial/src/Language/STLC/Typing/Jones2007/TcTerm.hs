@@ -91,9 +91,9 @@ tcRho t@(SynTerm'Var _ varName) exp_ty = do
   debug'
     "tcRho SynTerm'Var"
     [ ("varName", pretty' varName)
-    , ("varName", prettyVerbose varName)
+    , ("varName", prettyDetailed varName)
     , ("v_sigma", pretty' v_sigma)
-    , ("v_sigma", prettyVerbose v_sigma)
+    , ("v_sigma", prettyDetailed v_sigma)
     ,
       ( "exp_ty"
       , case exp_ty of
