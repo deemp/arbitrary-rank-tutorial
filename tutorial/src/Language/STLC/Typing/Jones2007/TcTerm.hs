@@ -46,7 +46,7 @@ runTypechecker program = do
   tcError <- newIORef Nothing
   let
     ?tcLevel = BT.TcLevel 0
-    ?varEnv = Map.empty
+    ?tcTyVarEnv = emptyTcTyVarEnv
     ?constraints = constraints
     ?tcErrorPropagated = tcError
     ?debug = ?debug

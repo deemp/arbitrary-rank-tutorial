@@ -19,7 +19,21 @@ import Prettyprinter.Util (putDocW)
 -- The Type Checking Monad
 -- ==============================================
 
-type IVarEnv = (?varEnv :: Map.Map Name Sigma)
+newtype TcTyVarEnv = TcTyVarEnv {env :: Map.Map Name Sigma}
+
+lookupTcTyVarEnv :: Name -> TcTyVarEnv -> Maybe Sigma
+lookupTcTyVarEnv k = Map.lookup k . (.env)
+
+toAscListTcTyVarEnv :: TcTyVarEnv -> [(Name, Sigma)]
+toAscListTcTyVarEnv = Map.toAscList . (.env)
+
+insertTcTyVarEnv :: Name -> Sigma -> TcTyVarEnv -> TcTyVarEnv
+insertTcTyVarEnv k v = TcTyVarEnv . Map.insert k v . (.env)
+
+emptyTcTyVarEnv :: TcTyVarEnv
+emptyTcTyVarEnv = TcTyVarEnv mempty
+
+type IVarEnv = (?tcTyVarEnv :: TcTyVarEnv)
 type ITcLevel = (?tcLevel :: TcLevel)
 type IConstraints = (?constraints :: IORef WantedConstraints)
 type ITcErrorPropagated = (?tcErrorPropagated :: IORef (Maybe TcError))
@@ -157,7 +171,7 @@ unify thing ty1 ty2
       do
         debug'
           "unify bound types"
-          [ ("?varEnv", prettyVerbose (Map.toAscList ?varEnv))
+          [ ("?tcTyVarEnv", prettyVerbose (toAscListTcTyVarEnv ?tcTyVarEnv))
           ]
         die (TcError'UnifyingBoundTypes ty1 ty2 thing)
 unify
@@ -285,14 +299,14 @@ quantify _ _ = error "Not implemented"
 
 extendVarEnv :: Name -> Sigma -> TcM a -> TcM a
 extendVarEnv var ty tcAction =
-  let ?varEnv = Map.insert var ty ?varEnv in tcAction
+  let ?tcTyVarEnv = insertTcTyVarEnv var ty ?tcTyVarEnv in tcAction
 
-getEnv :: TcM (Map.Map Name Sigma)
-getEnv = pure ?varEnv
+getEnv :: TcM TcTyVarEnv
+getEnv = pure ?tcTyVarEnv
 
 lookupVar :: Name -> TcM Sigma -- May fail
 lookupVar n =
-  case Map.lookup n ?varEnv of
+  case lookupTcTyVarEnv n ?tcTyVarEnv of
     Just ty -> pure ty
     Nothing -> die (TcError'UndefinedVariable n)
 
