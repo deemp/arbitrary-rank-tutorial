@@ -49,20 +49,33 @@ library
       Language.Arralac.LanguageServer.IntervalMap
       Language.Arralac.LanguageServer.Main
       Language.Arralac.Parser
-      Language.Arralac.Parser.Internal.Abs
-      Language.Arralac.Parser.Internal.Lex
-      Language.Arralac.Parser.Internal.Par
-      Language.Arralac.Typecheck.Jones2007.Bag
-      Language.Arralac.Typecheck.Jones2007.BasicTypes
-      Language.Arralac.Typecheck.Jones2007.Constraints
-      Language.Arralac.Typecheck.Jones2007.Main
-      Language.Arralac.Typecheck.Jones2007.Pretty
-      Language.Arralac.Typecheck.Jones2007.Solver
-      Language.Arralac.Typecheck.Jones2007.TcMonad
-      Language.Arralac.Typecheck.Jones2007.TcTerm
+      Language.Arralac.Parser.Abs
+      Language.Arralac.Parser.Lex
+      Language.Arralac.Parser.Par
+      Language.Arralac.Syntax.Local.Anno
+      Language.Arralac.Syntax.Local.Extension
+      Language.Arralac.Syntax.Local.Name
+      Language.Arralac.Syntax.Local.SynTerm
+      Language.Arralac.Syntax.Local.SynType
+      Language.Arralac.Syntax.Local.Type
+      Language.Arralac.Syntax.TTG.Extension
+      Language.Arralac.Syntax.TTG.SynTerm
+      Language.Arralac.Syntax.TTG.SynType
+      Language.Arralac.Syntax.TTG.Type
+      Language.Arralac.Typecheck.Bag
+      Language.Arralac.Typecheck.Constraints
+      Language.Arralac.Typecheck.Main
+      Language.Arralac.Typecheck.Pass
       Language.Arralac.Typecheck.Renamer
       Language.Arralac.Typecheck.Run
+      Language.Arralac.Typecheck.Solver
+      Language.Arralac.Typecheck.TcMonad
+      Language.Arralac.Typecheck.TcTerm
       Language.Arralac.Typecheck.Zonker
+      Language.Arralac.Utils.Pretty
+      Language.Arralac.Utils.Pretty.Class
+      Language.Arralac.Utils.Pretty.GPretty
+      Language.Arralac.Utils.Types
   other-modules:
       Paths_arbitrary_rank_tutorial
   hs-source-dirs:
