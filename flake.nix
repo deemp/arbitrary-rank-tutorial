@@ -28,6 +28,10 @@
       url = "github:deemp/arbitrary-rank-tutorial";
       flake = false;
     };
+    kind-generics-th = {
+      url = "gitlab:trupill/kind-generics";
+      flake = false;
+    };
     call-flake.url = "github:divnix/call-flake";
   };
 
@@ -97,7 +101,12 @@
                   # direct dependencies
 
                   free-foil = prev.callCabal2nix "free-foil" "${inputs.free-foil}/haskell/free-foil" { };
+                  kind-generics-th =
+                    prev.callCabal2nix "kind-generics-th" "${inputs.kind-generics-th}/kind-generics-th"
+                      { };
+
                   with-utf8 = prev.with-utf8_1_1_0_0;
+
                   bluefin =
                     packageFromHackage "bluefin" "0.0.15.0"
                       "sha256-ahmxmrvXyK77dX6qPDflrQusyoZTas+oMgj41im8KQA=";
@@ -145,12 +154,22 @@
                   ];
                 };
 
+                lsp-types = {
+                  haddock = true;
+                };
+
+                lsp = {
+                  haddock = true;
+                };
+
                 # direct dependencies
 
                 free-foil = {
                   check = false;
                 };
-                with-utf8 = default;
+                with-utf8 = {
+                  check = false;
+                };
 
                 # build tools
 
@@ -172,7 +191,7 @@
             # Development shell configuration
             devShell = {
               hlsCheck.enable = false;
-              hoogle = false;
+              hoogle = true;
               tools = hp: {
                 cabal-install = null;
                 hlint = null;
@@ -222,7 +241,7 @@
                   x: pkgs.lib.attrsets.isDerivation x && pkgs.lib.strings.hasPrefix "ghc-" x.name
                 ) haskellProjectsOutputs.devShell.nativeBuildInputs
               );
-              
+
               # TODO for a single ghc?
               inherit (haskellPackages) haskell-language-server;
             };
@@ -295,7 +314,8 @@
             # TODO use incremental
             # arbitrary-rank-tutorial = mkIncremental "arbitrary-rank-tutorial";
             arbitrary-rank-tutorial = haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
-            arbitrary-rank-tutorial-increment-base = haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
+            arbitrary-rank-tutorial-increment-base =
+              haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
 
             scope-graphs-modular-stlc = mkIncremental "scope-graphs-modular-stlc";
             scope-graphs-modular-stlc-increment-base =
@@ -392,6 +412,7 @@
                 alex
                 happy
                 bnfc
+                node
               ];
             };
           };

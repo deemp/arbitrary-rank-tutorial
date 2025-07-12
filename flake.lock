@@ -19,11 +19,11 @@
     "bnfc": {
       "flake": false,
       "locked": {
-        "lastModified": 1751471285,
-        "narHash": "sha256-kkPbNtES/4AdsYh8eLErFQ00WirDUwSG979qrVWtygo=",
+        "lastModified": 1752250690,
+        "narHash": "sha256-UCciIivyP/77QYGTG/JeRgkSliMCr19phQIycZO0Dug=",
         "owner": "deemp",
         "repo": "bnfc",
-        "rev": "b9b50082b5b6cb2643c09df62ea73c9ea3fd3d79",
+        "rev": "319c7b0a29ac62eab054fdb139b1079a2958711c",
         "type": "github"
       },
       "original": {
@@ -151,6 +151,22 @@
         "type": "github"
       }
     },
+    "kind-generics-th": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1748612939,
+        "narHash": "sha256-vkNf9DKJe8Y13fD/RBBhkjmkutdzFR0k3Vo0FchwTB0=",
+        "owner": "trupill",
+        "repo": "kind-generics",
+        "rev": "052407bfa54e74ac34fa04e16a1dd7537e165ec2",
+        "type": "gitlab"
+      },
+      "original": {
+        "owner": "trupill",
+        "repo": "kind-generics",
+        "type": "gitlab"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1743472173,
@@ -189,6 +205,7 @@
         "flake-parts": "flake-parts",
         "free-foil": "free-foil",
         "haskell-flake": "haskell-flake",
+        "kind-generics-th": "kind-generics-th",
         "nixpkgs": "nixpkgs",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix"
