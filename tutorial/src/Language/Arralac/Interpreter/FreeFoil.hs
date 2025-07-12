@@ -45,7 +45,7 @@ withFreshBinderUsingUnique (UnsafeScope _scope) name cont =
   binder =
     CoreNameBinder
       { name
-      , nameBinder = UnsafeNameBinder (UnsafeName (name.nameUnique))
+      , nameBinder = UnsafeNameBinder (UnsafeName (name.nameUnique.unique))
       }
 
 -- | Unsafely declare that a given name (binder)

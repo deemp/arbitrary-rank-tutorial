@@ -69,7 +69,7 @@ convertASTToCore scope = \case
     letE scope var.varName (convertASTToCore scope body) (\scope' -> convertASTToCore scope' rhs)
   SynTerm'Ann _ term _ ->
     convertASTToCore scope term
-  SynTerm'Var _ var -> Var (UnsafeName var.varName.nameUnique)
+  SynTerm'Var _ var -> Var (UnsafeName var.varName.nameUnique.unique)
 
 whnf :: (Distinct n) => Scope n -> CoreE n -> CoreE n
 whnf scope = \case

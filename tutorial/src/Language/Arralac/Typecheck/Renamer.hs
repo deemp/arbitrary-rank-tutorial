@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
+
 module Language.Arralac.Typecheck.Renamer where
 
 import Control.Exception (Exception, throw)
@@ -27,7 +28,7 @@ type NameFs = FastString
 -- | Variables scope.
 --
 -- Variable names and their ids.
-type Scope = Map NameFs Int
+type Scope = Map NameFs Unique
 
 -- | Current term variables scope.
 --
@@ -63,11 +64,11 @@ type RnM a = (IRnConstraints) => IO a
 -- | Similar to `genSym` in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L257
-newUnique :: (IUniqueSupply) => IO Int
+newUnique :: (IUniqueSupply) => IO Unique
 newUnique = do
   r <- readIORef ?uniqueSupply
   writeIORef ?uniqueSupply (r + 1)
-  pure r
+  pure (Unique r)
 
 selectScope :: (IRnConstraints) => NameSpace -> Scope
 selectScope = \case
@@ -75,13 +76,13 @@ selectScope = \case
   NameSpace'TypeVar -> ?tyVarScope
   NameSpace'TypeConcrete -> ?tyConcreteScope
 
-getVarId :: (IRnConstraints) => NameSpace -> NameFs -> Maybe Int
+getVarId :: (IRnConstraints) => NameSpace -> NameFs -> Maybe Unique
 getVarId ns k = Map.lookup k (selectScope ns)
 
-getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Int
+getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Unique
 getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
 
-getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Int
+getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Unique
 getExistingUnique ns pos name =
   case getVarId ns name of
     Nothing ->
