@@ -9,13 +9,13 @@ data PrettyVerbosity
   | PrettyVerbosity'Detailed
   | PrettyVerbosity'User
 
-type IPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
+type CtxPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
 
 -- | Class for pretty printing.
 --
 -- Allows for configuring verbosity.
 class Pretty' a where
-  pretty' :: (IPrettyVerbosity) => a -> Doc ann
+  pretty' :: (CtxPrettyVerbosity) => a -> Doc ann
 
 prettyCompact :: (Pretty' a) => a -> Doc ann
 prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Normal in pretty'
@@ -26,7 +26,7 @@ prettyDetailed = let ?prettyVerbosity = PrettyVerbosity'Detailed in pretty'
 prettyUser :: (Pretty' a) => a -> Doc ann
 prettyUser = let ?prettyVerbosity = PrettyVerbosity'User in pretty'
 
-prettyIndent :: (IPrettyVerbosity, Pretty' a) => a -> Doc ann
+prettyIndent :: (CtxPrettyVerbosity, Pretty' a) => a -> Doc ann
 prettyIndent = indent 2 . pretty'
 
 vsep' :: [Doc ann] -> Doc ann

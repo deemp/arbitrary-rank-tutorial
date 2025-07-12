@@ -18,34 +18,34 @@ type Scope = Map NameFs Unique
 -- | Current term variables scope.
 --
 -- Visible term variable names and their ids.
-type ITermVarScope = (?termVarScope :: Scope)
+type CtxTermVarScope = (?termVarScope :: Scope)
 
 -- | Current type variables scope.
 --
 -- Visible type variable names and their ids.
-type ITyVarScope = (?tyVarScope :: Scope)
+type CtxTyVarScope = (?tyVarScope :: Scope)
 
 -- | Concrete types scope.
 --
 -- Concrete type names and their ids.
-type ITyConcreteScope = (?tyConcreteScope :: Scope)
+type CtxTyConcreteScope = (?tyConcreteScope :: Scope)
 
 data LetOccursCheckInfo = LetOccursCheckInfo
   { letSrcSpan :: SrcSpan
   , letLhs :: Name
   }
 
-type ILetOccursCheckInfo = (?letOccursCheckInfo :: Maybe LetOccursCheckInfo)
+type CtxLetOccursCheckInfo = (?letOccursCheckInfo :: Maybe LetOccursCheckInfo)
 
-type IRnScopes = (ITermVarScope, ITyVarScope, ITyConcreteScope)
+type CtxRnScopes = (CtxTermVarScope, CtxTyVarScope, CtxTyConcreteScope)
 
-type IRnConstraints =
+type CtxRnConstraints =
   ( HasCallStack
-  , IUniqueSupply
-  , ICurrentFilePath
-  , IDebug
-  , IRnScopes
-  , ILetOccursCheckInfo
+  , CtxUniqueSupply
+  , CtxCurrentFilePath
+  , CtxDebug
+  , CtxRnScopes
+  , CtxLetOccursCheckInfo
   )
 
-type RnM a = (IRnConstraints) => IO a
+type RnM a = (CtxRnConstraints) => IO a

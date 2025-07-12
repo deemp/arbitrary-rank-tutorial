@@ -10,7 +10,7 @@ type FastString = Text
 -- ==============================================
 
 -- | Current file path.
-type ICurrentFilePath = (?currentFilePath :: FastString)
+type CtxCurrentFilePath = (?currentFilePath :: FastString)
 
 -- | Whether to output debug logs.
-type IDebug = (?debug :: Bool)
+type CtxDebug = (?debug :: Bool)

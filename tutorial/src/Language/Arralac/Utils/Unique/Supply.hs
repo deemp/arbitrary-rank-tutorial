@@ -8,13 +8,13 @@ import Language.Arralac.Utils.Unique (Unique (Unique))
 -- GHC implements a much more sophisticated unique supply.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L67
-type IUniqueSupply = (?uniqueSupply :: IORef Int)
+type CtxUniqueSupply = (?uniqueSupply :: IORef Int)
 
 -- | Generate a new unique id.
 --
 -- Similar to @genSym@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L257
-newUnique' :: (IUniqueSupply) => IO Int
+newUnique' :: (CtxUniqueSupply) => IO Int
 newUnique' = do
   r <- readIORef ?uniqueSupply
   writeIORef ?uniqueSupply (r + 1)
@@ -24,5 +24,5 @@ newUnique' = do
 --
 -- Similar to @uniqFromTag@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L282
-newUnique :: (IUniqueSupply) => IO Unique
+newUnique :: (CtxUniqueSupply) => IO Unique
 newUnique = Unique <$> newUnique'

@@ -128,7 +128,7 @@ toRealSrcSpan filePath (IMRange r) =
     , srcSpanECol = fromIntegral r._end._character
     }
 
-prettyIM :: (IPrettyVerbosity, Pretty' a) => FastString -> IM.IntervalMap IMRange a -> Doc ann
+prettyIM :: (CtxPrettyVerbosity, Pretty' a) => FastString -> IM.IntervalMap IMRange a -> Doc ann
 prettyIM filePath mp = pretty' mp'
  where
   mp' = IM.toAscList mp & traversed . _1 %~ toRealSrcSpan filePath

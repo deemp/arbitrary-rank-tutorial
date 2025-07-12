@@ -25,17 +25,17 @@ import Prettyprinter ((<+>))
 -- No promotion. See Note [Promotion and level-checking] in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3588
 
-type SolveM a = (IDebug, IPrettyVerbosity) => IO a
+type SolveM a = (CtxDebug, CtxPrettyVerbosity) => IO a
 
-type ILhsMetaTv = (?lhsMetaTv :: TcTyVar)
+type CtxLhsMetaTv = (?lhsMetaTv :: TcTyVar)
 
-type IMetaTvScope = (?metaTvScope :: Set.Set TcTyVar)
+type CtxMetaTvScope = (?metaTvScope :: Set.Set TcTyVar)
 
-type ICt = (?ct :: Ct)
+type CtxCt = (?ct :: Ct)
 
 class Solve a where
   type SolveTo a
-  solve :: (IMetaTvScope) => a -> SolveM (SolveTo a)
+  solve :: (CtxMetaTvScope) => a -> SolveM (SolveTo a)
 
 instance Solve Ct where
   type SolveTo Ct = [Ct]
@@ -156,7 +156,7 @@ unifyVar _ct _tv _ty = []
 -- See Note [Use checkTyEqRhs in mightEqualLater].
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L4362
 class Check a where
-  check :: (ILhsMetaTv, IMetaTvScope, ICt) => a -> SolveM ()
+  check :: (CtxLhsMetaTv, CtxMetaTvScope, CtxCt) => a -> SolveM ()
 
 -- | Check that a variable somewhere on the rhs
 -- of the constraint doesn't have a strictly deeper level
@@ -164,7 +164,7 @@ class Check a where
 --
 -- Similar to @tyVarLevelCheck@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3905
-levelCheck :: (ILhsMetaTv, ICt) => TcTyVar -> IO ()
+levelCheck :: (CtxLhsMetaTv, CtxCt) => TcTyVar -> IO ()
 levelCheck rhs = do
   let lhs = ?lhsMetaTv
       lhsLevel = ?lhsMetaTv.varDetails.tcLevel
@@ -187,7 +187,7 @@ levelCheck rhs = do
 --
 -- Similar to @simpleOccursCheck@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3892
-occursCheck :: (ILhsMetaTv, ICt, IMetaTvScope) => TcTyVar -> IO ()
+occursCheck :: (CtxLhsMetaTv, CtxCt, CtxMetaTvScope) => TcTyVar -> IO ()
 occursCheck var =
   when (Set.member var ?metaTvScope) $
     dieSolver SolverError'OccursCheck{tv = ?lhsMetaTv, ct = ?ct}
@@ -274,7 +274,7 @@ solveIteratively iterations constraints = do
 
   pure constraints'
  where
-  go :: (IMetaTvScope) => Int -> WantedConstraints -> SolveM WantedConstraints
+  go :: (CtxMetaTvScope) => Int -> WantedConstraints -> SolveM WantedConstraints
   go _ constraintsCurrent
     | [] <- toListWc constraintsCurrent =
         pure constraintsCurrent

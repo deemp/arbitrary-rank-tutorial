@@ -12,7 +12,7 @@ import Language.Arralac.Parser.Generated.Lex (Token)
 import Language.Arralac.Parser.Generated.Par
 import Language.Arralac.Utils.Types
 
-type ParserM a = (ICurrentFilePath) => IO a
+type ParserM a = (CtxCurrentFilePath) => IO a
 
 parseWith :: ([Token] -> Either String a) -> Text -> Either String a
 parseWith parser input = parser tokens

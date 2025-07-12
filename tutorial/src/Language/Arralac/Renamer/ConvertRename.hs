@@ -16,13 +16,13 @@ import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Pass
 import Language.Arralac.Utils.Unique (Unique)
-import Language.Arralac.Utils.Unique.Supply (IUniqueSupply, newUnique)
+import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
 
 -- ===================================
 -- [Convert and rename the parser AST]
 -- ===================================
 
-convertRenameAbs :: (HasCallStack, ICurrentFilePath, IDebug, IUniqueSupply, ConvertRename a) => a -> ConvertRenameTo a
+convertRenameAbs :: (HasCallStack, CtxCurrentFilePath, CtxDebug, CtxUniqueSupply, ConvertRename a) => a -> ConvertRenameTo a
 convertRenameAbs a = do
   let
     ?termVarScope = Map.empty
@@ -34,14 +34,14 @@ convertRenameAbs a = do
 
 class ConvertRename a where
   type ConvertRenameTo a
-  convertRename :: (IRnConstraints) => a -> (ConvertRenameTo a)
+  convertRename :: (CtxRnConstraints) => a -> (ConvertRenameTo a)
 
 instance ConvertRename Abs.Program where
   type ConvertRenameTo Abs.Program = IO (SynTerm CompRn)
   convertRename (Abs.Program _ program) =
     convertRename program
 
-convertPositionToSrcSpan :: (ICurrentFilePath) => Abs.BNFC'Position -> SrcSpan
+convertPositionToSrcSpan :: (CtxCurrentFilePath) => Abs.BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
   Just ((sLine, sCol), (eLine, eCol)) ->
     RealSrcSpan
@@ -62,7 +62,7 @@ runWithScope ns scope act =
     NameSpace'TypeVar -> let ?tyVarScope = scope in act
     NameSpace'TypeConcrete -> let ?tyConcreteScope = scope in act
 
-selectScope :: (IRnScopes) => NameSpace -> Scope
+selectScope :: (CtxRnScopes) => NameSpace -> Scope
 selectScope = \case
   NameSpace'TermVar -> ?termVarScope
   NameSpace'TypeVar -> ?tyVarScope
@@ -136,7 +136,7 @@ instance ConvertRename Abs.Exp where
       ty' <- convertRename ty
       pure $ SynTerm'Ann (convertPositionToSrcSpan pos) term' ty'
 
-getVarId :: (IRnScopes) => NameSpace -> NameFs -> Maybe Unique
+getVarId :: (CtxRnScopes) => NameSpace -> NameFs -> Maybe Unique
 getVarId ns k = Map.lookup k (selectScope ns)
 
 getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Unique

@@ -15,7 +15,7 @@ import Language.Arralac.Typecheck.Zonker (Zonk (..))
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Pass
-import Language.Arralac.Utils.Unique.Supply (IUniqueSupply)
+import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply)
 import UnliftIO.Exception (finally)
 
 -- ==============================================
@@ -45,7 +45,7 @@ typecheck term =
         [ ("constraints", pretty' constraints)
         ]
 
-runTypechecker :: (HasCallStack, IDebug, IUniqueSupply, IPrettyVerbosity, ISolverIterations) => SynTerm CompRn -> IO (SynTerm CompZn)
+runTypechecker :: (HasCallStack, CtxDebug, CtxUniqueSupply, CtxPrettyVerbosity, CtxSolverIterations) => SynTerm CompRn -> IO (SynTerm CompZn)
 runTypechecker program = do
   constraints <- newIORef emptyWantedConstraints
   tcError <- newIORef Nothing
@@ -57,7 +57,7 @@ runTypechecker program = do
   typecheck program
 
 -- TODO use filepath from implicit params
-runTypechecker' :: (HasCallStack, IDebug, IPrettyVerbosity, ISolverIterations) => FastString -> T.Text -> IO (SynTerm CompZn)
+runTypechecker' :: (HasCallStack, CtxDebug, CtxPrettyVerbosity, CtxSolverIterations) => FastString -> T.Text -> IO (SynTerm CompZn)
 runTypechecker' filePath content = do
   uniqueSupply <- newIORef 0
   let ?uniqueSupply = uniqueSupply

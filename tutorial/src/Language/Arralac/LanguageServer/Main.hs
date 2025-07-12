@@ -40,10 +40,10 @@ import UnliftIO (catch)
 type ServerState = Map NormalizedUri (IM.IntervalMap IMRange SpanInfo)
 
 -- | A mutable variable for storing the server state.
-type IServerState = (?serverState :: TVar ServerState)
+type CtxServerState = (?serverState :: TVar ServerState)
 
 -- | Logger to run in the LSP monad.
-type ILogger = (?logger :: L.LogAction (LspT Config IO) (WithSeverity T.Text))
+type CtxLogger = (?logger :: L.LogAction (LspT Config IO) (WithSeverity T.Text))
 
 -- | Language server config
 --
@@ -54,14 +54,14 @@ data Config = Config
   deriving stock (Generic, Show)
   deriving anyclass (J.ToJSON, J.FromJSON)
 
-type IConfig = (HasCallStack, ILogger, IServerState, IPrettyVerbosity)
+type CtxConfig = (HasCallStack, CtxLogger, CtxServerState, CtxPrettyVerbosity)
 
 -- | Like library LspM, but with a constant config.
 -- https://hackage.haskell.org/package/lsp-2.7.0.0/docs/Language-LSP-Server.html#t:LspM
-type LspM a = (IConfig) => LspT Config IO a
+type LspM a = (CtxConfig) => LspT Config IO a
 
 -- | 'Handlers' with additional context
-type Handlers' = (IConfig) => Handlers (LspT Config IO)
+type Handlers' = (CtxConfig) => Handlers (LspT Config IO)
 
 -- ==============================================
 -- The LSP Handlers

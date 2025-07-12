@@ -19,7 +19,7 @@ import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Bag
 import Language.Arralac.Utils.Unique (Unique)
-import Language.Arralac.Utils.Unique.Supply (IUniqueSupply, newUnique)
+import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
 import Prettyprinter
 import Prettyprinter.Util
 
@@ -41,28 +41,28 @@ insertTcTyVarEnv k v = TcTyVarEnv . Map.insert k v . (.env)
 emptyTcTyVarEnv :: TcTyVarEnv
 emptyTcTyVarEnv = TcTyVarEnv mempty
 
-type IVarEnv = (?tcTyVarEnv :: TcTyVarEnv)
-type ITcLevel = (?tcLevel :: TcLevel)
-type IConstraints = (?constraints :: IORef WantedConstraints)
-type ITcErrorPropagated = (?tcErrorPropagated :: IORef (Maybe TcError))
-type ISolverIterations = (?solverIterations :: Int)
+type CtxVarEnv = (?tcTyVarEnv :: TcTyVarEnv)
+type CtxTcLevel = (?tcLevel :: TcLevel)
+type CtxConstraints = (?constraints :: IORef WantedConstraints)
+type CtxTcErrorPropagated = (?tcErrorPropagated :: IORef (Maybe TcError))
+type CtxSolverIterations = (?solverIterations :: Int)
 
-type ITcEnv =
+type CtxTcEnv =
   ( HasCallStack
-  , IUniqueSupply
-  , IVarEnv
-  , ITcLevel
-  , IDebug
-  , IConstraints
-  , ITcErrorPropagated
-  , IPrettyVerbosity
-  , ISolverIterations
+  , CtxUniqueSupply
+  , CtxVarEnv
+  , CtxTcLevel
+  , CtxDebug
+  , CtxConstraints
+  , CtxTcErrorPropagated
+  , CtxPrettyVerbosity
+  , CtxSolverIterations
   )
 
 -- TcM in GHC is a ReaderT (Env a) IO b.
 -- It can be replaced with ImplicitParams
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types.hs#L271
-type TcM a = (ITcEnv) => IO a
+type TcM a = (CtxTcEnv) => IO a
 
 -- ==============================================
 -- Instantiation
@@ -427,7 +427,7 @@ tyVarToMetaTyVar x = do
 --
 -- Similar to @newSkolemTyVar@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L765
-newSkolemTyVar' :: (ITcLevel) => SkolemInfo -> Name -> TcTyVar
+newSkolemTyVar' :: (CtxTcLevel) => SkolemInfo -> Name -> TcTyVar
 newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 
 -- | Converts a 'BoundTv' to a 'SkolemTv'.
@@ -449,7 +449,7 @@ newSkolemTyVar _ x =
 -- Debugging utilities
 -- ==============================================
 
-debug :: (IDebug, IPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
+debug :: (CtxDebug, CtxPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
 debug label xs = when ?debug do
   putDocW
     1000
@@ -461,7 +461,7 @@ debug label xs = when ?debug do
         ]
     )
 
-debug' :: (IDebug, IPrettyVerbosity) => Doc ann -> [(Doc ann, Doc ann)] -> IO ()
+debug' :: (CtxDebug, CtxPrettyVerbosity) => Doc ann -> [(Doc ann, Doc ann)] -> IO ()
 debug' label xs = debug label (prettyVarVal <$> xs)
  where
   prettyVarVal :: (Doc ann, Doc ann) -> Doc ann
@@ -558,7 +558,7 @@ instance Pretty' TcError where
         , prettyIndent thing
         ]
           <> prettyDefinedAt thing
-    prettyDefinedAt :: (IPrettyVerbosity) => TypedThing -> [Doc ann]
+    prettyDefinedAt :: (CtxPrettyVerbosity) => TypedThing -> [Doc ann]
     prettyDefinedAt thing =
       [ "defined at:"
       , prettyIndent (getThingStart thing)
@@ -587,7 +587,7 @@ withTcError err tcAction = do
     Just _ -> do
       tcAction
 
-die :: (ITcErrorPropagated, HasCallStack) => TcError -> IO a -- Fail unconditionally
+die :: (CtxTcErrorPropagated, HasCallStack) => TcError -> IO a -- Fail unconditionally
 die tcErrorCurrent = do
   tcErrorPropagated <- readIORef ?tcErrorPropagated
   -- TODO Currently, a newer error can not overwrite the propagated error.
