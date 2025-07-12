@@ -21,24 +21,34 @@ import Language.Arralac.Utils.Types (FastString)
 --
 -- We use different representations of type variables via the 'XVar'' type family.
 data Type p
-  = -- | Vanilla type variable
+  = -- | Type variable.
+    --
+    -- @x@
     Type'Var (XVar' p)
-  | Type'ForAll
+  | -- | Forall construct.
+    --
+    -- @forall a. b@
+    Type'ForAll
       [XVar' p]
       (Type p)
-  | -- | This is a special case of a type constructor
-    -- where the type constructor is (->).
+  | -- | Function type.
+    --
+    -- @a -> b@
     Type'Fun (Type p) (Type p)
-  | -- | Type literals are similar to type constructors.
+  | -- | Concrete type.
     Type'Concrete TypeConcrete
 
 type family XVar' p
 
+-- | A concrete type.
 data TypeConcrete
   = TypeConcrete'Int
   | TypeConcrete'Bool
   | TypeConcrete'String
-  | TypeConcrete'Con FastString
+  | -- | Type with a single constructor.
+    --
+    -- That constructor has the same name as the type.
+    TypeConcrete'Con FastString
   deriving stock (Eq)
 
 typeConcreteName :: TypeConcrete -> FastString

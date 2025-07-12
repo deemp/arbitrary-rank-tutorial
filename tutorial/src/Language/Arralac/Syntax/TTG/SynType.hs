@@ -12,19 +12,19 @@ import Language.Arralac.Syntax.TTG.Extension
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
 data SynType x
-  = -- | Type variable
+  = -- | Type variable.
     --
     -- @x@
     SynType'Var (XSynType'Var' x) (XSynType'Var x)
-  | -- | Forall
+  | -- | Forall construct.
     --
     -- @forall a. b@
     SynType'ForAll (XSynType'ForAll' x) [XSynType'ForAll'Var x] (XSynType'ForAll'Body x)
-  | -- | Function
+  | -- | Function type.
     --
     -- @a -> b@
     SynType'Fun (XSynType'Fun' x) (XSynType'Fun'Arg x) (XSynType'Fun'Res x)
-  | -- | Concrete type
+  | -- | Concrete type.
     --
     -- @String@
     SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)

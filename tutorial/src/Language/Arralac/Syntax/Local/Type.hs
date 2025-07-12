@@ -21,8 +21,6 @@ type instance XVar' CompZn = ZnTyVar
 -- [Variables]
 -- ==============================================
 
--- TODO make a newtype
-
 -- | Similar to 'TcLevel' in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
@@ -33,10 +31,15 @@ type instance XVar' CompZn = ZnTyVar
 newtype TcLevel = TcLevel Int
   deriving newtype (Show, Eq, Ord, Num)
 
--- TODO might need TcLevel
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L418
-
+-- | Expected type.
+--
+-- Similar to 'ExpType' in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L401
 data Expected a = Infer (IORef a) | Check a
+
+-- TODO ^ Do we need TcLevel in Infer?
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L418
 
 -- | A term or a type variable produced by the renamer.
 --
@@ -104,12 +107,6 @@ data ZnTermVar
     , varType :: Type CompZn
     }
 
--- TODO add another Indirect variant for types zonked during typechecking.
--- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
---
--- The issue was mentioned here:
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L260
-
 -- | Similar to 'MetaDetails' in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
@@ -121,6 +118,12 @@ data MetaDetails
     -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L915
     Flexi
   | Indirect TcType
+
+-- TODO ^ add another Indirect variant for types zonked during typechecking.
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
+--
+-- The issue was mentioned here:
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L260
 
 -- | What restrictions are on this metavariable around unification?
 -- These are checked in GHC.Tc.Utils.Unify.checkTopShape
@@ -141,7 +144,6 @@ data MetaInfo
 -- | Details about a 'TyVar'
 --
 -- See Note [TyVars and TcTyVars during type checking]
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L601
 data TcTyVarDetails
   = -- | A type variable always bound by an enclosing 'forall'.
