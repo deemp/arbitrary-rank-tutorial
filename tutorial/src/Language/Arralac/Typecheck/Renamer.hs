@@ -46,9 +46,12 @@ type ITyVarScope = (?tyVarScope :: Scope)
 -- Built-in type names and their ids.
 type ITyConcreteScope = (?tyConcreteScope :: Scope)
 
--- TODO add index because the parse type isn't enough to differentiate
--- TODO add built-in types to the scope
--- TODO Forbid shadowing?
+data LetOccursCheckInfo = LetOccursCheckInfo
+  { letSrcSpan :: SrcSpan
+  , letLhs :: Name
+  }
+
+type ILetOccursCheckInfo = (?letOccursCheckInfo :: Maybe LetOccursCheckInfo)
 
 type IRnConstraints =
   ( HasCallStack
@@ -107,15 +110,17 @@ withNamesInScope ns names act = do
           ( Map.fromList
               ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)
           )
-          $ (selectScope ns)
+          $ selectScope ns
   runWithScope ns scope act
 
 convertProgram :: Abs.Program -> RnM (SynTerm CompRn)
-convertProgram (Abs.Program _ program) = convertRename program
+convertProgram (Abs.Program _ program) = do
+  let ?letOccursCheckInfo = Nothing
+  convertRename program
 
 class ConvertRename a where
   type ConvertRenameTo a
-  convertRename :: (IRnConstraints) => a -> (ConvertRenameTo a)
+  convertRename :: (IRnConstraints, ILetOccursCheckInfo) => a -> (ConvertRenameTo a)
 
 convertPositionToSrcSpan :: (ICurrentFilePath) => Abs.BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
@@ -131,11 +136,24 @@ convertPositionToSrcSpan = \case
   Nothing ->
     UnhelpfulSpan UnhelpfulNoLocationInfo
 
+letOccursCheck :: (ILetOccursCheckInfo) => Name -> IO ()
+letOccursCheck name = do
+  case ?letOccursCheckInfo of
+    Just info ->
+      when (name.nameOcc.occNameFS == info.letLhs.nameOcc.occNameFS) $
+        dieRn
+          RnError'LetOccursCheckFailed
+            { letOccursCheckInfo = info
+            , letLhsOcc = name
+            }
+    _ -> pure ()
+
 instance ConvertRename Abs.Exp where
   type ConvertRenameTo Abs.Exp = IO (SynTerm CompRn)
   convertRename = \case
     Abs.ExpVar _pos var -> do
       var' <- convertRename var False
+      letOccursCheck var'
       pure $ SynTerm'Var () var'
     Abs.ExpInt pos val ->
       pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Num val)
@@ -165,9 +183,17 @@ instance ConvertRename Abs.Exp where
       var' <- convertRename var True
       -- TODO should the let-expression be recursive
       -- and the var be brought into scope of the assigned term?
-      term1' <- convertRename term1
+      let pos' = convertPositionToSrcSpan pos
+      term1' <- do
+        let ?letOccursCheckInfo =
+              Just
+                LetOccursCheckInfo
+                  { letSrcSpan = pos'
+                  , letLhs = var'
+                  }
+        convertRename term1
       term2' <- withNameInScope NameSpace'TermVar var' (convertRename term2)
-      pure $ SynTerm'Let (convertPositionToSrcSpan pos) var' term1' term2'
+      pure $ SynTerm'Let pos' var' term1' term2'
     Abs.ExpAnno pos term ty -> do
       term' <- convertRename term
       ty' <- convertRename ty
@@ -288,6 +314,7 @@ data RnError
   = -- TODO make a parser error
     RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
   | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
+  | RnError'LetOccursCheckFailed {letOccursCheckInfo :: LetOccursCheckInfo, letLhsOcc :: Name}
 
 -- | A renamer exception that can capture the 'callStack' at the 'throw' site.
 --
@@ -312,6 +339,17 @@ instance Pretty' RnError where
         , prettyIndent name
         , "at:"
         , prettyIndent srcSpan
+        ]
+    RnError'LetOccursCheckFailed{letOccursCheckInfo, letLhsOcc} ->
+      vsep'
+        [ "Recursive `let'-binding at:"
+        , prettyIndent letOccursCheckInfo.letSrcSpan
+        , "Variable:"
+        , prettyIndent letOccursCheckInfo.letLhs
+        , "bound in a `let'-expression at:"
+        , prettyIndent letOccursCheckInfo.letLhs.nameLoc
+        , "occurs in the RHS-expression at:"
+        , prettyIndent letLhsOcc.nameLoc
         ]
 
 instance Exception RnError
