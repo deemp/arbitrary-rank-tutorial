@@ -7,6 +7,7 @@ import Data.IntSet qualified as IntSet
 import Generics.Kind.TH
 import Language.Arralac.Syntax.Local.Name qualified as BT
 import Language.Arralac.Utils.Pretty (Pretty' (..))
+import Language.Arralac.Utils.Unique (Unique (..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | A wrapper around 'NameBinder' that stores additional information.
