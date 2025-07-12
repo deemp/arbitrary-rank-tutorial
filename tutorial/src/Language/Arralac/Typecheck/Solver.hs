@@ -26,8 +26,10 @@ import Prettyprinter ((<+>))
 
 type SolveM a = (IDebug, IPrettyVerbosity) => IO a
 
-type IMetaTv = (?metaTv :: TcTyVar)
+type ILhsMetaTv = (?lhsMetaTv :: TcTyVar)
+
 type IMetaTvScope = (?metaTvScope :: Set.Set TcTyVar)
+
 type ICt = (?ct :: Ct)
 
 class Solve a where
@@ -44,7 +46,7 @@ instance Solve Ct where
       SkolemTv{} -> dieSolver SolverError'CannotUnifySkolemVar{ct}
       BoundTv{} -> dieSolver SolverError'CannotUnifyBoundVar{tv = lhs, ty = rhs, ct}
       MetaTv{metaTvRef} -> do
-        let ?metaTv = lhs
+        let ?lhsMetaTv = lhs
             ?metaTvScope = Set.insert lhs ?metaTvScope
             ?ct = ct
 
@@ -153,12 +155,12 @@ unifyVar _ct _tv _ty = []
 -- See Note [Use checkTyEqRhs in mightEqualLater].
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L4362
 class Check a where
-  check :: (IMetaTv, IMetaTvScope, ICt) => a -> SolveM ()
+  check :: (ILhsMetaTv, IMetaTvScope, ICt) => a -> SolveM ()
 
-checkLevel :: (IMetaTv, ICt) => TcTyVar -> IO ()
+checkLevel :: (ILhsMetaTv, ICt) => TcTyVar -> IO ()
 checkLevel rhs = do
-  let lhs = ?metaTv
-      lhsLevel = ?metaTv.varDetails.tcLevel
+  let lhs = ?lhsMetaTv
+      lhsLevel = ?lhsMetaTv.varDetails.tcLevel
       rhsLevel = rhs.varDetails.tcLevel
   when (lhsLevel < rhsLevel) do
     dieSolver
@@ -185,7 +187,7 @@ instance Check TcTyVar where
     case var.varDetails of
       MetaTv{metaTvRef} -> do
         when (Set.member var ?metaTvScope) $
-          dieSolver SolverError'OccursCheck{tv = ?metaTv, ct = ?ct}
+          dieSolver SolverError'OccursCheck{tv = ?lhsMetaTv, ct = ?ct}
         metaDetails <- readIORef metaTvRef
         case metaDetails of
           Flexi -> pure ()
@@ -208,7 +210,7 @@ instance Check Ct where
     let lhs = ct.ct_eq_can.eq_lhs
         rhs = ct.ct_eq_can.eq_rhs
 
-    let ?metaTv = lhs
+    let ?lhsMetaTv = lhs
         ?metaTvScope = mempty
         ?ct = ct
 
