@@ -1,12 +1,12 @@
-module Language.Arralac.Typecheck.TcTerm where
+module Language.Arralac.Typechecker.TcTerm where
 
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typecheck.TcMonad
-import Language.Arralac.Typecheck.Types.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
+import Language.Arralac.Typechecker.TcMonad
+import Language.Arralac.Typechecker.Types.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types.Bag (unitBag)
 import Language.Arralac.Utils.Types.Pass

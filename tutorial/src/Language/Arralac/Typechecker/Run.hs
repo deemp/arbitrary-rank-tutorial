@@ -1,4 +1,4 @@
-module Language.Arralac.Typecheck.Run where
+module Language.Arralac.Typechecker.Run where
 
 import Data.IORef (newIORef, readIORef)
 import Data.Text qualified as T
@@ -7,11 +7,11 @@ import Language.Arralac.Parser.Parse
 import Language.Arralac.Renamer.ConvertRename (convertRenameAbs)
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
-import Language.Arralac.Typecheck.Solver (solveIteratively)
-import Language.Arralac.Typecheck.TcMonad
-import Language.Arralac.Typecheck.TcTerm (inferRho)
-import Language.Arralac.Typecheck.Types.Constraints (emptyWantedConstraints)
-import Language.Arralac.Typecheck.Zonker (Zonk (..))
+import Language.Arralac.Typechecker.Solver (solveIteratively)
+import Language.Arralac.Typechecker.TcMonad
+import Language.Arralac.Typechecker.TcTerm (inferRho)
+import Language.Arralac.Typechecker.Types.Constraints (emptyWantedConstraints)
+import Language.Arralac.Typechecker.Zonker (Zonk (..))
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Pass

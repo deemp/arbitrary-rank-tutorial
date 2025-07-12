@@ -67,13 +67,13 @@ library
       Language.Arralac.Syntax.TTG.SynTerm
       Language.Arralac.Syntax.TTG.SynType
       Language.Arralac.Syntax.TTG.Type
-      Language.Arralac.Typecheck.Main
-      Language.Arralac.Typecheck.Run
-      Language.Arralac.Typecheck.Solver
-      Language.Arralac.Typecheck.TcMonad
-      Language.Arralac.Typecheck.TcTerm
-      Language.Arralac.Typecheck.Types.Constraints
-      Language.Arralac.Typecheck.Zonker
+      Language.Arralac.Typechecker.Main
+      Language.Arralac.Typechecker.Run
+      Language.Arralac.Typechecker.Solver
+      Language.Arralac.Typechecker.TcMonad
+      Language.Arralac.Typechecker.TcTerm
+      Language.Arralac.Typechecker.Types.Constraints
+      Language.Arralac.Typechecker.Zonker
       Language.Arralac.Utils.Pretty
       Language.Arralac.Utils.Pretty.Class
       Language.Arralac.Utils.Pretty.GPretty

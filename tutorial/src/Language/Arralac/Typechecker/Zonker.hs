@@ -1,4 +1,4 @@
-module Language.Arralac.Typecheck.Zonker where
+module Language.Arralac.Typechecker.Zonker where
 
 import Control.Lens ((%~))
 import Control.Monad (forM)
@@ -12,7 +12,7 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typecheck.TcMonad (debug')
+import Language.Arralac.Typechecker.TcMonad (debug')
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Pass

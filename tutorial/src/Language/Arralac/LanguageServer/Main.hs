@@ -16,7 +16,7 @@ import Data.Text qualified as T
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
 import Language.Arralac.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
-import Language.Arralac.Typecheck.Run (runTypechecker')
+import Language.Arralac.Typechecker.Run (runTypechecker')
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.LSP.Logging (defaultClientLogger)

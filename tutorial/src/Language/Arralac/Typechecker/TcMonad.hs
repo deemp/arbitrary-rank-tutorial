@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Language.Arralac.Typecheck.TcMonad where
+module Language.Arralac.Typechecker.TcMonad where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (when)
@@ -14,7 +14,7 @@ import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typecheck.Types.Constraints
+import Language.Arralac.Typechecker.Types.Constraints
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Bag

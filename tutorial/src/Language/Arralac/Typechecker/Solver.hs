@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Language.Arralac.Typecheck.Solver where
+module Language.Arralac.Typechecker.Solver where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (forM, forM_, when)
@@ -11,8 +11,8 @@ import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typecheck.TcMonad (badType, debug')
-import Language.Arralac.Typecheck.Types.Constraints
+import Language.Arralac.Typechecker.TcMonad (badType, debug')
+import Language.Arralac.Typechecker.Types.Constraints
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Bag

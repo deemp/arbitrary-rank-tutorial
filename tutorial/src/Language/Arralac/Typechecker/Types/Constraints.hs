@@ -1,4 +1,4 @@
-module Language.Arralac.Typecheck.Types.Constraints where
+module Language.Arralac.Typechecker.Types.Constraints where
 
 import GHC.Generics (Generic)
 import Language.Arralac.Syntax.Local.Name (RealSrcSpan)
