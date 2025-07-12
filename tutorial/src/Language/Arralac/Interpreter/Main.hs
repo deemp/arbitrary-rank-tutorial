@@ -19,7 +19,12 @@ data Core scope term
   = Core'Lit SynLit
   | Core'App term term
   | Core'Lam scope
-  | Core'Let term scope
+  | -- | Non-recursive @let@.
+    --
+    -- @let a = b in c@.
+    --
+    -- @a@ may not occur in @b@.
+    Core'Let term scope
   deriving stock (Functor)
 
 deriveBifunctor ''Core
