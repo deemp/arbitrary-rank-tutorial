@@ -99,7 +99,8 @@ instance Pretty' RealSrcSpan where
     (pretty' r.srcSpanFile <> ":")
       <> (pretty' (r.srcSpanSLine + 1) <> ":" <> pretty' (r.srcSpanSCol + 1))
       <> "-"
-      <> (pretty' (r.srcSpanELine + 1) <> ":" <> pretty' (r.srcSpanECol + 1))
+      -- https://github.com/microsoft/vscode/blob/7b1c3d3dcee38406280f67f9909508680da0898d/src/vs/workbench/contrib/terminalContrib/links/browser/terminalLinkParsing.ts#L79
+      <> (pretty' (r.srcSpanELine + 1) <> "." <> pretty' (r.srcSpanECol + 1))
 
 instance Pretty' UnhelpfulSpanReason where
   pretty' = \case
