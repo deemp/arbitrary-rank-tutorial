@@ -73,7 +73,6 @@ library
       Language.Arralac.Typechecker.TcMonad
       Language.Arralac.Typechecker.TcTerm
       Language.Arralac.Typechecker.Types.Constraints
-      Language.Arralac.Typechecker.Zonker
       Language.Arralac.Utils.Pretty
       Language.Arralac.Utils.Pretty.Class
       Language.Arralac.Utils.Pretty.GPretty
@@ -82,6 +81,8 @@ library
       Language.Arralac.Utils.Types.Pass
       Language.Arralac.Utils.Unique
       Language.Arralac.Utils.Unique.Supply
+      Language.Arralac.Zonker.Tc.Zonk
+      Language.Arralac.Zonker.Zn.Zonk
   other-modules:
       Paths_arbitrary_rank_tutorial
   hs-source-dirs:

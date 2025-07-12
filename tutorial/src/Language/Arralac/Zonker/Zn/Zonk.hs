@@ -1,4 +1,4 @@
-module Language.Arralac.Typechecker.Zonker where
+module Language.Arralac.Zonker.Zn.Zonk where
 
 import Control.Lens ((%~))
 import Control.Monad (forM)

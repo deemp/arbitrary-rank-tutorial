@@ -11,11 +11,11 @@ import Language.Arralac.Typechecker.Solver (solveIteratively)
 import Language.Arralac.Typechecker.TcMonad
 import Language.Arralac.Typechecker.TcTerm (inferRho)
 import Language.Arralac.Typechecker.Types.Constraints (emptyWantedConstraints)
-import Language.Arralac.Typechecker.Zonker (Zonk (..))
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Types.Pass
 import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply)
+import Language.Arralac.Zonker.Zn.Zonk (Zonk (..))
 import UnliftIO.Exception (finally)
 
 -- ==============================================
