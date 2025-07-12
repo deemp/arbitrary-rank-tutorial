@@ -171,17 +171,26 @@ checkLevel rhs = do
         }
 
 instance Check TcTyVar where
-  check var =
+  check var = do
+    -- If this is a metavariable, it cannot unify with any metavariable
+    -- with a deeper level. Hence, even if the variable has an Indirect type,
+    -- that type won't contain any variable with a deeper level.
+    --
+    -- Therefore, we can check just the level of this variable.
+    --
+    -- See:
+    -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L873
+    checkLevel var
+
     case var.varDetails of
       MetaTv{metaTvRef} -> do
         when (Set.member var ?metaTvScope) $
           dieSolver SolverError'OccursCheck{tv = ?metaTv, ct = ?ct}
         metaDetails <- readIORef metaTvRef
         case metaDetails of
-          Flexi -> checkLevel var
+          Flexi -> pure ()
           Indirect ty -> check ty
-      _ -> do
-        checkLevel var
+      _ -> pure ()
 
 instance Check TcType where
   check = \case
