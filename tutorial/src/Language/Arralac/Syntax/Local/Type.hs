@@ -22,7 +22,6 @@ type instance XVar' CompZn = ZnTyVar
 -- ==============================================
 
 -- | Similar to @TcLevel@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
 --
 -- Also see Note [TcLevel invariants] in GHC.
@@ -34,7 +33,6 @@ newtype TcLevel = TcLevel Int
 -- | Expected type.
 --
 -- Similar to @ExpType@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L401
 data Expected a = Infer (IORef a) | Check a
 
@@ -44,7 +42,6 @@ data Expected a = Infer (IORef a) | Check a
 -- | A term or a type variable produced by the renamer.
 --
 -- Similar to @RdrName@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Reader.hs#L166
 data RnVar = RnVar
   { varName :: !Name
@@ -108,7 +105,6 @@ data ZnTermVar
     }
 
 -- | Similar to @MetaDetails@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
 data MetaDetails
   = -- | Flexi type variables unify to become Indirects.
@@ -197,7 +193,6 @@ type Tau = TcType -- No ForAlls anywhere
 -- | A type that can have mutable type variables.
 --
 -- Similar to @TcType@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 --
 -- GHC also has 'Kind's, but we don't have them.

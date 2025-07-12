@@ -14,7 +14,6 @@ import Prettyprinter
 -- | A globally unique identifier.
 --
 -- Similar to @Unique@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
 newtype Unique = Unique {unique :: Int}
   deriving newtype (Eq, Ord, Pretty')
@@ -50,7 +49,6 @@ data NameSpace
 -- and not yet resolved".
 --
 -- Similar to @OccName@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L360
 data OccName = OccName
   { occNameSpace :: !NameSpace

@@ -73,8 +73,7 @@ mkTypedThingIfCheck thing = \case
   Infer _ -> Nothing
   Check _ -> Just (HsExprRnThing thing)
 
--- | Similar to `tcCheckPolyExpr` in GHC.
---
+-- | Similar to @tcCheckPolyExpr@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L100
 tcRho :: SynTerm CompRn -> Expected Rho -> TcM (SynTerm CompTc)
 -- Invariant: if the second argument is (Check rho),
@@ -197,7 +196,6 @@ tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
       ann_ty_syn
 
 -- | Similar to @tcInferSigma@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/App.hs#L174
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
 inferSigma = error "Not implemented!"
@@ -251,7 +249,7 @@ pushLevelAndCaptureConstraints skol_tvs act = do
 -- checkSigma
 -- ==============================================
 
--- | Similar to `tcCheckPolyLExpr`
+-- | Similar to @tcCheckPolyLExpr@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L115
 checkSigma :: SynTerm CompRn -> Sigma -> TcM (SynTerm CompTc)
 checkSigma expr sigma =

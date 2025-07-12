@@ -41,7 +41,6 @@ type instance Anno TcTyVar = SrcSpan
 -- | Maps the "normal" id type for a given compiler pass.
 --
 -- Similar to @IdGhcP@ in GHC.
---
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L205
 type family IdCompP pass where
   IdCompP 'Renamed = Name

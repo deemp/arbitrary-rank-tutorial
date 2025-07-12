@@ -61,8 +61,9 @@ type IRnConstraints =
 
 type RnM a = (IRnConstraints) => IO a
 
--- | Similar to `genSym` in GHC.
---
+-- | Generate a new 'Unique'.
+-- 
+-- Similar to @genSym@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L257
 newUnique :: (IUniqueSupply) => IO Unique
 newUnique = do
