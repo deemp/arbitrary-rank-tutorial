@@ -4,7 +4,6 @@ module Language.Arralac.Typecheck.Renamer where
 
 import Control.Exception (Exception, throw)
 import Control.Monad (forM)
-import Data.IORef (readIORef, writeIORef)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text qualified as T
@@ -21,6 +20,8 @@ import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
+import Language.Arralac.Utils.Unique (Unique)
+import Language.Arralac.Utils.Unique.Supply (IUniqueSupply, newUnique)
 
 -- | A name.
 type NameFs = FastString
@@ -60,16 +61,6 @@ type IRnConstraints =
   )
 
 type RnM a = (IRnConstraints) => IO a
-
--- | Generate a new 'Unique'.
--- 
--- Similar to @genSym@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L257
-newUnique :: (IUniqueSupply) => IO Unique
-newUnique = do
-  r <- readIORef ?uniqueSupply
-  writeIORef ?uniqueSupply (r + 1)
-  pure (Unique r)
 
 selectScope :: (IRnConstraints) => NameSpace -> Scope
 selectScope = \case

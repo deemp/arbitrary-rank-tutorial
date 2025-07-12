@@ -16,9 +16,10 @@ import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typecheck.Bag
 import Language.Arralac.Typecheck.Constraints
-import Language.Arralac.Typecheck.Renamer
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
+import Language.Arralac.Utils.Unique (Unique)
+import Language.Arralac.Utils.Unique.Supply (IUniqueSupply, newUnique)
 import Prettyprinter
 import Prettyprinter.Util
 

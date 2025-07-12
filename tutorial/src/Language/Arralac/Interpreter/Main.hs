@@ -10,6 +10,7 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Unique (Unique (unique))
 import Prettyprinter
 
 -- TODO Delayed substitution and Normalization by Evaluation

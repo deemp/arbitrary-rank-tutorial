@@ -76,6 +76,8 @@ library
       Language.Arralac.Utils.Pretty.Class
       Language.Arralac.Utils.Pretty.GPretty
       Language.Arralac.Utils.Types
+      Language.Arralac.Utils.Unique
+      Language.Arralac.Utils.Unique.Supply
   other-modules:
       Paths_arbitrary_rank_tutorial
   hs-source-dirs:

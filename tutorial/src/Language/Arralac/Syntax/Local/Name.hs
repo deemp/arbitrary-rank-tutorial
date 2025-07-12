@@ -1,8 +1,9 @@
 module Language.Arralac.Syntax.Local.Name where
 
 import GHC.Generics (Generic)
-import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Pretty (Pretty' (..), PrettyVerbosity (..))
 import Language.Arralac.Utils.Types (FastString)
+import Language.Arralac.Utils.Unique (Unique)
 import Prettyprinter
 
 -- import Language.Arralac.Syntax.Local.Type
@@ -10,13 +11,6 @@ import Prettyprinter
 -- ==============================================
 -- [Names]
 -- ==============================================
-
--- | A globally unique identifier.
---
--- Similar to @Unique@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique.hs#L98
-newtype Unique = Unique {unique :: Int}
-  deriving newtype (Eq, Ord, Pretty')
 
 -- | A unique, unambiguous name for something, containing information about where that thing originated.
 --

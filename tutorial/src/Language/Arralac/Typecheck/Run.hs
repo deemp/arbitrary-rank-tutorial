@@ -16,6 +16,7 @@ import Language.Arralac.Typecheck.TcTerm (inferRho)
 import Language.Arralac.Typecheck.Zonker (Zonk (..))
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
+import Language.Arralac.Utils.Unique.Supply (IUniqueSupply)
 import UnliftIO.Exception (finally)
 
 -- ==============================================
