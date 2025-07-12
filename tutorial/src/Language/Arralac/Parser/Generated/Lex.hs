@@ -9,7 +9,7 @@
 
 {-# LANGUAGE PatternSynonyms #-}
 
-module Language.Arralac.Parser.Lex where
+module Language.Arralac.Parser.Generated.Lex where
 
 import Prelude
 
