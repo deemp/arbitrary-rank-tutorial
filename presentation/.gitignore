@@ -3,3 +3,4 @@ main*
 !main.pdf
 indent.log
 *.bak*
+_minted
