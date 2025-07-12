@@ -12,10 +12,10 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Typecheck.TcMonad (debug')
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
+import Language.Arralac.Utils.Types.Pass
 
 -- Substitute metavariables with their Indirect types after typechecking
 -- to produce a term without metavariables.

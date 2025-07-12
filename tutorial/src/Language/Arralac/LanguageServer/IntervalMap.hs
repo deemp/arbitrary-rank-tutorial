@@ -7,9 +7,9 @@ import Language.Arralac.Syntax.Local.SynTerm ()
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
+import Language.Arralac.Utils.Types.Pass
 import Language.LSP.Protocol.Types (Position (..), Range (..))
 import Prettyprinter (Doc)
 

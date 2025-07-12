@@ -9,8 +9,8 @@ import Data.IORef (IORef)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Language.Arralac.Syntax.Local.Name (Name (..), SrcSpan)
-import Language.Arralac.Typecheck.Pass (CompRn, CompTc, CompZn)
 import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types.Pass (CompRn, CompTc, CompZn)
 import Language.Arralac.Utils.Unique (Unique)
 import Prettyprinter
 

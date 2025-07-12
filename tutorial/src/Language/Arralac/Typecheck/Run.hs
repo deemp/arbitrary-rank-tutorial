@@ -7,14 +7,14 @@ import Language.Arralac.Parser.Parse
 import Language.Arralac.Renamer.ConvertRename (convertRenameAbs)
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
-import Language.Arralac.Typecheck.Constraints (emptyWantedConstraints)
-import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Typecheck.Solver (solveIteratively)
 import Language.Arralac.Typecheck.TcMonad
 import Language.Arralac.Typecheck.TcTerm (inferRho)
+import Language.Arralac.Typecheck.Types.Constraints (emptyWantedConstraints)
 import Language.Arralac.Typecheck.Zonker (Zonk (..))
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
+import Language.Arralac.Utils.Types.Pass
 import Language.Arralac.Utils.Unique.Supply (IUniqueSupply)
 import UnliftIO.Exception (finally)
 

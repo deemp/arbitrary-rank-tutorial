@@ -8,8 +8,8 @@ import Language.Arralac.Syntax.Local.Name qualified as BT
 import Language.Arralac.Syntax.Local.SynTerm ()
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
-import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types.Pass
 import Language.Arralac.Utils.Unique (Unique (unique))
 import Prettyprinter
 

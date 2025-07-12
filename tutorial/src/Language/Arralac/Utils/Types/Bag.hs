@@ -1,4 +1,4 @@
-module Language.Arralac.Typecheck.Bag where
+module Language.Arralac.Utils.Types.Bag where
 
 import Data.List (intersperse)
 import Language.Arralac.Utils.Pretty (Pretty' (..))

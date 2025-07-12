@@ -1,13 +1,13 @@
-module Language.Arralac.Typecheck.Constraints where
+module Language.Arralac.Typecheck.Types.Constraints where
 
 import GHC.Generics (Generic)
 import Language.Arralac.Syntax.Local.Name (RealSrcSpan)
 import Language.Arralac.Syntax.Local.SynTerm ()
 import Language.Arralac.Syntax.Local.Type (TcLevel, TcTyVar, TcType)
 import Language.Arralac.Syntax.TTG.SynTerm (SynTerm)
-import Language.Arralac.Typecheck.Bag (Bag (..), emptyBag)
-import Language.Arralac.Typecheck.Pass (CompRn)
 import Language.Arralac.Utils.Pretty (Pretty' (..), genericPretty)
+import Language.Arralac.Utils.Types.Bag (Bag (..), emptyBag)
+import Language.Arralac.Utils.Types.Pass (CompRn)
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L123
 

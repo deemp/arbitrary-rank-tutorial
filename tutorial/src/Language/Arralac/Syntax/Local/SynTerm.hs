@@ -8,8 +8,8 @@ import Language.Arralac.Syntax.Local.SynType ()
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types.Pass
 import Prettyprinter
 
 -- In GHC, the extension field for the variable AST node constructor

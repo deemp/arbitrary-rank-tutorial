@@ -5,8 +5,8 @@ module Language.Arralac.Syntax.Local.SynType where
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Typecheck.Pass
 import Language.Arralac.Utils.Pretty
+import Language.Arralac.Utils.Types.Pass
 import Prettyprinter (hsep, parens, (<+>))
 
 -- We use different representations for term and type variables.

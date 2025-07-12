@@ -48,13 +48,14 @@ library
       Language.Arralac.Interpreter.Main
       Language.Arralac.LanguageServer.IntervalMap
       Language.Arralac.LanguageServer.Main
-      Language.Arralac.Parser
       Language.Arralac.Parser.Abs
-      Language.Arralac.Parser.Lex
-      Language.Arralac.Parser.Par
-      Language.Arralac.Renamer
+      Language.Arralac.Parser.Error
+      Language.Arralac.Parser.Generated.Abs
+      Language.Arralac.Parser.Generated.Lex
+      Language.Arralac.Parser.Generated.Par
+      Language.Arralac.Parser.Parse
+      Language.Arralac.Renamer.ConvertRename
       Language.Arralac.Renamer.Error
-      Language.Arralac.Renamer.Rename
       Language.Arralac.Renamer.Types
       Language.Arralac.Syntax.Local.Anno
       Language.Arralac.Syntax.Local.Extension
@@ -66,19 +67,19 @@ library
       Language.Arralac.Syntax.TTG.SynTerm
       Language.Arralac.Syntax.TTG.SynType
       Language.Arralac.Syntax.TTG.Type
-      Language.Arralac.Typecheck.Bag
-      Language.Arralac.Typecheck.Constraints
       Language.Arralac.Typecheck.Main
-      Language.Arralac.Typecheck.Pass
       Language.Arralac.Typecheck.Run
       Language.Arralac.Typecheck.Solver
       Language.Arralac.Typecheck.TcMonad
       Language.Arralac.Typecheck.TcTerm
+      Language.Arralac.Typecheck.Types.Constraints
       Language.Arralac.Typecheck.Zonker
       Language.Arralac.Utils.Pretty
       Language.Arralac.Utils.Pretty.Class
       Language.Arralac.Utils.Pretty.GPretty
       Language.Arralac.Utils.Types
+      Language.Arralac.Utils.Types.Bag
+      Language.Arralac.Utils.Types.Pass
       Language.Arralac.Utils.Unique
       Language.Arralac.Utils.Unique.Supply
   other-modules:

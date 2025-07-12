@@ -14,10 +14,10 @@ import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typecheck.Bag
-import Language.Arralac.Typecheck.Constraints
+import Language.Arralac.Typecheck.Types.Constraints
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
+import Language.Arralac.Utils.Types.Bag
 import Language.Arralac.Utils.Unique (Unique)
 import Language.Arralac.Utils.Unique.Supply (IUniqueSupply, newUnique)
 import Prettyprinter
