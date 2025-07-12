@@ -6,7 +6,7 @@ import Prettyprinter (indent, vsep)
 
 -- | A list of something.
 --
--- Similar to 'Bag' in GHC.
+-- Similar to @Bag@ in GHC.
 -- However, GHC uses a tree-like structure for the `Bag`.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/Bag.hs#L48
 newtype Bag a = Bag {bag :: [a]}

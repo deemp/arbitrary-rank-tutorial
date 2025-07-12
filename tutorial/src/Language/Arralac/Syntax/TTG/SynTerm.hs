@@ -6,7 +6,7 @@ import Language.Arralac.Utils.Types (FastString)
 
 -- | Terms AST in the TTG representation.
 --
--- Similar to 'HsExpr' in GHC.
+-- Similar to @HsExpr@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L332
 data SynTerm x

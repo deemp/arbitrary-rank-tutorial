@@ -143,7 +143,7 @@ unifyVar _ct _tv _ty = []
 
 -- | Perform occurs and level check.
 --
--- Similar to 'checkTypeEq' in GHC.
+-- Similar to @checkTypeEq@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver/Monad.hs#L2328
 --
 -- Eager unifier in GHC does these checks if the left-hand side
@@ -162,7 +162,7 @@ class Check a where
 -- of the constraint doesn't have a strictly deeper level
 -- than the lhs variable from the constraint.
 --
--- Similar to 'tyVarLevelCheck' in GHC.
+-- Similar to @tyVarLevelCheck@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3905
 levelCheck :: (ILhsMetaTv, ICt) => TcTyVar -> IO ()
 levelCheck rhs = do
@@ -185,14 +185,14 @@ levelCheck rhs = do
 -- | Check whether this metavar is not one of the metavars
 -- in whose 'Indirect' types this metavar appeared transitively.
 --
--- Similar to 'simpleOccursCheck' in GHC.
+-- Similar to @simpleOccursCheck@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3892
 occursCheck :: (ILhsMetaTv, ICt, IMetaTvScope) => TcTyVar -> IO ()
 occursCheck var =
   when (Set.member var ?metaTvScope) $
     dieSolver SolverError'OccursCheck{tv = ?lhsMetaTv, ct = ?ct}
 
--- Similar to 'simpleUnifyCheck' in GHC.
+-- Similar to @simpleUnifyCheck@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2932
 instance Check TcTyVar where
   check var = do

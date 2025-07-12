@@ -196,7 +196,7 @@ tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
       body'
       ann_ty_syn
 
--- | Similar to 'tcInferSigma' in GHC.
+-- | Similar to @tcInferSigma@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/App.hs#L174
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
@@ -208,7 +208,7 @@ inferSigma = error "Not implemented!"
 
 -- | Capture constraints at a deeper level.
 --
--- Similar to 'pushLevelAndCaptureConstraints' in GHC.
+-- Similar to @pushLevelAndCaptureConstraints@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L1909
 pushLevelAndCaptureConstraints ::
   -- | skolems

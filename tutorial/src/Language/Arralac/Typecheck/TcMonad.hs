@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
+
 module Language.Arralac.Typecheck.TcMonad where
 
 import Control.Exception (Exception, throw)
@@ -87,7 +88,7 @@ instantiate ty = pure ty
 -- | Performs deep skolemisation, returning the
 -- skolem constants and the skolemised type.
 --
--- Similar to 'topSkolemise' in GHC.
+-- Similar to @topSkolemise@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Instantiate.hs#L201
 --
 -- See Note [When to build an implication] in GHC.
@@ -288,7 +289,7 @@ isMetaTv _ = False
 
 -- | Solve constraints and quantify over type variables.
 --
--- Similar to 'simplifyInfer' in GHC.
+-- Similar to @simplifyInfer@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver.hs#L878
 --
 -- Note [quantifyTyVars] in GHC.
@@ -343,7 +344,7 @@ mkOccNameFS occ_sp fs = OccName occ_sp fs
 
 -- | Create a new 'Name'.
 --
--- Similar to 'newSysName' in GHC.
+-- Similar to @newSysName@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L735
 newSysName :: OccName -> TcM Name
@@ -356,7 +357,7 @@ newSysName occ =
 -- Creating type variables
 -- ==============================================
 
--- | Similar to 'mkTcTyVar' in GHC.
+-- | Similar to @mkTcTyVar@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L1046
 mkTcTyVar :: Name -> TcTyVarDetails -> TcTyVar
@@ -382,13 +383,13 @@ mkTyVarOccFS fs = mkOccNameFS tvName fs
 newMetaTyVarName :: FastString -> TcM Name
 newMetaTyVarName str = newSysName (mkTyVarOccFS str)
 
--- | Similar to 'newMutVar' in GHC.
+-- | Similar to @newMutVar@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/IOEnv.hs#L218
 newMutVar :: a -> TcM (IORef a)
 newMutVar val = newIORef val
 
--- | Similar to 'newTauTvDetailsAtLevel' in GHC.
+-- | Similar to @newTauTvDetailsAtLevel@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L844
 newMetaDetails :: MetaInfo -> TcM TcTyVarDetails
@@ -402,7 +403,7 @@ newMetaDetails info =
         , tcLevel = ?tcLevel
         }
 
--- | Similar to 'newMetaTyVarTyAtLevel' in GHC.
+-- | Similar to @newMetaTyVarTyAtLevel@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1069
 newMetaTyVar' :: FastString -> TcM TcTyVarMeta
@@ -429,7 +430,7 @@ tyVarToMetaTyVar x = do
 
 -- | Makes a new skolem type variable.
 --
--- Similar to 'newSkolemTyVar' in GHC.
+-- Similar to @newSkolemTyVar@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L765
 newSkolemTyVar' :: (ITcLevel) => SkolemInfo -> Name -> TcTyVar
@@ -437,7 +438,7 @@ newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 
 -- | Converts a 'BoundTv' to a 'SkolemTv'.
 --
--- Similar to 'cloneTyVarTyVar' in GHC.
+-- Similar to @cloneTyVarTyVar@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L779
 newSkolemTyVar :: SkolemInfoAnon -> TcBoundVar -> TcM TcTyVar

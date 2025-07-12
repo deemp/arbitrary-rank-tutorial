@@ -21,7 +21,7 @@ type instance XVar' CompZn = ZnTyVar
 -- [Variables]
 -- ==============================================
 
--- | Similar to 'TcLevel' in GHC.
+-- | Similar to @TcLevel@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L698
 --
@@ -33,7 +33,7 @@ newtype TcLevel = TcLevel Int
 
 -- | Expected type.
 --
--- Similar to 'ExpType' in GHC.
+-- Similar to @ExpType@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L401
 data Expected a = Infer (IORef a) | Check a
@@ -43,7 +43,7 @@ data Expected a = Infer (IORef a) | Check a
 
 -- | A term or a type variable produced by the renamer.
 --
--- Similar to 'RdrName' in GHC.
+-- Similar to @RdrName@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Reader.hs#L166
 data RnVar = RnVar
@@ -107,7 +107,7 @@ data ZnTermVar
     , varType :: Type CompZn
     }
 
--- | Similar to 'MetaDetails' in GHC.
+-- | Similar to @MetaDetails@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
 data MetaDetails
@@ -196,7 +196,7 @@ type Tau = TcType -- No ForAlls anywhere
 
 -- | A type that can have mutable type variables.
 --
--- Similar to 'TcType' in GHC.
+-- Similar to @TcType@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 --
