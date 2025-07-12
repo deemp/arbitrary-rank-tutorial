@@ -13,9 +13,8 @@ import Language.Arralac.Utils.Types.Pass (CompRn)
 
 -- | The "context" of an error message, e.g. "In the expression <...>",
 -- "In the pattern <...>", or "In the equations for closed type family <...>".
---
--- TODO remove?
 data ErrCtxtMsg
+-- ^ TODO remove?
 
 -- | Local typechecker environment for a constraint.
 --
@@ -62,40 +61,41 @@ data CtLoc = CtLoc
   }
   deriving stock (Generic)
 
--- | Evidence for a Wanted constraint
+-- | Evidence for a Wanted constraint.
 --
--- We want to keep things simple,
--- so we don't rewrite wanteds.
---
--- See Note [Wanteds rewrite Wanteds]
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2415
---
+-- Similar to @WantedCtEvidence@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2178
+--
+-- We want to keep things simple, so we don't rewrite wanteds.
+--
+-- See Note [Wanteds rewrite Wanteds] in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2415
 data WantedCtEvidence
   = WantedCt
   { ctev_loc :: CtLoc
   }
   deriving stock (Generic)
 
--- Constraint evidence
+-- | Constraint evidence.
+--
+-- Similar to @CtEvidence@ in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2166
 --
 -- We don't have given constraints
 -- because we don't have constraints on types
 -- (the <constraints> part in <constraints> => <type>)
 -- https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/constraint_kind.html
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2166
 data CtEvidence = CtWanted
   { ct_ev_wanted :: WantedCtEvidence
   }
   deriving stock (Generic)
 
--- TODO store how a constrain appeared
+-- TODO ^ store how a constrain appeared
 -- For equality, store previous constraints
 
--- TODO
--- Do we have given equality constraints?
-
+-- | Equality constraint.
+--
+-- Similar to @EqCt@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L299
 data EqCt = EqCt
   { eq_ev :: CtEvidence
@@ -143,28 +143,40 @@ data Implication = Implic
   }
   deriving stock (Generic)
 
--- Out of simple constraints (see `WantedConstraints.wc_simple`), we only have equality constraints.
+-- | A constraint.
+-- 
+-- Similar to @Ct@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L198
+-- 
+-- Out of simple constraints, we only have equality constraints.
+-- 
+-- See @WantedConstraints@ in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L1090
 data Ct = CEqCan
   { ct_eq_can :: EqCt
-  --  ^ A canonical equality constraint.
+  -- ^ A canonical equality constraint.
   --
-  -- See Note [Canonicalization]
-  --
+  -- See Note [Canonicalization] in GHC.
   -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver/Solve.hs#L1033
   --
   -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L2057
   }
   deriving stock (Generic)
 
+-- | A 'Bag' of constraints ('Ct').
+--
+-- Similar to @Cts@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L164
 type Cts = Bag Ct
 
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L164
+-- | A 'Bag' of 'Implication's.
+--
+-- Similar to 'Cts'.
 type Impls = Bag Implication
 
 -- | Constraints that we want to solve.
 --
+-- Similar to @WantedConstraints@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L1089
 data WantedConstraints = WantedCts
   { wc_simple :: Cts
