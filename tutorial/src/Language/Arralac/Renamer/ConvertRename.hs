@@ -1,4 +1,4 @@
-module Language.Arralac.Renamer.Rename where
+module Language.Arralac.Renamer.ConvertRename where
 
 import Control.Monad (forM)
 import Data.Map qualified as Map
@@ -9,7 +9,6 @@ import Language.Arralac.Parser.Abs qualified as Abs
 import Language.Arralac.Renamer.Error
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.SynTerm ()
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType

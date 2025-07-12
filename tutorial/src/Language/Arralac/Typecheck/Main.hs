@@ -4,7 +4,7 @@ import Control.Monad.Foil (emptyScope)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Language.Arralac.Interpreter.Main (convertASTToCore, whnf)
-import Language.Arralac.Renamer (RnErrorWithCallStack)
+import Language.Arralac.Renamer.Error (RnErrorWithCallStack)
 import Language.Arralac.Typecheck.Run (runTypechecker')
 import Language.Arralac.Typecheck.Solver (SolverErrorWithCallStack)
 import Language.Arralac.Typecheck.TcMonad (TcErrorWithCallStack)

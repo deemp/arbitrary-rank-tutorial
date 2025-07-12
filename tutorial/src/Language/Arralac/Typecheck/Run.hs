@@ -4,11 +4,11 @@ import Data.IORef (newIORef, readIORef)
 import Data.Text qualified as T
 import GHC.Stack
 import Language.Arralac.Parser.Parse
+import Language.Arralac.Renamer.ConvertRename (convertRenameAbs)
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Typecheck.Constraints (emptyWantedConstraints)
 import Language.Arralac.Typecheck.Pass
-import Language.Arralac.Renamer (convertRenameAbs)
 import Language.Arralac.Typecheck.Solver (solveIteratively)
 import Language.Arralac.Typecheck.TcMonad
 import Language.Arralac.Typecheck.TcTerm (inferRho)
