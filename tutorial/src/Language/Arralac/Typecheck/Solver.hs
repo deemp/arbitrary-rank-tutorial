@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
+
 module Language.Arralac.Typecheck.Solver where
 
 import Control.Exception (Exception, throw)
@@ -157,12 +158,21 @@ unifyVar _ct _tv _ty = []
 class Check a where
   check :: (ILhsMetaTv, IMetaTvScope, ICt) => a -> SolveM ()
 
-checkLevel :: (ILhsMetaTv, ICt) => TcTyVar -> IO ()
-checkLevel rhs = do
+-- | Check that a variable somewhere on the rhs
+-- of the constraint doesn't have a strictly deeper level
+-- than the lhs variable from the constraint.
+--
+-- Similar to 'tyVarLevelCheck' in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3905
+levelCheck :: (ILhsMetaTv, ICt) => TcTyVar -> IO ()
+levelCheck rhs = do
   let lhs = ?lhsMetaTv
       lhsLevel = ?lhsMetaTv.varDetails.tcLevel
       rhsLevel = rhs.varDetails.tcLevel
-  when (lhsLevel < rhsLevel) do
+
+  -- Similar to this check in GHC.
+  -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2972
+  when (rhsLevel > lhsLevel) do
     dieSolver
       SolverError'SkolemEscape
         { tv1 = lhs
@@ -172,26 +182,40 @@ checkLevel rhs = do
         , ct = ?ct
         }
 
+-- | Check whether this metavar is not one of the metavars
+-- in whose 'Indirect' types this metavar appeared transitively.
+--
+-- Similar to 'simpleOccursCheck' in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3892
+occursCheck :: (ILhsMetaTv, ICt, IMetaTvScope) => TcTyVar -> IO ()
+occursCheck var =
+  when (Set.member var ?metaTvScope) $
+    dieSolver SolverError'OccursCheck{tv = ?lhsMetaTv, ct = ?ct}
+
+-- Similar to 'simpleUnifyCheck' in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2932
 instance Check TcTyVar where
   check var = do
     -- If this is a metavariable, it cannot unify with any metavariable
     -- with a deeper level. Hence, even if the variable has an Indirect type,
     -- that type won't contain any variable with a deeper level.
     --
-    -- Therefore, we can check just the level of this variable.
+    -- Therefore, we can check just the level of this metavariable.
     --
     -- See:
     -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L873
-    checkLevel var
+    levelCheck var
 
     case var.varDetails of
       MetaTv{metaTvRef} -> do
-        when (Set.member var ?metaTvScope) $
-          dieSolver SolverError'OccursCheck{tv = ?lhsMetaTv, ct = ?ct}
+        occursCheck var
+
         metaDetails <- readIORef metaTvRef
         case metaDetails of
           Flexi -> pure ()
-          Indirect ty -> check ty
+          Indirect ty -> do
+            let ?metaTvScope = Set.insert var ?metaTvScope
+            check ty
       _ -> pure ()
 
 instance Check TcType where
