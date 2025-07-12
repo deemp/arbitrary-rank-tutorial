@@ -4,16 +4,16 @@ import GHC.Generics (Generic)
 import Language.Arralac.Utils.Pretty (Pretty' (..), PrettyVerbosity (..))
 import Language.Arralac.Utils.Types (FastString)
 import Language.Arralac.Utils.Unique (Unique)
+import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
 import Prettyprinter
 
--- import Language.Arralac.Syntax.Local.Type
-
--- ==============================================
+-- =======
 -- [Names]
--- ==============================================
+-- =======
 
 -- | A unique, unambiguous name for something, containing information about where that thing originated.
 --
+-- Similar to @Name@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
 data Name = Name
   { nameOcc :: OccName
@@ -23,16 +23,6 @@ data Name = Name
   -- See https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L148
   }
   deriving stock (Generic)
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
-data NameSpace
-  = -- | Terms namespace.
-    NameSpace'TermVar
-  | -- | Types namespace.
-    NameSpace'TypeVar
-  | -- | Built-in types namespace.
-    NameSpace'TypeConcrete
-  deriving stock (Eq, Show)
 
 -- | Occurrence Name.
 --
@@ -50,25 +40,36 @@ data OccName = OccName
   }
   deriving stock (Show, Generic)
 
--- ==============================================
--- [Positions in the source code]
--- ==============================================
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
-data UnhelpfulSpanReason
-  = UnhelpfulNoLocationInfo
-  | UnhelpfulGenerated
-  | UnhelpfulOther !FastString
+-- Similar to @NameSpace@ in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
+data NameSpace
+  = -- | Terms namespace.
+    NameSpace'TermVar
+  | -- | Types namespace.
+    NameSpace'TypeVar
+  | -- | Built-in types namespace.
+    NameSpace'TypeConcrete
   deriving stock (Eq, Show)
 
--- TODO How does BNFC represent empty span?
--- Is its bound open on the right? Example : [start; finish)
+-- ===================
+-- [Source code spans]
+-- ===================
+
+-- | Source Span
+--
+-- A 'SrcSpan' identifies either a specific portion of a text file
+-- or a human-readable description of a location.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L392
+data SrcSpan
+  = RealSrcSpan RealSrcSpan
+  | UnhelpfulSpan UnhelpfulSpanReason
 
 -- | Real Source Span
 --
 -- It's open on the right: [start; finish)
---
 -- It's zero-based here. Not sure about GHC.
+--
+-- Similar to @RealSrcSpan@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L367
 data RealSrcSpan
   = RealSrcSpan'
@@ -80,19 +81,50 @@ data RealSrcSpan
   }
   deriving stock (Eq)
 
--- | Source Span
+-- | Unknown span.
 --
--- A 'SrcSpan' identifies either a specific portion of a text file
--- or a human-readable description of a location.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L392
-data SrcSpan
-  = -- TODO Replace with RealSrcSpan
-    RealSrcSpan RealSrcSpan
-  | UnhelpfulSpan UnhelpfulSpanReason
+-- Similar to @UnhelpfulSpanReason@ in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
+data UnhelpfulSpanReason
+  = UnhelpfulNoLocationInfo
+  | UnhelpfulGenerated
+  | UnhelpfulOther !FastString
+  deriving stock (Eq, Show)
 
--- ==============================================
--- [Miscellaneous instances]
--- ==============================================
+-- ================
+-- [Creating Names]
+-- ================
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L465
+noSrcSpan :: SrcSpan
+noSrcSpan = UnhelpfulSpan UnhelpfulNoLocationInfo
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L548
+mkSystemName :: Unique -> OccName -> Name
+mkSystemName uniq occ = mkSystemNameAt uniq occ noSrcSpan
+
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L552
+mkSystemNameAt :: Unique -> OccName -> SrcSpan -> Name
+mkSystemNameAt uniq occ loc =
+  Name
+    { nameUnique = uniq
+    , nameOcc = occ
+    , nameLoc = loc
+    }
+
+-- | Create a new 'Name'.
+--
+-- Similar to @newSysName@ in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L735
+newSysName :: (CtxUniqueSupply) => OccName -> IO Name
+newSysName occ =
+  do
+    uniq <- newUnique
+    pure (mkSystemName uniq occ)
+
+-- ==========================
+-- [Instances for code spans]
+-- ==========================
 
 instance Pretty' RealSrcSpan where
   pretty' r =

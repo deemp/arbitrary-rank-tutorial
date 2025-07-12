@@ -17,21 +17,6 @@ type CtxPrettyVerbosity = (?prettyVerbosity :: PrettyVerbosity)
 class Pretty' a where
   pretty' :: (CtxPrettyVerbosity) => a -> Doc ann
 
-prettyCompact :: (Pretty' a) => a -> Doc ann
-prettyCompact = let ?prettyVerbosity = PrettyVerbosity'Normal in pretty'
-
-prettyDetailed :: (Pretty' a) => a -> Doc ann
-prettyDetailed = let ?prettyVerbosity = PrettyVerbosity'Detailed in pretty'
-
-prettyUser :: (Pretty' a) => a -> Doc ann
-prettyUser = let ?prettyVerbosity = PrettyVerbosity'User in pretty'
-
-prettyIndent :: (CtxPrettyVerbosity, Pretty' a) => a -> Doc ann
-prettyIndent = indent 2 . pretty'
-
-vsep' :: [Doc ann] -> Doc ann
-vsep' xs = encloseSep "" "" line xs <> line
-
 instance {-# OVERLAPPABLE #-} (Pretty' a) => Show a where
   show =
     let ?prettyVerbosity = PrettyVerbosity'Detailed

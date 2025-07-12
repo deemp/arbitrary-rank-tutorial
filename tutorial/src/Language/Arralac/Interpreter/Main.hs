@@ -6,10 +6,10 @@ import Data.Bifunctor.TH (deriveBifunctor)
 import Language.Arralac.Interpreter.FreeFoil (CoreNameBinder (..), PrettyName (..), addSubst, extendScope, withFreshUsingUnique)
 import Language.Arralac.Syntax.Local.Name qualified as BT
 import Language.Arralac.Syntax.Local.SynTerm ()
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.Var.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
+import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types.Pass
 import Language.Arralac.Utils.Unique (Unique (unique))
 import Prettyprinter
 

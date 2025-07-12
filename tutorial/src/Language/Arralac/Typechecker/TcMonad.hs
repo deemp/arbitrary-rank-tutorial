@@ -2,60 +2,40 @@
 
 module Language.Arralac.Typechecker.TcMonad where
 
-import Control.Exception (Exception, throw)
-import Control.Monad (when)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Traversable (forM)
-import GHC.Stack (HasCallStack, callStack, prettyCallStack)
+import GHC.Stack (HasCallStack)
+import Language.Arralac.Solver.Types
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typechecker.Types.Constraints
+import Language.Arralac.Typechecker.Constraints
+import Language.Arralac.Typechecker.Error
+import Language.Arralac.Typechecker.TcTyVarEnv
+import Language.Arralac.Typechecker.Types
+import Language.Arralac.Utils.Bag
+import Language.Arralac.Utils.Debug
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Types.Bag
-import Language.Arralac.Utils.Unique (Unique)
 import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
-import Prettyprinter
-import Prettyprinter.Util
+import Language.Arralac.Syntax.Local.Var.Tc
 
--- ==============================================
--- The Type Checking Monad
--- ==============================================
-
-newtype TcTyVarEnv = TcTyVarEnv {env :: Map.Map Name Sigma}
-
-lookupTcTyVarEnv :: Name -> TcTyVarEnv -> Maybe Sigma
-lookupTcTyVarEnv k = Map.lookup k . (.env)
-
-toAscListTcTyVarEnv :: TcTyVarEnv -> [(Name, Sigma)]
-toAscListTcTyVarEnv = Map.toAscList . (.env)
-
-insertTcTyVarEnv :: Name -> Sigma -> TcTyVarEnv -> TcTyVarEnv
-insertTcTyVarEnv k v = TcTyVarEnv . Map.insert k v . (.env)
-
-emptyTcTyVarEnv :: TcTyVarEnv
-emptyTcTyVarEnv = TcTyVarEnv mempty
-
-type CtxVarEnv = (?tcTyVarEnv :: TcTyVarEnv)
-type CtxTcLevel = (?tcLevel :: TcLevel)
-type CtxConstraints = (?constraints :: IORef WantedConstraints)
-type CtxTcErrorPropagated = (?tcErrorPropagated :: IORef (Maybe TcError))
-type CtxSolverIterations = (?solverIterations :: Int)
+-- =========================
+-- [The Type Checking Monad]
+-- =========================
 
 type CtxTcEnv =
   ( HasCallStack
   , CtxUniqueSupply
-  , CtxVarEnv
-  , CtxTcLevel
-  , CtxDebug
-  , CtxConstraints
-  , CtxTcErrorPropagated
   , CtxPrettyVerbosity
+  , CtxDebug
+  , CtxTcTyVarEnv
+  , CtxTcLevel
+  , CtxWantedConstraints
+  , CtxTcErrorPropagated
   , CtxSolverIterations
   )
 
@@ -64,9 +44,9 @@ type CtxTcEnv =
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types.hs#L271
 type TcM a = (CtxTcEnv) => IO a
 
--- ==============================================
--- Instantiation
--- ==============================================
+-- ===============
+-- [Instantiation]
+-- ===============
 
 -- | Instantiate type variables in the topmost 'forall'
 -- of the argument type with 'Flexi' metavariables.
@@ -82,9 +62,9 @@ instantiate (Type'ForAll tvs ty) = do
   substTy tvs (Type'Var <$> tvs') ty
 instantiate ty = pure ty
 
--- ==============================================
--- Skolemisation
--- ==============================================
+-- ===============
+-- [Skolemisation]
+-- ===============
 
 -- | Performs deep skolemisation, returning the
 -- skolem constants and the skolemised type.
@@ -114,6 +94,10 @@ skolemise (Type'Fun arg_ty res_ty) = do
 -- Rule PRMONO
 skolemise ty = pure ([], ty)
 
+-- ==============
+-- [Substitution]
+-- ==============
+
 -- | Replace the specified quantified (introduced in a 'forall') type variables by given meta type variables.
 --
 -- No worries about capture, because the two kinds of type variable are distinct.
@@ -138,7 +122,7 @@ subst_ty _ (Type'Var n@TcTyVar{varDetails = MetaTv{}}) =
   pure $ Type'Var n
 -- TODO should we panic if skolem?
 subst_ty _ (Type'Var var@TcTyVar{}) =
-  die TcError'UnboundVariable{var}
+  dieTc TcError'UnboundVariable{var}
 subst_ty _ (Type'Concrete tc) =
   pure $ Type'Concrete tc
 subst_ty env (Type'ForAll ns rho) = do
@@ -149,16 +133,16 @@ subst_ty env (Type'ForAll ns rho) = do
   -- so we can leave these variables as they are now
   Type'ForAll ns <$> (subst_ty env' rho)
 
--- ==============================================
--- Unification
--- ==============================================
+-- =============
+-- [Unification]
+-- =============
 
-badType :: Tau -> Bool
+isBoundTvTypeVar :: Tau -> Bool
 -- Tells which types should never be encountered during unification
-badType (Type'Var TcTyVar{varDetails = BoundTv{}}) = True
-badType _ = False
+isBoundTvTypeVar (Type'Var TcTyVar{varDetails = BoundTv{}}) = True
+isBoundTvTypeVar _ = False
 
--- TODO use only necessary constraints?
+-- TODO ^ use only necessary constraints?
 
 -- | Extends the substitution by side effect (p. 43)
 --
@@ -173,14 +157,14 @@ unify :: Maybe TypedThing -> Tau -> Tau -> TcM ()
 -- The first type is "expected",
 -- the second one is "actual"
 unify thing ty1 ty2
-  | badType ty1 || badType ty2 -- Compiler error
+  | isBoundTvTypeVar ty1 || isBoundTvTypeVar ty2 -- Compiler error
     =
       do
         debug'
           "unify bound types"
           [ ("?tcTyVarEnv", prettyDetailed (toAscListTcTyVarEnv ?tcTyVarEnv))
           ]
-        die (TcError'UnifyingBoundTypes ty1 ty2 thing)
+        dieTc (TcError'UnifyingBoundTypes ty1 ty2 thing)
 unify
   _thing
   (Type'Var TcTyVar{varDetails = MetaTv{metaTvRef = tv1}})
@@ -201,7 +185,7 @@ unify _thing (Type'Fun arg1 res1) (Type'Fun arg2 res2) = do
 unify _thing (Type'Concrete tc1) (Type'Concrete tc2)
   | tc1 == tc2 = pure ()
 unify thing ty1 ty2 =
-  die TcError'CannotUnify{ty1 = ty1, ty2 = ty2, thing}
+  dieTc TcError'CannotUnify{ty1 = ty1, ty2 = ty2, thing}
 
 -- | Unify a variable with a type.
 --
@@ -209,7 +193,7 @@ unify thing ty1 ty2 =
 unifyVar :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> TcM ()
 -- Invariant: tv is a flexible type variable
 -- Check whether tv is bound
-unifyVar thing tv ty swapped | isMetaTv tv = do
+unifyVar thing tv@TcTyVar{varDetails = MetaTv{}} ty swapped = do
   emitCEqCan thing tv ty swapped
 unifyVar _thing _tv _ty _ = pure ()
 
@@ -225,28 +209,6 @@ unifyFun thing tau = do
   unify thing tau (Type'Fun arg_ty res_ty)
   pure (arg_ty, res_ty)
 
-mkCEqCan :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> Ct
-mkCEqCan thing tv ty swapped =
-  CEqCan
-    EqCt
-      { eq_ev =
-          CtWanted
-            WantedCt
-              { ctev_loc =
-                  CtLoc
-                    { ctl_origin =
-                        TypeEqOrigin
-                          { uo_actual = if swapped then Type'Var tv else ty
-                          , uo_expected = if swapped then ty else Type'Var tv
-                          , uo_thing = thing
-                          }
-                    , ctl_env = Nothing
-                    }
-              }
-      , eq_lhs = tv
-      , eq_rhs = ty
-      }
-
 emitCEqCan :: Maybe TypedThing -> TcTyVar -> Tau -> Bool -> TcM ()
 emitCEqCan thing tv ty swapped = do
   constraintsCur <- readIORef ?constraints
@@ -257,35 +219,9 @@ emitCEqCan thing tv ty swapped = do
           }
   writeIORef ?constraints constraintsNew
 
-isMetaTv :: TcTyVar -> Bool
-isMetaTv TcTyVar{varDetails = MetaTv{}} = True
-isMetaTv _ = False
-
--- ==============================================
--- Quantification
--- ==============================================
-
--- TODO implement a zonker to be used during typechecking.
---
--- See Note [What is zonking?] in GHC.
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L106
-
--- TODO Should 'quantify' use 'BoundTv' in forall?
---
--- See "TyVarDetails, MetaDetails, MetaInfo" in GHC
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L549
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L566
---
--- As written in Sec. 5.5 of Practical type inference for arbitrary-rank types:
---
--- > Furthermore, quantify guarantees to return a type that is fully substituted;
--- this makes it easier to instantiate later, because the proper type variables
--- can all be found without involving the substitution.
---
--- So, perhaps yes, it should use 'BoundTv'.
+-- ================
+-- [Quantification]
+-- ================
 
 -- | Solve constraints and quantify over type variables.
 --
@@ -301,56 +237,27 @@ quantify :: TcLevel -> [TcTyVarMeta] -> Rho -> WantedConstraints -> TcM Sigma
 -- Quantify over the specified type variables (all flexible)
 quantify = error "Not implemented!"
 
--- ==============================================
--- Dealing with the type environment
--- ==============================================
-
-extendVarEnv :: Name -> Sigma -> TcM a -> TcM a
-extendVarEnv var ty tcAction =
-  let ?tcTyVarEnv = insertTcTyVarEnv var ty ?tcTyVarEnv in tcAction
-
-getEnv :: TcM TcTyVarEnv
-getEnv = pure ?tcTyVarEnv
-
-lookupVar :: Name -> TcM Sigma -- May fail
-lookupVar n =
-  case lookupTcTyVarEnv n ?tcTyVarEnv of
-    Just ty -> pure ty
-    Nothing -> die (TcError'UndefinedVariable n)
-
--- ==============================================
--- Creating Names
--- ==============================================
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L552
-mkSystemNameAt :: Unique -> OccName -> SrcSpan -> Name
-mkSystemNameAt uniq occ loc =
-  Name
-    { nameUnique = uniq
-    , nameOcc = occ
-    , nameLoc = loc
-    }
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L465
-noSrcSpan :: SrcSpan
-noSrcSpan = UnhelpfulSpan UnhelpfulNoLocationInfo
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L548
-mkSystemName :: Unique -> OccName -> Name
-mkSystemName uniq occ = mkSystemNameAt uniq occ noSrcSpan
-
-mkOccNameFS :: NameSpace -> FastString -> OccName
-mkOccNameFS occ_sp fs = OccName occ_sp fs
-
--- | Create a new 'Name'.
+-- TODO ^ implement a zonker to be used during typechecking.
 --
--- Similar to @newSysName@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L735
-newSysName :: OccName -> TcM Name
-newSysName occ =
-  do
-    uniq <- newUnique
-    pure (mkSystemName uniq occ)
+-- See Note [What is zonking?] in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Zonk/Type.hs#L106
+
+-- TODO ^ Should 'quantify' use 'BoundTv' in forall?
+--
+-- See "TyVarDetails, MetaDetails, MetaInfo" in GHC
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L549
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L566
+--
+-- As written in Sec. 5.5 of Practical type inference for arbitrary-rank types:
+--
+-- > Furthermore, quantify guarantees to return a type that is fully substituted;
+-- this makes it easier to instantiate later, because the proper type variables
+-- can all be found without involving the substitution.
+--
+-- So, perhaps yes, it should use 'BoundTv'.
 
 -- ==============================================
 -- Creating type variables
@@ -365,9 +272,9 @@ mkTcTyVar name details =
     , varDetails = details
     }
 
--- ==============================================
--- Creating metavariables
--- ==============================================
+-- ========================
+-- [Creating metavariables]
+-- ========================
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L261
 tvName :: NameSpace
@@ -376,6 +283,9 @@ tvName = NameSpace'TypeVar
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L488
 mkTyVarOccFS :: FastString -> OccName
 mkTyVarOccFS fs = mkOccNameFS tvName fs
+
+mkOccNameFS :: NameSpace -> FastString -> OccName
+mkOccNameFS occ_sp fs = OccName occ_sp fs
 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L728
 newMetaTyVarName :: FastString -> TcM Name
@@ -443,159 +353,4 @@ newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv{}} = do
       skolemInfo = SkolemInfo tv.varName.nameUnique infoAnon
   pure $ newSkolemTyVar' skolemInfo name
 newSkolemTyVar _ x =
-  die (TcError'UnboundVariable x)
-
--- ==============================================
--- Debugging utilities
--- ==============================================
-
-debug :: (CtxDebug, CtxPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
-debug label xs = when ?debug do
-  putDocW
-    1000
-    ( vsep
-        [ "[" <> label <> "]"
-        , foldMap (\x -> "$ " <> x <> line) xs
-        , pretty' (prettyCallStack callStack)
-        , line
-        ]
-    )
-
-debug' :: (CtxDebug, CtxPrettyVerbosity) => Doc ann -> [(Doc ann, Doc ann)] -> IO ()
-debug' label xs = debug label (prettyVarVal <$> xs)
- where
-  prettyVarVal :: (Doc ann, Doc ann) -> Doc ann
-  prettyVarVal (var, val) = var <> ":" <> line <> indent 4 val
-
--- ==============================================
--- Type checking errors
--- ==============================================
-
-data TcError
-  = TcError'UndefinedVariable {varName :: Name}
-  | TcError'UnboundVariable {var :: TcTyVar}
-  | TcError'UnexpectedType {expected :: TcType, actual :: TcType, thing :: Maybe TypedThing}
-  | -- TODO specify which type(s) are bound
-    TcError'UnifyingBoundTypes {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
-  | TcError'ExpectedFlexiVariables {tvs :: [TcTyVar]}
-  | TcError'UnknownConcreteType {name :: Name}
-  | TcError'ExpectedAllMetavariables {tvs :: [TcTyVar]}
-  | TcError'CannotUnify {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
-
--- Capture current callstack in GADT
--- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
-data TcErrorWithCallStack where
-  TcErrorWithCallStack :: (HasCallStack) => TcError -> TcErrorWithCallStack
-
-getThingStart :: TypedThing -> SrcSpan
-getThingStart (HsExprRnThing thing) =
-  case thing of
-    SynTerm'Var _ var -> var.nameLoc
-    SynTerm'Lit anno _ -> anno
-    SynTerm'App anno _ _ -> anno
-    SynTerm'Lam anno _ _ -> anno
-    SynTerm'ALam anno _ _ _ -> anno
-    SynTerm'Let anno _ _ _ -> anno
-    SynTerm'Ann anno _ _ -> anno
-
-instance Pretty' TcError where
-  pretty' = \case
-    TcError'UndefinedVariable{varName} ->
-      vsep'
-        [ "Not in scope:"
-        , prettyIndent varName
-        ]
-    TcError'UnboundVariable{var} ->
-      vsep'
-        [ "Expected a bound variable, but got:"
-        , prettyIndent var
-        ]
-    TcError'UnexpectedType{expected, actual, thing} ->
-      vsep' $
-        [ "Expected the type:"
-        , prettyIndent expected
-        , "but got the type:"
-        , prettyIndent actual
-        ]
-          <> prettyThingLocation thing
-    TcError'UnifyingBoundTypes{ty1, ty2, thing} ->
-      vsep' $
-        [ "Trying to unify type:"
-        , prettyIndent ty1
-        , "with type:"
-        , prettyIndent ty2
-        ]
-          <> prettyThingLocation thing
-    TcError'ExpectedFlexiVariables{tvs} ->
-      vsep'
-        [ "Expected all variables to be Flexi, but these are not:"
-        , prettyIndent tvs
-        ]
-    TcError'UnknownConcreteType{name} ->
-      vsep'
-        [ "Unknown concrete type:"
-        , prettyIndent name
-        ]
-    TcError'ExpectedAllMetavariables{tvs} ->
-      vsep'
-        [ "Expected all variables to be metavariables, but got:"
-        , prettyIndent tvs
-        ]
-    TcError'CannotUnify{ty1, ty2, thing} ->
-      vsep' $
-        [ "Cannot unify type:"
-        , prettyIndent ty1
-        , "with type:"
-        , prettyIndent ty2
-        ]
-          <> prettyThingLocation thing
-   where
-    prettyThingLocation :: Maybe TypedThing -> [Doc ann]
-    prettyThingLocation = \case
-      Nothing -> mempty
-      Just thing ->
-        [ "in the expression:"
-        , prettyIndent thing
-        ]
-          <> prettyDefinedAt thing
-    prettyDefinedAt :: (CtxPrettyVerbosity) => TypedThing -> [Doc ann]
-    prettyDefinedAt thing =
-      [ "defined at:"
-      , prettyIndent (getThingStart thing)
-      ]
-
-instance Pretty' TcErrorWithCallStack where
-  pretty' (TcErrorWithCallStack err) =
-    vsep'
-      [ pretty' (prettyCallStack callStack)
-      , pretty' err
-      ]
-
-instance Exception TcError
-
-instance Exception TcErrorWithCallStack
-
-withTcError :: TcError -> TcM a -> TcM a
-withTcError err tcAction = do
-  tcErrorCurrent <- readIORef ?tcErrorPropagated
-  case tcErrorCurrent of
-    Nothing -> do
-      writeIORef ?tcErrorPropagated (Just err)
-      res <- tcAction
-      writeIORef ?tcErrorPropagated Nothing
-      pure res
-    Just _ -> do
-      tcAction
-
-die :: (CtxTcErrorPropagated, HasCallStack) => TcError -> IO a -- Fail unconditionally
-die tcErrorCurrent = do
-  tcErrorPropagated <- readIORef ?tcErrorPropagated
-  -- TODO Currently, a newer error can not overwrite the propagated error.
-  -- We need this behavior to propagate actual vs expected type errors.
-  -- If there's a mismatch during unification, we can immediately report.
-  -- Should we choose the error for each combination of types of errors (new, propagated)?
-  let error' =
-        case tcErrorPropagated of
-          Nothing -> tcErrorCurrent
-          Just err -> err
-  throw (TcErrorWithCallStack error')
+  dieTc (TcError'UnboundVariable x)

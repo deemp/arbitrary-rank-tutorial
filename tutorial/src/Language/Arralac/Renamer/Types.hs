@@ -5,7 +5,6 @@ import GHC.Stack (HasCallStack)
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Unique
-import Language.Arralac.Utils.Unique.Supply
 
 -- | A name.
 type NameFs = FastString

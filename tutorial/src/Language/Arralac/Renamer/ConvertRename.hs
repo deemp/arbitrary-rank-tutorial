@@ -4,7 +4,6 @@ import Control.Monad (forM)
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import GHC.Base (when)
-import GHC.Stack (HasCallStack)
 import Language.Arralac.Parser.Abs qualified as Abs
 import Language.Arralac.Renamer.Error
 import Language.Arralac.Renamer.Types
@@ -13,24 +12,14 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Types.Pass
 import Language.Arralac.Utils.Unique (Unique)
-import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
+import Language.Arralac.Utils.Unique.Supply (newUnique)
 
 -- ===================================
 -- [Convert and rename the parser AST]
 -- ===================================
-
-convertRenameAbs :: (HasCallStack, CtxCurrentFilePath, CtxDebug, CtxUniqueSupply, ConvertRename a) => a -> ConvertRenameTo a
-convertRenameAbs a = do
-  let
-    ?termVarScope = Map.empty
-    ?tyVarScope = Map.empty
-    -- TODO put existing types here?
-    ?tyConcreteScope = Map.empty
-    ?letOccursCheckInfo = Nothing
-  convertRename a
 
 class ConvertRename a where
   type ConvertRenameTo a

@@ -56,31 +56,42 @@ library
       Language.Arralac.Parser.Parse
       Language.Arralac.Renamer.ConvertRename
       Language.Arralac.Renamer.Error
+      Language.Arralac.Renamer.Run
       Language.Arralac.Renamer.Types
+      Language.Arralac.Solver.Types
       Language.Arralac.Syntax.Local.Anno
       Language.Arralac.Syntax.Local.Extension
       Language.Arralac.Syntax.Local.Name
       Language.Arralac.Syntax.Local.SynTerm
       Language.Arralac.Syntax.Local.SynType
       Language.Arralac.Syntax.Local.Type
+      Language.Arralac.Syntax.Local.Var.Rn
+      Language.Arralac.Syntax.Local.Var.Tc
+      Language.Arralac.Syntax.Local.Var.Types
+      Language.Arralac.Syntax.Local.Var.Zn
       Language.Arralac.Syntax.TTG.Extension
       Language.Arralac.Syntax.TTG.SynTerm
       Language.Arralac.Syntax.TTG.SynType
       Language.Arralac.Syntax.TTG.Type
+      Language.Arralac.Typechecker.Constraints
+      Language.Arralac.Typechecker.Error
       Language.Arralac.Typechecker.Main
       Language.Arralac.Typechecker.Run
       Language.Arralac.Typechecker.Solver
       Language.Arralac.Typechecker.TcMonad
       Language.Arralac.Typechecker.TcTerm
-      Language.Arralac.Typechecker.Types.Constraints
+      Language.Arralac.Typechecker.TcTyVarEnv
+      Language.Arralac.Typechecker.Types
+      Language.Arralac.Utils.Bag
+      Language.Arralac.Utils.Debug
+      Language.Arralac.Utils.Pass
       Language.Arralac.Utils.Pretty
       Language.Arralac.Utils.Pretty.Class
       Language.Arralac.Utils.Pretty.GPretty
       Language.Arralac.Utils.Types
-      Language.Arralac.Utils.Types.Bag
-      Language.Arralac.Utils.Types.Pass
       Language.Arralac.Utils.Unique
       Language.Arralac.Utils.Unique.Supply
+      Language.Arralac.Utils.Unique.Types
       Language.Arralac.Zonker.Tc.Zonk
       Language.Arralac.Zonker.Zn.Zonk
   other-modules:

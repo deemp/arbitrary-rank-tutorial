@@ -2,14 +2,15 @@
 
 module Language.Arralac.Syntax.Local.SynTerm where
 
-import Language.Arralac.Syntax.Local.Extension ()
+import Language.Arralac.Syntax.Local.Extension
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.SynType ()
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.Var.Tc
+import Language.Arralac.Syntax.Local.Var.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
+import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types.Pass
 import Prettyprinter
 
 -- In GHC, the extension field for the variable AST node constructor
@@ -23,10 +24,6 @@ import Prettyprinter
 type instance XSynTerm'VarCommon CompRn = Name
 type instance XSynTerm'VarCommon CompTc = TcTermVar
 type instance XSynTerm'VarCommon CompZn = ZnTermVar
-
-type instance XSynTerm'AnnoCommon CompRn = SrcSpan
-type instance XSynTerm'AnnoCommon CompTc = TcAnno
-type instance XSynTerm'AnnoCommon CompZn = ZnAnno
 
 type instance XSynTerm'Var x = XSynTerm'VarCommon x
 

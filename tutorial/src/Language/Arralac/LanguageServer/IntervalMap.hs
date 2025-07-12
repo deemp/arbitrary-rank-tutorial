@@ -2,14 +2,16 @@ module Language.Arralac.LanguageServer.IntervalMap where
 
 import Control.Lens (traversed, (%~), (&), _1)
 import Data.IntervalMap.Generic.Strict qualified as IM
+import Language.Arralac.Syntax.Local.Extension
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.SynTerm ()
 import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.Var.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
+import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Types.Pass
 import Language.LSP.Protocol.Types (Position (..), Range (..))
 import Prettyprinter (Doc)
 

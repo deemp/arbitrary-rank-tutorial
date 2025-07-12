@@ -1,16 +1,25 @@
 module Language.Arralac.Typechecker.TcTerm where
 
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Language.Arralac.Syntax.Local.Extension
 import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.Var.Tc
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Typechecker.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
+import Language.Arralac.Typechecker.Error (TcError (..), withTcError)
 import Language.Arralac.Typechecker.TcMonad
-import Language.Arralac.Typechecker.Types.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
+import Language.Arralac.Typechecker.TcTyVarEnv (extendTcTyVarEnv, lookupTcTyVarType)
+import Language.Arralac.Utils.Bag (unitBag)
+import Language.Arralac.Utils.Debug
+import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types.Bag (unitBag)
-import Language.Arralac.Utils.Types.Pass
 import Prettyprinter (line)
+
+-- ========================
+-- [tcRho and its variants]
+-- ========================
 
 checkRho :: SynTerm CompRn -> Rho -> TcM (SynTerm CompTc)
 -- Invariant: the Rho is always in weak-prenex form
@@ -35,43 +44,11 @@ inferRho expr =
     ref' <- readIORef ref
     pure (expr', ref')
 
--- TODO Levels
-convertSynTy :: SynType CompRn -> TcM (SynType CompTc, TcType)
-convertSynTy = \case
-  SynType'Var _ var -> do
-    -- TODO correct tcLevel?
-    var' <- pure TcTyVar{varName = var, varDetails = BoundTv{tcLevel = ?tcLevel}}
-    pure $
-      ( SynType'Var () var'
-      , Type'Var var'
-      )
-  SynType'ForAll srcLoc tvs body -> do
-    -- TODO correct tcLevel?
-    let tvs' = (\varName -> TcTyVar{varName, varDetails = BoundTv{tcLevel = ?tcLevel}}) <$> tvs
-    (body', body'ty) <- convertSynTy body
-    pure $
-      ( SynType'ForAll srcLoc tvs' body'
-      , Type'ForAll tvs' body'ty
-      )
-  SynType'Fun srcLoc arg res -> do
-    (arg', arg'ty) <- convertSynTy arg
-    (res', res'ty) <- convertSynTy res
-    pure $
-      ( SynType'Fun srcLoc arg' res'
-      , Type'Fun arg'ty res'ty
-      )
-  -- TODO handle more correctly?
-  SynType'Concrete srcLoc concrete -> do
-    pure $
-      ( SynType'Concrete srcLoc concrete
-      , Type'Concrete concrete.concreteType
-      )
-
 mkTypedThingIfCheck :: SynTerm CompRn -> Expected a -> Maybe TypedThing
 mkTypedThingIfCheck thing = \case
   -- TODO should we provide typed thing during inference?
   Infer _ -> Nothing
-  Check _ -> Just (HsExprRnThing thing)
+  Check _ -> Just (TypedThing'SynTermRn thing)
 
 -- | Similar to @tcCheckPolyExpr@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L100
@@ -91,7 +68,7 @@ tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
       TcAnno{annoSrcLoc, annoType = exp_ty}
       lit
 tcRho t@(SynTerm'Var _ varName) exp_ty = do
-  v_sigma <- lookupVar varName
+  v_sigma <- lookupTcTyVarType varName
   debug'
     "tcRho SynTerm'Var"
     [ ("varName", pretty' varName)
@@ -130,7 +107,7 @@ tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
     , ("body", pretty' body)
     , ("exp_ty", pretty' exp_ty)
     ]
-  body' <- extendVarEnv varName var_ty (checkRho body body_ty)
+  body' <- extendTcTyVarEnv varName var_ty (checkRho body body_ty)
   pure $
     SynTerm'Lam
       TcAnno{annoSrcLoc, annoType = modeTy}
@@ -138,7 +115,7 @@ tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
       body'
 tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
   var_ty <- Type'Var <$> newMetaTyVar' "m"
-  (body', body_ty) <- extendVarEnv varName var_ty (inferRho body)
+  (body', body_ty) <- extendTcTyVarEnv varName var_ty (inferRho body)
   writeIORef ref (Type'Fun var_ty body_ty)
   pure $
     SynTerm'Lam
@@ -150,7 +127,7 @@ tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
   (var_ty_syn, var_ty') <- convertSynTy var_ty
   -- TODO Should some typed thing be passed?
   subsCheck Nothing arg_ty var_ty'
-  body' <- extendVarEnv varName var_ty' (checkRho body body_ty)
+  body' <- extendTcTyVarEnv varName var_ty' (checkRho body body_ty)
   pure $
     SynTerm'ALam
       TcAnno{annoSrcLoc, annoType = modeTy}
@@ -159,7 +136,7 @@ tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
       body'
 tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
   (var_ty_syn, var_ty') <- convertSynTy var_ty
-  (body', body_ty) <- extendVarEnv varName var_ty' (inferRho body)
+  (body', body_ty) <- extendTcTyVarEnv varName var_ty' (inferRho body)
   writeIORef ref (Type'Fun var_ty' body_ty)
   -- TODO is it correct to use Check here?
   pure $
@@ -171,7 +148,7 @@ tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
 tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
   -- TODO call inferSigma here
   (rhs', var_ty) <- inferRho rhs
-  body' <- extendVarEnv varName var_ty (tcRho body exp_ty)
+  body' <- extendTcTyVarEnv varName var_ty (tcRho body exp_ty)
   pure $
     SynTerm'Let
       TcAnno{annoType = exp_ty, annoSrcLoc}
@@ -195,59 +172,98 @@ tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do
       body'
       ann_ty_syn
 
+-- TODO Levels
+convertSynTy :: SynType CompRn -> TcM (SynType CompTc, TcType)
+convertSynTy = \case
+  SynType'Var _ var -> do
+    -- TODO correct tcLevel?
+    let var' =
+          TcTyVar
+            { varName = var
+            , varDetails = BoundTv{tcLevel = ?tcLevel}
+            }
+    pure $
+      ( SynType'Var () var'
+      , Type'Var var'
+      )
+  SynType'ForAll srcLoc tvs body -> do
+    -- TODO correct tcLevel?
+    let tvs' =
+          ( \varName ->
+              TcTyVar
+                { varName
+                , varDetails =
+                    BoundTv{tcLevel = ?tcLevel}
+                }
+          )
+            <$> tvs
+    (body', body'ty) <- convertSynTy body
+    pure $
+      ( SynType'ForAll srcLoc tvs' body'
+      , Type'ForAll tvs' body'ty
+      )
+  SynType'Fun srcLoc arg res -> do
+    (arg', arg'ty) <- convertSynTy arg
+    (res', res'ty) <- convertSynTy res
+    pure $
+      ( SynType'Fun srcLoc arg' res'
+      , Type'Fun arg'ty res'ty
+      )
+  -- TODO handle more correctly?
+  SynType'Concrete srcLoc concrete -> do
+    pure $
+      ( SynType'Concrete srcLoc concrete
+      , Type'Concrete concrete.concreteType
+      )
+
+-- =============
+-- [Infer sigma]
+-- =============
+
 -- | Similar to @tcInferSigma@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/App.hs#L174
 inferSigma :: SynTerm CompRn -> TcM (SynTerm CompTc, Sigma)
 inferSigma = error "Not implemented!"
 
--- ==============================================
--- Capture constraints
--- ==============================================
+-- ===================
+-- [Instantiate sigma]
+-- ===================
 
--- | Capture constraints at a deeper level.
---
--- Similar to @pushLevelAndCaptureConstraints@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L1909
-pushLevelAndCaptureConstraints ::
-  -- | skolems
-  [TcTyVar] ->
-  TcM a ->
-  TcM a
-pushLevelAndCaptureConstraints skol_tvs act = do
-  constraints <- newIORef emptyWantedConstraints
+instSigma :: Maybe TypedThing -> Sigma -> Expected Rho -> TcM ()
+-- Invariant: if the second argument is (Check rho),
+--            then rho is in weak-prenex form
+instSigma thing tyActual (Check tyExpected) = do
+  debug'
+    "instSigma Check"
+    [ ("thing", pretty' thing)
+    , ("tyActual", pretty' tyActual)
+    , ("tyExpected", pretty' tyExpected)
+    ]
+  withTcError
+    TcError'UnexpectedType
+      { thing
+      , expected = tyExpected
+      , actual = tyActual
+      }
+    $ subsCheckRho thing tyActual tyExpected
+instSigma thing sigma (Infer tyExpected) = do
+  debug'
+    "instSigma Infer before instantiate"
+    [ ("thing", pretty' thing)
+    , ("sigma", pretty' sigma)
+    ]
+  rho <- instantiate sigma
+  debug'
+    "instSigma Infer after instantiate"
+    [ ("thing", pretty' thing)
+    , ("sigma", pretty' sigma)
+    , ("rho", pretty' rho)
+    ]
+  writeIORef tyExpected rho
 
-  let tcLevelNew = ?tcLevel + fromInteger 1
-
-  expr' <- do
-    let ?constraints = constraints
-        ?tcLevel = tcLevelNew
-     in act
-
-  constraintsSkol' <- readIORef constraints
-
-  let implicationCt =
-        Implic
-          { ic_tclvl = tcLevelNew
-          , ic_skols = skol_tvs
-          , ic_env = Nothing
-          , ic_wanted = constraintsSkol'
-          , ic_status = IC_Unsolved
-          }
-
-  constraintsLocal <- readIORef ?constraints
-
-  let constraintsLocal' =
-        constraintsLocal
-          { wc_impl = unitBag implicationCt <> constraintsLocal.wc_impl
-          }
-
-  writeIORef ?constraints constraintsLocal'
-
-  pure expr'
-
--- ==============================================
--- checkSigma
--- ==============================================
+-- ============
+-- [checkSigma]
+-- ============
 
 -- | Similar to @tcCheckPolyLExpr@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Gen/Expr.hs#L115
@@ -284,9 +300,9 @@ checkSigma expr sigma =
 
     pushLevelAndCaptureConstraints skol_tvs (checkRho expr rho)
 
--- ==============================================
--- Subsumption checking
--- ==============================================
+-- ======================
+-- [Subsumption checking]
+-- ======================
 
 subsCheck :: Maybe TypedThing -> Sigma -> Sigma -> TcM ()
 subsCheck thing sigma1 sigma2 = do
@@ -329,34 +345,47 @@ subsCheckFun _thing a1 r1 a2 r2 = do
   subsCheck Nothing a2 a1
   subsCheckRho Nothing r1 r2
 
-instSigma :: Maybe TypedThing -> Sigma -> Expected Rho -> TcM ()
--- Invariant: if the second argument is (Check rho),
---            then rho is in weak-prenex form
-instSigma thing tyActual (Check tyExpected) = do
-  debug'
-    "instSigma Check"
-    [ ("thing", pretty' thing)
-    , ("tyActual", pretty' tyActual)
-    , ("tyExpected", pretty' tyExpected)
-    ]
-  withTcError
-    TcError'UnexpectedType
-      { thing
-      , expected = tyExpected
-      , actual = tyActual
-      }
-    $ subsCheckRho thing tyActual tyExpected
-instSigma thing sigma (Infer tyExpected) = do
-  debug'
-    "instSigma Infer before instantiate"
-    [ ("thing", pretty' thing)
-    , ("sigma", pretty' sigma)
-    ]
-  rho <- instantiate sigma
-  debug'
-    "instSigma Infer after instantiate"
-    [ ("thing", pretty' thing)
-    , ("sigma", pretty' sigma)
-    , ("rho", pretty' rho)
-    ]
-  writeIORef tyExpected rho
+-- =====================
+-- [Capture constraints]
+-- =====================
+
+-- | Capture constraints at a deeper level.
+--
+-- Similar to @pushLevelAndCaptureConstraints@ in GHC.
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L1909
+pushLevelAndCaptureConstraints ::
+  -- | skolems
+  [TcTyVar] ->
+  TcM a ->
+  TcM a
+pushLevelAndCaptureConstraints skol_tvs act = do
+  constraints <- newIORef emptyWantedConstraints
+
+  let tcLevelNew = ?tcLevel + fromInteger 1
+
+  expr' <- do
+    let ?constraints = constraints
+        ?tcLevel = tcLevelNew
+     in act
+
+  constraintsSkol' <- readIORef constraints
+
+  let implicationCt =
+        Implic
+          { ic_tclvl = tcLevelNew
+          , ic_skols = skol_tvs
+          , ic_env = Nothing
+          , ic_wanted = constraintsSkol'
+          , ic_status = IC_Unsolved
+          }
+
+  constraintsLocal <- readIORef ?constraints
+
+  let constraintsLocal' =
+        constraintsLocal
+          { wc_impl = unitBag implicationCt <> constraintsLocal.wc_impl
+          }
+
+  writeIORef ?constraints constraintsLocal'
+
+  pure expr'

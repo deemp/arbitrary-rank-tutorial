@@ -1,37 +1,46 @@
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
+
 module Language.Arralac.Typechecker.Run where
 
 import Data.IORef (newIORef, readIORef)
 import Data.Text qualified as T
 import GHC.Stack
 import Language.Arralac.Parser.Parse
-import Language.Arralac.Renamer.ConvertRename (convertRenameAbs)
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Renamer.Run (convertRenameAbs)
+import Language.Arralac.Solver.Types (CtxSolverIterations)
 import Language.Arralac.Syntax.TTG.SynTerm
+import Language.Arralac.Typechecker.Constraints (CtxWantedConstraints, emptyWantedConstraints)
+import Language.Arralac.Typechecker.Error (CtxTcErrorPropagated)
 import Language.Arralac.Typechecker.Solver (solveIteratively)
-import Language.Arralac.Typechecker.TcMonad
 import Language.Arralac.Typechecker.TcTerm (inferRho)
-import Language.Arralac.Typechecker.Types.Constraints (emptyWantedConstraints)
+import Language.Arralac.Typechecker.TcTyVarEnv (CtxTcTyVarEnv, emptyTcTyVarEnv)
+import Language.Arralac.Typechecker.Types (TcLevel (..))
+import Language.Arralac.Utils.Debug (debug')
+import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Types.Pass
 import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply)
 import Language.Arralac.Zonker.Zn.Zonk (Zonk (..))
 import UnliftIO.Exception (finally)
 
--- ==============================================
---      The top-level wrapper
--- ==============================================
-
--- TODO Too much boilerplate...
-
 -- TODO use bluefin to expose exceptions
 
 -- TODO report many independent errors, not fail on the first error
-typecheck :: SynTerm CompRn -> TcM (SynTerm CompZn)
+typecheck ::
+  ( CtxSolverIterations
+  , CtxDebug
+  , CtxPrettyVerbosity
+  , CtxUniqueSupply
+  , CtxTcTyVarEnv
+  , CtxTcErrorPropagated
+  , CtxWantedConstraints
+  ) =>
+  SynTerm CompRn -> IO (SynTerm CompZn)
 typecheck term =
   do
     constraints <- newIORef emptyWantedConstraints
     let ?constraints = constraints
+        ?tcLevel = TcLevel 0
     -- TODO run inferSigma
     (tcTerm, _) <- inferRho term
     constraintsNew <- readIORef ?constraints

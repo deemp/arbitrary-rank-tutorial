@@ -5,9 +5,9 @@ import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Language.Arralac.Interpreter.Main (convertASTToCore, whnf)
 import Language.Arralac.Renamer.Error (RnErrorWithCallStack)
+import Language.Arralac.Typechecker.Error (TcErrorWithCallStack)
 import Language.Arralac.Typechecker.Run (runTypechecker')
 import Language.Arralac.Typechecker.Solver (SolverErrorWithCallStack)
-import Language.Arralac.Typechecker.TcMonad (TcErrorWithCallStack)
 import Language.Arralac.Utils.Pretty
 import Prettyprinter (line)
 import Prettyprinter.Render.Text (putDoc)

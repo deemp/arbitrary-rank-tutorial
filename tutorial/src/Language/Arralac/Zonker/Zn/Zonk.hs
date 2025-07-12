@@ -8,14 +8,20 @@ import Data.Generics.Labels ()
 import Data.Generics.Product ()
 import Data.IORef (readIORef)
 import GHC.Stack (HasCallStack)
+import Language.Arralac.Syntax.Local.Anno ()
+import Language.Arralac.Syntax.Local.Extension
+import Language.Arralac.Syntax.Local.SynTerm ()
+import Language.Arralac.Syntax.Local.SynType ()
 import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.Var.Tc
+import Language.Arralac.Syntax.Local.Var.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typechecker.TcMonad (debug')
+import Language.Arralac.Utils.Debug (debug')
+import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Types.Pass
 
 -- Substitute metavariables with their Indirect types after typechecking
 -- to produce a term without metavariables.
@@ -27,11 +33,11 @@ import Language.Arralac.Utils.Types.Pass
 type ZnM a = (HasCallStack, CtxDebug, CtxPrettyVerbosity) => IO a
 
 class Zonk a where
-  type To a
-  zonk :: a -> ZnM (To a)
+  type ZonkTo a
+  zonk :: a -> ZnM (ZonkTo a)
 
 instance Zonk TcTyVar where
-  type To TcTyVar = Either ZnTyVar ZnType
+  type ZonkTo TcTyVar = Either ZnTyVar ZnType
   zonk var =
     case var.varDetails of
       MetaTv{metaTvRef} -> do
@@ -55,7 +61,7 @@ instance Zonk TcTyVar where
         pure $ Left ZnTyVar{varName = var.varName}
 
 instance Zonk (SynType CompTc) where
-  type To (SynType CompTc) = SynType CompZn
+  type ZonkTo (SynType CompTc) = SynType CompZn
   zonk = \case
     -- TODO get type from tctyvar
     SynType'Var anno TcTyVar{varName} -> do
@@ -73,7 +79,7 @@ instance Zonk (SynType CompTc) where
       pure $ SynType'Concrete anno lit
 
 instance Zonk TcType where
-  type To TcType = ZnType
+  type ZonkTo TcType = ZnType
   zonk = \case
     -- TODO are zonks of different parts of a type independent?
     Type'Var var -> do
@@ -92,19 +98,19 @@ instance Zonk TcType where
       pure $ Type'Concrete ty
 
 instance Zonk TcAnno where
-  type To TcAnno = ZnAnno
+  type ZonkTo TcAnno = ZnAnno
   zonk TcAnno{annoSrcLoc, annoType} = do
     annoType' <- zonk annoType
     pure ZnAnno{annoSrcLoc, annoType = annoType'}
 
 instance Zonk TcTermVar where
-  type To TcTermVar = ZnTermVar
+  type ZonkTo TcTermVar = ZnTermVar
   zonk TcTermVar{varName, varType} = do
     varType' <- zonk varType
     pure ZnTermVar{varName, varType = varType'}
 
 instance Zonk (Expected TcType) where
-  type To (Expected TcType) = ZnType
+  type ZonkTo (Expected TcType) = ZnType
   zonk ty = do
     varType' <-
       case ty of
@@ -113,7 +119,7 @@ instance Zonk (Expected TcType) where
     zonk varType'
 
 instance Zonk (SynTerm CompTc) where
-  type To (SynTerm CompTc) = SynTerm CompZn
+  type ZonkTo (SynTerm CompTc) = SynTerm CompZn
   zonk = \case
     SynTerm'Var _ var -> do
       var' <- zonk var

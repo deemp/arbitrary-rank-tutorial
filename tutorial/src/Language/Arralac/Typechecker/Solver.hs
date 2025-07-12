@@ -11,12 +11,15 @@ import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typechecker.TcMonad (badType, debug')
-import Language.Arralac.Typechecker.Types.Constraints
+import Language.Arralac.Typechecker.Constraints
+import Language.Arralac.Typechecker.TcMonad (isBoundTvTypeVar)
+import Language.Arralac.Typechecker.Types
+import Language.Arralac.Utils.Bag
+import Language.Arralac.Utils.Debug (debug')
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Types.Bag
 import Prettyprinter ((<+>))
+import Language.Arralac.Syntax.Local.Var.Tc
 
 -- Constraint solver.
 --
@@ -99,12 +102,12 @@ instance Solve WantedConstraints where
 unify :: Ct -> Tau -> Tau -> IO [Ct]
 -- Invariant:
 -- The first type is "expected",
--- the second one is "actual"
+-- the second one is "actual".
 unify ct tv'@(Type'Var tv) ty
-  | badType tv' =
+  | isBoundTvTypeVar tv' =
       dieSolver SolverError'CannotUnifyBoundVar{tv, ty, ct}
 unify ct ty tv'@(Type'Var tv)
-  | badType tv' =
+  | isBoundTvTypeVar tv' =
       dieSolver SolverError'CannotUnifyBoundVar{tv, ty, ct}
 unify
   _ct
