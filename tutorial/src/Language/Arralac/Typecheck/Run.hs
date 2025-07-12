@@ -8,7 +8,7 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Typecheck.Constraints (emptyWantedConstraints)
 import Language.Arralac.Typecheck.Pass
-import Language.Arralac.Typecheck.Renamer (convertRenameAbs)
+import Language.Arralac.Renamer (convertRenameAbs)
 import Language.Arralac.Typecheck.Solver (solveIteratively)
 import Language.Arralac.Typecheck.TcMonad
 import Language.Arralac.Typecheck.TcTerm (inferRho)

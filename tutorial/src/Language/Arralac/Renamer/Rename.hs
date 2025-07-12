@@ -1,16 +1,13 @@
-{-# OPTIONS_GHC -Wno-partial-fields #-}
+module Language.Arralac.Renamer.Rename where
 
-module Language.Arralac.Typecheck.Renamer where
-
-import Control.Exception (Exception, throw)
 import Control.Monad (forM)
-import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import GHC.Base (when)
-import GHC.Exception (prettyCallStack)
-import GHC.Stack (HasCallStack, callStack)
+import GHC.Stack (HasCallStack)
 import Language.Arralac.Parser.Abs qualified as Abs
+import Language.Arralac.Renamer.Error
+import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.SynTerm ()
 import Language.Arralac.Syntax.Local.Type
@@ -18,57 +15,9 @@ import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typecheck.Pass
-import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Unique (Unique)
 import Language.Arralac.Utils.Unique.Supply (IUniqueSupply, newUnique)
-
--- =======
--- [Types]
--- =======
-
--- | A name.
-type NameFs = FastString
-
--- | Variables scope.
---
--- Variable names and their ids.
-type Scope = Map NameFs Unique
-
--- | Current term variables scope.
---
--- Visible term variable names and their ids.
-type ITermVarScope = (?termVarScope :: Scope)
-
--- | Current type variables scope.
---
--- Visible type variable names and their ids.
-type ITyVarScope = (?tyVarScope :: Scope)
-
--- | Concrete types scope.
---
--- Concrete type names and their ids.
-type ITyConcreteScope = (?tyConcreteScope :: Scope)
-
-data LetOccursCheckInfo = LetOccursCheckInfo
-  { letSrcSpan :: SrcSpan
-  , letLhs :: Name
-  }
-
-type ILetOccursCheckInfo = (?letOccursCheckInfo :: Maybe LetOccursCheckInfo)
-
-type IRnScopes = (ITermVarScope, ITyVarScope, ITyConcreteScope)
-
-type IRnConstraints =
-  ( HasCallStack
-  , IUniqueSupply
-  , ICurrentFilePath
-  , IDebug
-  , IRnScopes
-  , ILetOccursCheckInfo
-  )
-
-type RnM a = (IRnConstraints) => IO a
 
 -- ===================================
 -- [Convert and rename the parser AST]
@@ -318,61 +267,3 @@ instance ConvertRename Abs.Type where
       SynType'Fun (convertPositionToSrcSpan pos)
         <$> (convertRename ty1)
         <*> (convertRename ty2)
-
--- ================
--- [Renamer errors]
--- ================
-
--- | A renamer exception.
-data RnError
-  = -- TODO make a parser error
-    RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
-  | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
-  | RnError'LetOccursCheckFailed {letOccursCheckInfo :: LetOccursCheckInfo, letLhsOcc :: Name}
-
--- | A renamer exception that can capture the 'callStack' at the 'throw' site.
---
--- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
-data RnErrorWithCallStack where
-  RnErrorWithCallStack :: (HasCallStack) => RnError -> RnErrorWithCallStack
-
--- | Fail unconditionally with a 'RnErrorWithCallStack'.
-dieRn :: (HasCallStack) => RnError -> IO a
-dieRn rnError = throw (RnErrorWithCallStack rnError)
-
-instance Pretty' RnError where
-  pretty' = \case
-    RnError'ForallBindsNoTvs{srcSpan} ->
-      vsep'
-        [ "`forall' binds no type variables at:"
-        , prettyIndent srcSpan
-        ]
-    RnError'UnboundTypeVariable{srcSpan, name} ->
-      vsep'
-        [ "Unbound type variable:"
-        , prettyIndent name
-        , "at:"
-        , prettyIndent srcSpan
-        ]
-    RnError'LetOccursCheckFailed{letOccursCheckInfo, letLhsOcc} ->
-      vsep'
-        [ "Recursive `let'-binding at:"
-        , prettyIndent letOccursCheckInfo.letSrcSpan
-        , "Variable:"
-        , prettyIndent letOccursCheckInfo.letLhs
-        , "bound in a `let'-expression at:"
-        , prettyIndent letOccursCheckInfo.letLhs.nameLoc
-        , "occurs in the RHS-expression at:"
-        , prettyIndent letLhsOcc.nameLoc
-        ]
-
-instance Exception RnError
-
-instance Pretty' RnErrorWithCallStack where
-  pretty' (RnErrorWithCallStack err) =
-    vsep'
-      [ pretty' (prettyCallStack callStack)
-      , pretty' err
-      ]
-
-instance Exception RnErrorWithCallStack

@@ -52,6 +52,10 @@ library
       Language.Arralac.Parser.Abs
       Language.Arralac.Parser.Lex
       Language.Arralac.Parser.Par
+      Language.Arralac.Renamer
+      Language.Arralac.Renamer.Error
+      Language.Arralac.Renamer.Rename
+      Language.Arralac.Renamer.Types
       Language.Arralac.Syntax.Local.Anno
       Language.Arralac.Syntax.Local.Extension
       Language.Arralac.Syntax.Local.Name
@@ -66,7 +70,6 @@ library
       Language.Arralac.Typecheck.Constraints
       Language.Arralac.Typecheck.Main
       Language.Arralac.Typecheck.Pass
-      Language.Arralac.Typecheck.Renamer
       Language.Arralac.Typecheck.Run
       Language.Arralac.Typecheck.Solver
       Language.Arralac.Typecheck.TcMonad
