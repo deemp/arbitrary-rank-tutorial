@@ -1,7 +1,6 @@
 module Language.Arralac.Typecheck.Run where
 
 import Data.IORef (newIORef, readIORef)
-import Data.Map qualified as Map
 import Data.Text qualified as T
 import GHC.Stack
 import Language.Arralac.Parser
@@ -9,7 +8,7 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Typecheck.Constraints (emptyWantedConstraints)
 import Language.Arralac.Typecheck.Pass
-import Language.Arralac.Typecheck.Renamer (ConvertRename (convertRename))
+import Language.Arralac.Typecheck.Renamer (convertRenameAbs)
 import Language.Arralac.Typecheck.Solver (solveIteratively)
 import Language.Arralac.Typecheck.TcMonad
 import Language.Arralac.Typecheck.TcTerm (inferRho)
@@ -65,9 +64,5 @@ runTypechecker' filePath content = do
       ?currentFilePath = filePath
   program <- do
     let
-      ?termVarScope = Map.empty
-      ?tyVarScope = Map.empty
-      -- TODO put existing types here
-      ?tyConcreteScope = Map.empty
-    parseText content >>= convertRename
+    parseText content >>= convertRenameAbs
   runTypechecker program

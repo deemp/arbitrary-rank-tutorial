@@ -23,6 +23,10 @@ import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Unique (Unique)
 import Language.Arralac.Utils.Unique.Supply (IUniqueSupply, newUnique)
 
+-- =======
+-- [Types]
+-- =======
+
 -- | A name.
 type NameFs = FastString
 
@@ -41,9 +45,9 @@ type ITermVarScope = (?termVarScope :: Scope)
 -- Visible type variable names and their ids.
 type ITyVarScope = (?tyVarScope :: Scope)
 
--- | Built-in types scope.
+-- | Concrete types scope.
 --
--- Built-in type names and their ids.
+-- Concrete type names and their ids.
 type ITyConcreteScope = (?tyConcreteScope :: Scope)
 
 data LetOccursCheckInfo = LetOccursCheckInfo
@@ -53,74 +57,41 @@ data LetOccursCheckInfo = LetOccursCheckInfo
 
 type ILetOccursCheckInfo = (?letOccursCheckInfo :: Maybe LetOccursCheckInfo)
 
+type IRnScopes = (ITermVarScope, ITyVarScope, ITyConcreteScope)
+
 type IRnConstraints =
   ( HasCallStack
   , IUniqueSupply
-  , ITermVarScope
-  , ITyVarScope
-  , ITyConcreteScope
   , ICurrentFilePath
   , IDebug
+  , IRnScopes
+  , ILetOccursCheckInfo
   )
 
 type RnM a = (IRnConstraints) => IO a
 
-selectScope :: (IRnConstraints) => NameSpace -> Scope
-selectScope = \case
-  NameSpace'TermVar -> ?termVarScope
-  NameSpace'TypeVar -> ?tyVarScope
-  NameSpace'TypeConcrete -> ?tyConcreteScope
+-- ===================================
+-- [Convert and rename the parser AST]
+-- ===================================
 
-getVarId :: (IRnConstraints) => NameSpace -> NameFs -> Maybe Unique
-getVarId ns k = Map.lookup k (selectScope ns)
-
-getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Unique
-getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
-
-getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Unique
-getExistingUnique ns pos name =
-  case getVarId ns name of
-    Nothing ->
-      dieRn
-        RnError'UnboundTypeVariable
-          { name
-          , srcSpan = convertPositionToSrcSpan pos
-          }
-    Just u -> pure u
-
-runWithScope :: NameSpace -> Scope -> RnM a -> RnM a
-runWithScope ns scope act =
-  case ns of
-    NameSpace'TermVar -> let ?termVarScope = scope in act
-    NameSpace'TypeVar -> let ?tyVarScope = scope in act
-    NameSpace'TypeConcrete -> let ?tyConcreteScope = scope in act
-
-withNameInScope :: NameSpace -> Name -> RnM a -> RnM a
-withNameInScope ns name act = do
-  let scope = Map.insert name.nameOcc.occNameFS name.nameUnique (selectScope ns)
-  runWithScope ns scope act
-
-withNamesInScope :: NameSpace -> [Name] -> RnM a -> RnM a
-withNamesInScope ns names act = do
-  -- Map.union prefers the first argument
-  -- and we need to add new names to the scope
-  -- to implement shadowing
-  let scope =
-        Map.union
-          ( Map.fromList
-              ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)
-          )
-          $ selectScope ns
-  runWithScope ns scope act
-
-convertProgram :: Abs.Program -> RnM (SynTerm CompRn)
-convertProgram (Abs.Program _ program) = do
-  let ?letOccursCheckInfo = Nothing
-  convertRename program
+convertRenameAbs :: (HasCallStack, ICurrentFilePath, IDebug, IUniqueSupply, ConvertRename a) => a -> ConvertRenameTo a
+convertRenameAbs a = do
+  let
+    ?termVarScope = Map.empty
+    ?tyVarScope = Map.empty
+    -- TODO put existing types here?
+    ?tyConcreteScope = Map.empty
+    ?letOccursCheckInfo = Nothing
+  convertRename a
 
 class ConvertRename a where
   type ConvertRenameTo a
-  convertRename :: (IRnConstraints, ILetOccursCheckInfo) => a -> (ConvertRenameTo a)
+  convertRename :: (IRnConstraints) => a -> (ConvertRenameTo a)
+
+instance ConvertRename Abs.Program where
+  type ConvertRenameTo Abs.Program = IO (SynTerm CompRn)
+  convertRename (Abs.Program _ program) =
+    convertRename program
 
 convertPositionToSrcSpan :: (ICurrentFilePath) => Abs.BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
@@ -136,7 +107,25 @@ convertPositionToSrcSpan = \case
   Nothing ->
     UnhelpfulSpan UnhelpfulNoLocationInfo
 
-letOccursCheck :: (ILetOccursCheckInfo) => Name -> IO ()
+runWithScope :: NameSpace -> Scope -> RnM a -> RnM a
+runWithScope ns scope act =
+  case ns of
+    NameSpace'TermVar -> let ?termVarScope = scope in act
+    NameSpace'TypeVar -> let ?tyVarScope = scope in act
+    NameSpace'TypeConcrete -> let ?tyConcreteScope = scope in act
+
+selectScope :: (IRnScopes) => NameSpace -> Scope
+selectScope = \case
+  NameSpace'TermVar -> ?termVarScope
+  NameSpace'TypeVar -> ?tyVarScope
+  NameSpace'TypeConcrete -> ?tyConcreteScope
+
+withNameInScope :: NameSpace -> Name -> RnM a -> RnM a
+withNameInScope ns name act = do
+  let scope = Map.insert name.nameOcc.occNameFS name.nameUnique (selectScope ns)
+  runWithScope ns scope act
+
+letOccursCheck :: Name -> RnM ()
 letOccursCheck name = do
   case ?letOccursCheckInfo of
     Just info ->
@@ -199,6 +188,12 @@ instance ConvertRename Abs.Exp where
       ty' <- convertRename ty
       pure $ SynTerm'Ann (convertPositionToSrcSpan pos) term' ty'
 
+getVarId :: (IRnScopes) => NameSpace -> NameFs -> Maybe Unique
+getVarId ns k = Map.lookup k (selectScope ns)
+
+getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Unique
+getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
+
 instance ConvertRename Abs.Var where
   type ConvertRenameTo Abs.Var = Bool -> IO Name
   convertRename (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
@@ -242,6 +237,30 @@ parseTypeConcrete name = do
     | name == typeConcreteName TypeConcrete'String -> TypeConcrete'String
     | name == typeConcreteName TypeConcrete'Int -> TypeConcrete'Int
     | otherwise -> TypeConcrete'Con name
+
+withNamesInScope :: NameSpace -> [Name] -> RnM a -> RnM a
+withNamesInScope ns names act = do
+  -- Map.union prefers the first argument
+  -- and we need to add new names to the scope
+  -- to implement shadowing
+  let scope =
+        Map.union
+          ( Map.fromList
+              ((\name -> (name.nameOcc.occNameFS, name.nameUnique)) <$> names)
+          )
+          $ selectScope ns
+  runWithScope ns scope act
+
+getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Unique
+getExistingUnique ns pos name =
+  case getVarId ns name of
+    Nothing ->
+      dieRn
+        RnError'UnboundTypeVariable
+          { name
+          , srcSpan = convertPositionToSrcSpan pos
+          }
+    Just u -> pure u
 
 instance ConvertRename Abs.Type where
   type ConvertRenameTo Abs.Type = IO (SynType CompRn)
@@ -300,14 +319,9 @@ instance ConvertRename Abs.Type where
         <$> (convertRename ty1)
         <*> (convertRename ty2)
 
-instance ConvertRename Abs.Program where
-  type ConvertRenameTo Abs.Program = IO (SynTerm CompRn)
-  convertRename (Abs.Program _ program) =
-    convertRename program
-
--- ==============================================
--- Renamer errors
--- ==============================================
+-- ================
+-- [Renamer errors]
+-- ================
 
 -- | A renamer exception.
 data RnError
