@@ -66,6 +66,7 @@ dependencies:
   - base >= 4.7 && < 5
   - bifunctors
   - generic-lens
+  - code-page
   - containers
   - free-foil
   - IntervalMap
@@ -81,7 +82,7 @@ dependencies:
   - stm
   - text
   - unliftio
-  - validation
+  - with-utf8
 
 default-extensions:
   - BlockArguments

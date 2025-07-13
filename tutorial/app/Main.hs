@@ -3,7 +3,7 @@
 
 module Main where
 
-import Language.Arralac.LanguageServer.Main qualified as LS
+import Language.Arralac.LanguageServer.Run qualified as LS
 import Main.Utf8 (withUtf8)
 
 -- TODO CLI

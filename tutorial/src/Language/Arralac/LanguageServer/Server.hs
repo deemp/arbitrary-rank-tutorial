@@ -1,4 +1,4 @@
-module Language.Arralac.LanguageServer.Main where
+module Language.Arralac.LanguageServer.Server where
 
 import Colog.Core
 import Colog.Core qualified as L
@@ -11,7 +11,6 @@ import Data.Aeson qualified as J
 import Data.IntervalMap.Generic.Strict qualified as IM
 import Data.Map (Map)
 import Data.Map qualified as M
-import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
@@ -25,11 +24,10 @@ import Language.LSP.Protocol.Message (SMethod (..), TRequestMessage (..))
 import Language.LSP.Protocol.Types
 import Language.LSP.Protocol.Types qualified as L
 import Language.LSP.Protocol.Types qualified as LSP
-import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getConfig, getVirtualFile, notificationHandler, requestHandler, runLspT, runServer, sendNotification, type (<~>) (Iso))
+import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getConfig, getVirtualFile, notificationHandler, requestHandler, runLspT, sendNotification, type (<~>) (Iso))
 import Language.LSP.VFS (virtualFileText)
 import Prettyprinter (Doc, defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
-import System.Environment (lookupEnv)
 import UnliftIO (catch)
 
 -- | The server's state.
@@ -246,23 +244,3 @@ serverDefinition sectionName serverState =
               , _save = Just $ InR $ SaveOptions $ Just False
               }
       }
-
--- ==============================================
--- The Main Entry Point for the Server
--- ==============================================
-
--- | The main entry point for our server.
-main :: IO Int
-main = do
-  sectionName <- lookupEnv "LSP_SETTINGS_ARRALAC_SECTION"
-  let sectionName' = T.pack $ fromMaybe "arralac" sectionName
-
-  -- Create the initial empty server state.
-  initialServerState <- newTVarIO M.empty
-
-  -- Start the server.
-  -- 'runServer' wraps 'runServerWithHandles'
-  exitCode <- runServer $ serverDefinition sectionName' initialServerState
-
-  -- Return the exit code.
-  pure exitCode
