@@ -55,30 +55,30 @@ custom-setup:
     - base >= 4.11.0.0 && < 5.0
     - Cabal >= 2.4.0.1 && < 4.0
     - code-page
-    - process >= 1.6.3.0
-    - with-utf8
-    - text
     - directory
+    - process >= 1.6.3.0
+    - text
+    - with-utf8
 
 dependencies:
   - aeson
   - array >= 0.5.5.0
   - base >= 4.7 && < 5
   - bifunctors
-  - generic-lens
+  - co-log-core
   - code-page
   - containers
+  - deepseq
   - free-foil
+  - generic-lens
   - IntervalMap
   - kind-generics
   - kind-generics-th
+  - lens
   - lsp
   - lsp-types
   - mtl
-  - lens
   - prettyprinter
-  - co-log-core
-  - deepseq
   - stm
   - text
   - unliftio
