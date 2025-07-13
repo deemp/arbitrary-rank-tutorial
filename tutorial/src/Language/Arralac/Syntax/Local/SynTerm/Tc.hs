@@ -78,7 +78,7 @@ instance Pretty' (SynTerm CompTc) where
                       ]
                   )
                 <> "."
-                  <+> pretty' term
+                <+> pretty' term
                 <> line
             )
         , "::"
