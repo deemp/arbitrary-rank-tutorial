@@ -161,8 +161,6 @@ library
     , array >=0.5.5.0
     , base >=4.7 && <5
     , bifunctors
-    , bluefin
-    , bluefin-internal
     , co-log-core
     , containers
     , deepseq
@@ -245,8 +243,6 @@ executable arralac
     , array >=0.5.5.0
     , base >=4.7 && <5
     , bifunctors
-    , bluefin
-    , bluefin-internal
     , co-log-core
     , containers
     , deepseq

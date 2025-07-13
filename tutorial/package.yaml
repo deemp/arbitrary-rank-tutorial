@@ -24,7 +24,7 @@ verbatim:
 # common to point users to the README.md file.
 description: |
   Arralac: `Ar`bitrary-`ra`nk polymorphism + `la`mbda `c`alculus
-  
+
   Please see the README on GitHub at <https://github.com/deemp/arbitrary-rank-tutorial#readme>
 
 # Running Setup.hs requires:
@@ -65,8 +65,6 @@ dependencies:
   - array >= 0.5.5.0
   - base >= 4.7 && < 5
   - bifunctors
-  - bluefin
-  - bluefin-internal
   - generic-lens
   - containers
   - free-foil
