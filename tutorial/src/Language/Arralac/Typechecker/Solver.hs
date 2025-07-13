@@ -9,6 +9,7 @@ import Data.IORef (readIORef, writeIORef)
 import Data.Set qualified as Set
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
+import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typechecker.Constraints
@@ -19,7 +20,6 @@ import Language.Arralac.Utils.Debug (debug')
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Prettyprinter ((<+>))
-import Language.Arralac.Syntax.Local.Var.Tc
 
 -- Constraint solver.
 --

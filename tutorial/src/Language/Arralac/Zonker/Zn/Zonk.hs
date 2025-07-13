@@ -9,12 +9,16 @@ import Data.Generics.Product ()
 import Data.IORef (readIORef)
 import GHC.Stack (HasCallStack)
 import Language.Arralac.Syntax.Local.Anno ()
-import Language.Arralac.Syntax.Local.Extension
-import Language.Arralac.Syntax.Local.SynTerm ()
-import Language.Arralac.Syntax.Local.SynType ()
+import Language.Arralac.Syntax.Local.Extension.Tc
+import Language.Arralac.Syntax.Local.Extension.Zn
+import Language.Arralac.Syntax.Local.SynTerm.Tc ()
+import Language.Arralac.Syntax.Local.SynTerm.Zn ()
+import Language.Arralac.Syntax.Local.SynTermVar.Tc
+import Language.Arralac.Syntax.Local.SynTermVar.Zn
+import Language.Arralac.Syntax.Local.SynType.Tc ()
+import Language.Arralac.Syntax.Local.TyVar.Tc
+import Language.Arralac.Syntax.Local.TyVar.Zn
 import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.Local.Var.Tc
-import Language.Arralac.Syntax.Local.Var.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type

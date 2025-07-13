@@ -6,9 +6,11 @@ import Control.Exception (Exception, throw)
 import Data.IORef (IORef, readIORef, writeIORef)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
+import Language.Arralac.Syntax.Local.Extension.Rn ()
 import Language.Arralac.Syntax.Local.Name
+import Language.Arralac.Syntax.Local.TyVar.Rn
+import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.Local.Var.Tc
 import Language.Arralac.Syntax.TTG.SynTerm (SynTerm (..))
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Utils.Pretty
@@ -21,7 +23,7 @@ import Prettyprinter (Doc)
 type CtxTcErrorPropagated = (?tcErrorPropagated :: IORef (Maybe TcError))
 
 data TcError
-  = TcError'UndefinedVariable {varName :: Name}
+  = TcError'UndefinedVariable {rnVar :: RnVar}
   | TcError'UnboundVariable {var :: TcTyVar}
   | TcError'UnexpectedType {expected :: TcType, actual :: TcType, thing :: Maybe TypedThing}
   | -- TODO specify which type(s) are bound
@@ -68,7 +70,7 @@ instance Exception TcErrorWithCallStack
 getThingStart :: TypedThing -> SrcSpan
 getThingStart (TypedThing'SynTermRn thing) =
   case thing of
-    SynTerm'Var _ var -> var.nameLoc
+    SynTerm'Var _ var -> var.varName.nameLoc
     SynTerm'Lit anno _ -> anno
     SynTerm'App anno _ _ -> anno
     SynTerm'Lam anno _ _ -> anno
@@ -78,10 +80,10 @@ getThingStart (TypedThing'SynTermRn thing) =
 
 instance Pretty' TcError where
   pretty' = \case
-    TcError'UndefinedVariable{varName} ->
+    TcError'UndefinedVariable{rnVar} ->
       vsep'
         [ "Not in scope:"
-        , prettyIndent varName
+        , prettyIndent rnVar.varName
         ]
     TcError'UnboundVariable{var} ->
       vsep'

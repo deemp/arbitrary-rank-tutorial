@@ -7,6 +7,7 @@ import Language.Arralac.Syntax.TTG.Type
 
 import Data.IORef (IORef)
 import Language.Arralac.Syntax.Local.Name
+import Language.Arralac.Syntax.TTG.TyVar
 import Language.Arralac.Utils.Pass (CompRn, CompTc, CompZn)
 import Language.Arralac.Utils.Pretty
 import Prettyprinter
@@ -24,10 +25,6 @@ data Expected a = Infer (IORef a) | Check a
 -- [Types]
 -- =======
 
-type Sigma = TcType
-type Rho = TcType -- No top-level ForAll
-type Tau = TcType -- No ForAlls anywhere
-
 -- | A type that can have mutable type variables.
 --
 -- Similar to @TcType@ in GHC.
@@ -35,8 +32,8 @@ type Tau = TcType -- No ForAlls anywhere
 --
 -- GHC also has 'Kind's, but we don't have them.
 --
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L107
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L110
 type TcType = Type CompTc
 
 type RnType = Type CompRn
@@ -45,9 +42,13 @@ type ZnType = Type CompZn
 
 type TcTypeMeta = TcType
 
--- ==============================================
+type Sigma = TcType
+type Rho = TcType -- No top-level ForAll
+type Tau = TcType -- No ForAlls anywhere
+
+-- ================
 -- [Concrete types]
--- ==============================================
+-- ================
 
 data Concrete = Concrete
   { concreteName :: Name
@@ -58,14 +59,11 @@ data Concrete = Concrete
 -- [Instances for Types]
 -- =====================
 
-instance Pretty' Concrete where
-  pretty' c = pretty' c.concreteType
-
 instance (Pretty' a) => Pretty' (Expected a) where
   pretty' (Infer _) = "[Infer]"
   pretty' (Check a) = "[Check]: " <> pretty' a
 
-instance (Pretty' (XVar' p)) => Pretty' (Type p) where
+instance (Pretty' (XTyVar p)) => Pretty' (Type p) where
   pretty' = \case
     Type'Var var -> pretty' var
     Type'ForAll vars body -> "forall " <> hsep (pretty' <$> vars) <> "." <+> pretty' body
@@ -78,3 +76,6 @@ instance (Pretty' (XVar' p)) => Pretty' (Type p) where
           Type'ForAll _ _ -> parens
           _ -> id
     Type'Concrete ty -> pretty' ty
+
+instance Pretty' Concrete where
+  pretty' c = pretty' c.concreteType

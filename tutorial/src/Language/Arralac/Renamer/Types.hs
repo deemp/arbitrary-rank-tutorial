@@ -5,6 +5,7 @@ import GHC.Stack (HasCallStack)
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Unique
+import Language.Arralac.Syntax.Local.RnVar
 
 -- | A name.
 type NameFs = FastString
@@ -31,7 +32,7 @@ type CtxTyConcreteScope = (?tyConcreteScope :: Scope)
 
 data LetOccursCheckInfo = LetOccursCheckInfo
   { letSrcSpan :: SrcSpan
-  , letLhs :: Name
+  , letLhs :: RnVar
   }
 
 type CtxLetOccursCheckInfo = (?letOccursCheckInfo :: Maybe LetOccursCheckInfo)

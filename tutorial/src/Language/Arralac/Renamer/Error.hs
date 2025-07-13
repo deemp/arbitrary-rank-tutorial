@@ -7,7 +7,7 @@ import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.SynTerm ()
+import Language.Arralac.Syntax.Local.RnVar
 import Language.Arralac.Utils.Pretty
 
 -- | A renamer exception.
@@ -15,7 +15,7 @@ data RnError
   = -- TODO make a parser error
     RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
   | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
-  | RnError'LetOccursCheckFailed {letOccursCheckInfo :: LetOccursCheckInfo, letLhsOcc :: Name}
+  | RnError'LetOccursCheckFailed {letOccursCheckInfo :: LetOccursCheckInfo, letLhsOcc :: RnVar}
 
 -- | A renamer exception that can capture the 'callStack' at the 'throw' site.
 --
@@ -48,9 +48,9 @@ instance Pretty' RnError where
         , "Variable:"
         , prettyIndent letOccursCheckInfo.letLhs
         , "bound in a `let'-expression at:"
-        , prettyIndent letOccursCheckInfo.letLhs.nameLoc
+        , prettyIndent letOccursCheckInfo.letLhs.varName.nameLoc
         , "occurs in the RHS-expression at:"
-        , prettyIndent letLhsOcc.nameLoc
+        , prettyIndent letLhsOcc.varName.nameLoc
         ]
 
 instance Exception RnError

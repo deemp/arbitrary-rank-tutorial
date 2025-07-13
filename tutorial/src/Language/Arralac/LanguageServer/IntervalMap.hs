@@ -2,11 +2,12 @@ module Language.Arralac.LanguageServer.IntervalMap where
 
 import Control.Lens (traversed, (%~), (&), _1)
 import Data.IntervalMap.Generic.Strict qualified as IM
-import Language.Arralac.Syntax.Local.Extension
+import Language.Arralac.Syntax.Local.Extension.Zn
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.SynTerm ()
+import Language.Arralac.Syntax.Local.SynTerm.Zn ()
+import Language.Arralac.Syntax.Local.SynTermVar.Zn
+import Language.Arralac.Syntax.Local.TyVar.Zn
 import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.Local.Var.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Utils.Pass

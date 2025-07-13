@@ -1,13 +1,16 @@
 module Language.Arralac.Syntax.TTG.SynTerm where
 
 import Language.Arralac.Syntax.TTG.Extension
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types (FastString)
+import Language.Arralac.Syntax.TTG.Lit
+import Language.Arralac.Syntax.TTG.SynTermVar
 
--- | Terms AST in the TTG representation.
+-- | Syntactic terms.
 --
 -- Similar to @HsExpr@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L332
+--
+-- Usecase in GHC:
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Expr.hs#L1294
 data SynTerm x
   = -- | x
     -- TODO replace with a family
@@ -25,38 +28,17 @@ data SynTerm x
   | -- | (f x) :: Int
     SynTerm'Ann (XSynTerm'Ann' x) (XSynTerm'Ann'Term x) (XSynTerm'Ann'Type x)
 
--- TODO make each constructor a record?
+-- TODO ^ make each constructor a record?
 
--- TODO add parentheses?
+-- TODO ^ add parentheses?
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L382
 -- https://github.com/ghc/ghc/blob/ef03d8b8851a1cace5f792fe5a91b6b227198aa2/compiler/Language/Haskell/Syntax/Expr.hs#L585
 
--- TODO add type extension field
-
--- TODO add add extension point to support Trees That Grow
+-- TODO ^ add extension point to support Trees That Grow
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L537
--- TODO explain what it can be used for
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Expr.hs#L1294
 
--- | A literal.
---
--- Its constructors don't have extension points
--- because 'SynLit' is wrapped into 'SynType'Concrete' that does.
---
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Lit.hs#L48
-data SynLit
-  = SynLit'Num Integer
-  | SynLit'Bool Bool
-  | SynLit'Str FastString
-  | SynLit'Con FastString
-
--- Type families for non-extension fields
--- should be defined together with the type.
+-- Type families for non-extension fields should be defined together with the type.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Expr.hs#L206
-
-type family XSynTerm'Var x
-
-type family XSynTerm'Lit x
 
 type family XSynTerm'App'Fun x
 type family XSynTerm'App'Arg x
@@ -74,13 +56,3 @@ type family XSynTerm'Let'InTerm x
 
 type family XSynTerm'Ann'Term x
 type family XSynTerm'Ann'Type x
-
-type family XSynTerm'VarCommon x
-type family XSynTerm'AnnoCommon x
-
-instance Pretty' SynLit where
-  pretty' = \case
-    SynLit'Num val -> pretty' val
-    SynLit'Str val -> "\"" <> pretty' val <> "\""
-    SynLit'Bool val -> pretty' val
-    SynLit'Con val -> pretty' val

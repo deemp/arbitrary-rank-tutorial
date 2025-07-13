@@ -1,21 +1,25 @@
 module Language.Arralac.Typechecker.TcTerm where
 
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Language.Arralac.Syntax.Local.Extension
+import Language.Arralac.Syntax.Local.Extension.Tc
+import Language.Arralac.Syntax.Local.RnVar
+import Language.Arralac.Syntax.Local.SynLit
+import Language.Arralac.Syntax.Local.SynTerm.Tc ()
+import Language.Arralac.Syntax.Local.SynTermVar.Tc
+import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.Local.Var.Tc
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Typechecker.Constraints (ImplicStatus (..), Implication (..), TypedThing (..), WantedConstraints (..), emptyWantedConstraints)
-import Language.Arralac.Typechecker.Error (TcError (..), withTcError)
+import Language.Arralac.Typechecker.Constraints
+import Language.Arralac.Typechecker.Error
 import Language.Arralac.Typechecker.TcMonad
-import Language.Arralac.Typechecker.TcTyVarEnv (extendTcTyVarEnv, lookupTcTyVarType)
-import Language.Arralac.Utils.Bag (unitBag)
+import Language.Arralac.Typechecker.TcTyVarEnv
+import Language.Arralac.Utils.Bag
 import Language.Arralac.Utils.Debug
 import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
-import Prettyprinter (line)
+import Prettyprinter
 
 -- ========================
 -- [tcRho and its variants]
@@ -67,14 +71,14 @@ tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
     SynTerm'Lit
       TcAnno{annoSrcLoc, annoType = exp_ty}
       lit
-tcRho t@(SynTerm'Var _ varName) exp_ty = do
-  v_sigma <- lookupTcTyVarType varName
+tcRho t@(SynTerm'Var _ var) exp_ty = do
+  v_sigma <- lookupTcTyVarType var
   debug'
     "tcRho SynTerm'Var"
-    [ ("varName", pretty' varName)
-    , ("varName", prettyDetailed varName)
+    [ ("varName", pretty' var.varName)
+    , ("varName (detailed)", prettyDetailed var.varName)
     , ("v_sigma", pretty' v_sigma)
-    , ("v_sigma", prettyDetailed v_sigma)
+    , ("v_sigma (detailed)", prettyDetailed v_sigma)
     ,
       ( "exp_ty"
       , case exp_ty of
@@ -87,7 +91,7 @@ tcRho t@(SynTerm'Var _ varName) exp_ty = do
   pure $
     SynTerm'Var
       ()
-      TcTermVar{varName, varType = exp_ty}
+      TcTermVar{varName = var.varName, varType = exp_ty}
 tcRho t@(SynTerm'App annoSrcLoc fun arg) exp_ty = do
   (fun', fun_ty) <- inferRho fun
   -- TODO should we pass Just here?
@@ -99,61 +103,61 @@ tcRho t@(SynTerm'App annoSrcLoc fun arg) exp_ty = do
       TcAnno{annoSrcLoc, annoType = exp_ty}
       fun'
       arg'
-tcRho t@(SynTerm'Lam annoSrcLoc varName body) modeTy@(Check exp_ty) = do
+tcRho t@(SynTerm'Lam annoSrcLoc var body) modeTy@(Check exp_ty) = do
   (var_ty, body_ty) <- unifyFun (mkTypedThingIfCheck t modeTy) exp_ty
   debug'
     "tcRho SynTerm'Lam"
-    [ ("varName", pretty' varName)
+    [ ("varName", pretty' var.varName)
     , ("body", pretty' body)
     , ("exp_ty", pretty' exp_ty)
     ]
-  body' <- extendTcTyVarEnv varName var_ty (checkRho body body_ty)
+  body' <- extendTcTyVarEnv var var_ty (checkRho body body_ty)
   pure $
     SynTerm'Lam
       TcAnno{annoSrcLoc, annoType = modeTy}
-      TcTermVar{varName, varType = Check var_ty}
+      TcTermVar{varName = var.varName, varType = Check var_ty}
       body'
-tcRho (SynTerm'Lam annoSrcLoc varName body) modeTy@(Infer ref) = do
+tcRho (SynTerm'Lam annoSrcLoc var body) modeTy@(Infer ref) = do
   var_ty <- Type'Var <$> newMetaTyVar' "m"
-  (body', body_ty) <- extendTcTyVarEnv varName var_ty (inferRho body)
+  (body', body_ty) <- extendTcTyVarEnv var var_ty (inferRho body)
   writeIORef ref (Type'Fun var_ty body_ty)
   pure $
     SynTerm'Lam
       TcAnno{annoSrcLoc, annoType = modeTy}
-      TcTermVar{varName, varType = Check var_ty}
+      TcTermVar{varName = var.varName, varType = Check var_ty}
       body'
-tcRho t@(SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Check exp_ty) = do
+tcRho t@(SynTerm'ALam annoSrcLoc var var_ty body) modeTy@(Check exp_ty) = do
   (arg_ty, body_ty) <- unifyFun (mkTypedThingIfCheck t modeTy) exp_ty
   (var_ty_syn, var_ty') <- convertSynTy var_ty
   -- TODO Should some typed thing be passed?
   subsCheck Nothing arg_ty var_ty'
-  body' <- extendTcTyVarEnv varName var_ty' (checkRho body body_ty)
+  body' <- extendTcTyVarEnv var var_ty' (checkRho body body_ty)
   pure $
     SynTerm'ALam
       TcAnno{annoSrcLoc, annoType = modeTy}
-      TcTermVar{varName, varType = Check var_ty'}
+      TcTermVar{varName = var.varName, varType = Check var_ty'}
       var_ty_syn
       body'
-tcRho (SynTerm'ALam annoSrcLoc varName var_ty body) modeTy@(Infer ref) = do
+tcRho (SynTerm'ALam annoSrcLoc var var_ty body) modeTy@(Infer ref) = do
   (var_ty_syn, var_ty') <- convertSynTy var_ty
-  (body', body_ty) <- extendTcTyVarEnv varName var_ty' (inferRho body)
+  (body', body_ty) <- extendTcTyVarEnv var var_ty' (inferRho body)
   writeIORef ref (Type'Fun var_ty' body_ty)
   -- TODO is it correct to use Check here?
   pure $
     SynTerm'ALam
       TcAnno{annoSrcLoc, annoType = modeTy}
-      TcTermVar{varName, varType = Check var_ty'}
+      TcTermVar{varName = var.varName, varType = Check var_ty'}
       var_ty_syn
       body'
-tcRho (SynTerm'Let annoSrcLoc varName rhs body) exp_ty = do
+tcRho (SynTerm'Let annoSrcLoc var rhs body) exp_ty = do
   -- TODO call inferSigma here
   (rhs', var_ty) <- inferRho rhs
-  body' <- extendTcTyVarEnv varName var_ty (tcRho body exp_ty)
+  body' <- extendTcTyVarEnv var var_ty (tcRho body exp_ty)
   pure $
     SynTerm'Let
       TcAnno{annoType = exp_ty, annoSrcLoc}
       -- TODO is it correct to use Check here?
-      TcTermVar{varName, varType = Check var_ty}
+      TcTermVar{varName = var.varName, varType = Check var_ty}
       rhs'
       body'
 tcRho t@(SynTerm'Ann annoSrcLoc body ann_ty) exp_ty = do

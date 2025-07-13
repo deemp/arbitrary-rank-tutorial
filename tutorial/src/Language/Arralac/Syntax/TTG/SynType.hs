@@ -2,11 +2,11 @@ module Language.Arralac.Syntax.TTG.SynType where
 
 import Language.Arralac.Syntax.TTG.Extension
 
--- ==============================================
+-- ================
 -- [Syntactic type]
--- ==============================================
+-- ================
 
--- | Type AST in TTG representation.
+-- | Syntactic type.
 --
 -- Similar to @HsType@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
@@ -27,10 +27,6 @@ data SynType x
     --
     -- @String@
     SynType'Concrete (XSynType'Concrete' x) (XSynType'Concrete x)
-
--- ==============================================
--- [Type families for type AST nodes]
--- ==============================================
 
 type family XSynType'Var x
 

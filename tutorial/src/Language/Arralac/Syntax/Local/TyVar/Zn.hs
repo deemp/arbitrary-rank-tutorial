@@ -1,15 +1,14 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Language.Arralac.Syntax.Local.Var.Zn where
+module Language.Arralac.Syntax.Local.TyVar.Zn where
 
 import Language.Arralac.Syntax.Local.Name (Name)
 import Language.Arralac.Syntax.Local.Type ()
-import Language.Arralac.Syntax.TTG.Type (Type, XVar')
+import Language.Arralac.Syntax.TTG.TyVar
 import Language.Arralac.Utils.Pass (CompZn)
 import Language.Arralac.Utils.Pretty
-import Prettyprinter
 
-type instance XVar' CompZn = ZnTyVar
+type instance XTyVar CompZn = ZnTyVar
 
 -- | A zonked type variable.
 --
@@ -23,13 +22,6 @@ data ZnTyVar
     { varName :: !Name
     }
 
-data ZnTermVar
-  = -- | Variable identifier
-    -- Always local and vanilla.
-    ZnTermVar
-    { varName :: !Name
-    , varType :: Type CompZn
-    }
 
 instance Eq ZnTyVar where
   var1 == var2 = var1.varName == var2.varName
@@ -39,7 +31,3 @@ instance Ord ZnTyVar where
 
 instance Pretty' ZnTyVar where
   pretty' ZnTyVar{varName} = pretty' varName
-
-instance Pretty' ZnTermVar where
-  pretty' ZnTermVar{varName, varType} =
-    parens (pretty' varName <+> "::" <+> pretty' varType)

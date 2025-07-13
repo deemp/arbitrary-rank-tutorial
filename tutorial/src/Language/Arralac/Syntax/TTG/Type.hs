@@ -1,5 +1,6 @@
 module Language.Arralac.Syntax.TTG.Type where
 
+import Language.Arralac.Syntax.TTG.TyVar
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types (FastString)
 
@@ -19,17 +20,17 @@ import Language.Arralac.Utils.Types (FastString)
 -- See Note [TyVars and TcTyVars during type checking] in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L558
 --
--- We use different representations of type variables via the 'XVar'' type family.
+-- We use different representations of type variables via the 'XTyVar' type family.
 data Type p
   = -- | Type variable.
     --
     -- @x@
-    Type'Var (XVar' p)
+    Type'Var (XTyVar p)
   | -- | Forall construct.
     --
     -- @forall a. b@
     Type'ForAll
-      [XVar' p]
+      [XTyVar p]
       (Type p)
   | -- | Function type.
     --
@@ -37,8 +38,6 @@ data Type p
     Type'Fun (Type p) (Type p)
   | -- | Concrete type.
     Type'Concrete TypeConcrete
-
-type family XVar' p
 
 -- | A concrete type.
 data TypeConcrete

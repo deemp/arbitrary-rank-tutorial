@@ -3,7 +3,9 @@ module Language.Arralac.Typechecker.Constraints where
 import Data.IORef (IORef)
 import GHC.Generics (Generic)
 import Language.Arralac.Syntax.Local.Name (RealSrcSpan)
-import Language.Arralac.Syntax.Local.SynTerm ()
+import Language.Arralac.Syntax.Local.SynTerm.Rn ()
+import Language.Arralac.Syntax.Local.SynTerm.Tc ()
+import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.Type (Tau, TcType)
 import Language.Arralac.Syntax.TTG.SynTerm (SynTerm)
 import Language.Arralac.Syntax.TTG.Type (Type (..))
@@ -11,7 +13,6 @@ import Language.Arralac.Typechecker.Types (TcLevel)
 import Language.Arralac.Utils.Bag (Bag (..), emptyBag)
 import Language.Arralac.Utils.Pass (CompRn)
 import Language.Arralac.Utils.Pretty (Pretty' (..), genericPretty)
-import Language.Arralac.Syntax.Local.Var.Tc
 
 type CtxWantedConstraints = (?constraints :: IORef WantedConstraints)
 

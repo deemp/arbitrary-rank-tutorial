@@ -7,7 +7,12 @@ import GHC.Base (when)
 import Language.Arralac.Parser.Abs qualified as Abs
 import Language.Arralac.Renamer.Error
 import Language.Arralac.Renamer.Types
+import Language.Arralac.Syntax.Local.Extension.Rn ()
 import Language.Arralac.Syntax.Local.Name
+import Language.Arralac.Syntax.Local.SynLit
+import Language.Arralac.Syntax.Local.SynTerm.Rn ()
+import Language.Arralac.Syntax.Local.SynTermVar.Rn
+import Language.Arralac.Syntax.Local.SynType.Rn ()
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
@@ -57,20 +62,23 @@ selectScope = \case
   NameSpace'TypeVar -> ?tyVarScope
   NameSpace'TypeConcrete -> ?tyConcreteScope
 
-withNameInScope :: NameSpace -> Name -> RnM a -> RnM a
-withNameInScope ns name act = do
-  let scope = Map.insert name.nameOcc.occNameFS name.nameUnique (selectScope ns)
+withVarInScope :: NameSpace -> RnVar -> RnM a -> RnM a
+withVarInScope ns var act = do
+  let scope = Map.insert var.varName.nameOcc.occNameFS var.varName.nameUnique (selectScope ns)
   runWithScope ns scope act
 
-letOccursCheck :: Name -> RnM ()
-letOccursCheck name = do
+letOccursCheck :: RnVar -> RnM ()
+letOccursCheck var = do
   case ?letOccursCheckInfo of
     Just info ->
-      when (name.nameOcc.occNameFS == info.letLhs.nameOcc.occNameFS) $
-        dieRn
+      when
+        ( var.varName.nameOcc.occNameFS
+            == info.letLhs.varName.nameOcc.occNameFS
+        )
+        $ dieRn
           RnError'LetOccursCheckFailed
             { letOccursCheckInfo = info
-            , letLhsOcc = name
+            , letLhsOcc = var
             }
     _ -> pure ()
 
@@ -98,12 +106,12 @@ instance ConvertRename Abs.Exp where
       pure $ SynTerm'App (convertPositionToSrcSpan pos) term1' term2'
     Abs.ExpAbs pos var term -> do
       var' <- convertRename var True
-      term' <- withNameInScope NameSpace'TermVar var' (convertRename term)
+      term' <- withVarInScope NameSpace'TermVar var' (convertRename term)
       pure $ SynTerm'Lam (convertPositionToSrcSpan pos) var' term'
     Abs.ExpAbsAnno pos var ty term -> do
       var' <- convertRename var True
       ty' <- convertRename ty
-      term' <- withNameInScope NameSpace'TermVar var' (convertRename term)
+      term' <- withVarInScope NameSpace'TermVar var' (convertRename term)
       pure $ SynTerm'ALam (convertPositionToSrcSpan pos) var' ty' term'
     Abs.ExpLet pos var term1 term2 -> do
       var' <- convertRename var True
@@ -118,7 +126,7 @@ instance ConvertRename Abs.Exp where
                   , letLhs = var'
                   }
         convertRename term1
-      term2' <- withNameInScope NameSpace'TermVar var' (convertRename term2)
+      term2' <- withVarInScope NameSpace'TermVar var' (convertRename term2)
       pure $ SynTerm'Let pos' var' term1' term2'
     Abs.ExpAnno pos term ty -> do
       term' <- convertRename term
@@ -132,7 +140,7 @@ getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Unique
 getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
 
 instance ConvertRename Abs.Var where
-  type ConvertRenameTo Abs.Var = Bool -> IO Name
+  type ConvertRenameTo Abs.Var = Bool -> IO RnVar
   convertRename (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
     let ns = NameSpace'TermVar
     nameUnique <-
@@ -140,15 +148,16 @@ instance ConvertRename Abs.Var where
         then newUnique
         else getExistingOrNewUnique ns name
     pure $
-      Name
-        { nameOcc =
-            OccName
-              { occNameSpace = ns
-              , occNameFS = name
-              }
-        , nameUnique
-        , nameLoc = (convertPositionToSrcSpan pos)
-        }
+      RnVar
+        Name
+          { nameOcc =
+              OccName
+                { occNameSpace = ns
+                , occNameFS = name
+                }
+          , nameUnique
+          , nameLoc = (convertPositionToSrcSpan pos)
+          }
 
 instance ConvertRename Abs.TypeVariable where
   type ConvertRenameTo Abs.TypeVariable = IO Name

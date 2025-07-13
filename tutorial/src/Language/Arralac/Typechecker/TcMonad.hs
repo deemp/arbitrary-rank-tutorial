@@ -10,6 +10,7 @@ import Data.Traversable (forM)
 import GHC.Stack (HasCallStack)
 import Language.Arralac.Solver.Types
 import Language.Arralac.Syntax.Local.Name
+import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typechecker.Constraints
@@ -21,7 +22,6 @@ import Language.Arralac.Utils.Debug
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Types
 import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
-import Language.Arralac.Syntax.Local.Var.Tc
 
 -- =========================
 -- [The Type Checking Monad]

@@ -1,21 +1,22 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Language.Arralac.Syntax.Local.Var.Tc where
+module Language.Arralac.Syntax.Local.TyVar.Tc where
 
 import Data.IORef (IORef)
 import Data.Text
 import GHC.Generics
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.TTG.Type (Type, XVar')
+import Language.Arralac.Syntax.TTG.TyVar
+import Language.Arralac.Syntax.TTG.Type (Type)
 import Language.Arralac.Typechecker.Types
 import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
 import Language.Arralac.Utils.Unique
 import Prettyprinter
 
-type instance XVar' CompTc = TcTyVar
+type instance XTyVar CompTc = TcTyVar
 
 -- | A type variable.
 --
@@ -43,13 +44,6 @@ type TcBoundVar = TcTyVar
 type TcTyVarMeta = TcTyVar
 
 type TcTyVarSkolem = TcTyVar
-
--- | A term variable, possibly with a known type.
-data TcTermVar
-  = TcTermVar
-  { varName :: !Name
-  , varType :: Expected TcType
-  }
 
 -- | Similar to @MetaDetails@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
@@ -194,23 +188,6 @@ data SkolemInfo
 
 -- TODO ^ actually use this
 
--- ======================
--- [SkolemInfo instances]
--- ======================
-
--- TODO provide more info
-instance Pretty' SkolemInfoAnon where
-  pretty' = \case
-    SigSkol _ _ _ -> "SigSkol"
-    SigTypeSkol _ -> "SigTypeSkol"
-    ForAllSkol _ -> "ForAllSkol"
-    InferSkol _ -> "InferSkol"
-    UnifyForAllSkol _ -> "UnifyForAllSkol"
-
--- ==========================================
--- [Instances and functions for Tc variables]
--- ==========================================
-
 instance Eq TcTyVar where
   var1 == var2 = var1.varName == var2.varName
 
@@ -247,10 +224,11 @@ instance Pretty' TcTyVar where
                 PrettyVerbosity'User -> []
             )
 
-instance Pretty' TcTermVar where
-  pretty' var =
-    hsep
-      [ pretty' var.varName
-      , "::"
-      , braces (pretty' var.varType)
-      ]
+-- TODO provide more info
+instance Pretty' SkolemInfoAnon where
+  pretty' = \case
+    SigSkol _ _ _ -> "SigSkol"
+    SigTypeSkol _ -> "SigTypeSkol"
+    ForAllSkol _ -> "ForAllSkol"
+    InferSkol _ -> "InferSkol"
+    UnifyForAllSkol _ -> "UnifyForAllSkol"

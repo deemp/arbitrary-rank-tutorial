@@ -5,8 +5,9 @@ import Control.Monad.Free.Foil (AST (..), ScopedAST (..), substitute)
 import Data.Bifunctor.TH (deriveBifunctor)
 import Language.Arralac.Interpreter.FreeFoil (CoreNameBinder (..), PrettyName (..), addSubst, extendScope, withFreshUsingUnique)
 import Language.Arralac.Syntax.Local.Name qualified as BT
-import Language.Arralac.Syntax.Local.SynTerm ()
-import Language.Arralac.Syntax.Local.Var.Zn
+import Language.Arralac.Syntax.Local.SynLit
+import Language.Arralac.Syntax.Local.SynTerm.Zn ()
+import Language.Arralac.Syntax.Local.SynTermVar.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Utils.Pass
 import Language.Arralac.Utils.Pretty
@@ -16,15 +17,15 @@ import Prettyprinter
 -- TODO Delayed substitution and Normalization by Evaluation
 
 data Core scope term
-  = Core'Lit SynLit
+  = Core'Lam scope
   | Core'App term term
-  | Core'Lam scope
   | -- | Non-recursive @let@.
     --
     -- @let a = b in c@.
     --
     -- @a@ may not occur in @b@.
     Core'Let term scope
+  | Core'Lit SynLit
   deriving stock (Functor)
 
 deriveBifunctor ''Core
