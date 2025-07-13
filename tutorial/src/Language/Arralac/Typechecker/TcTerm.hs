@@ -18,6 +18,7 @@ import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.Error
 import Language.Arralac.Typechecker.TcMonad
+import Language.Arralac.Typechecker.TcTyVar
 import Language.Arralac.Typechecker.TcTyVarEnv
 import Prettyprinter
 

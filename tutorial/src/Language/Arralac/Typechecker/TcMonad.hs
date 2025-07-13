@@ -2,7 +2,7 @@
 
 module Language.Arralac.Typechecker.TcMonad where
 
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef (readIORef, writeIORef)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
@@ -12,14 +12,14 @@ import Language.Arralac.Prelude.Bag
 import Language.Arralac.Prelude.Debug
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
-import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply, newUnique)
+import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
 import Language.Arralac.Solver.Types
-import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.Error
+import Language.Arralac.Typechecker.TcTyVar (isBoundTvTypeVar, newMetaTyVar', newSkolemTyVar, tyVarToMetaTyVar)
 import Language.Arralac.Typechecker.TcTyVarEnv
 import Language.Arralac.Typechecker.Types
 
@@ -137,11 +137,6 @@ subst_ty env (Type'ForAll ns rho) = do
 -- [Unification]
 -- =============
 
-isBoundTvTypeVar :: Tau -> Bool
--- Tells which types should never be encountered during unification
-isBoundTvTypeVar (Type'Var TcTyVar{varDetails = BoundTv{}}) = True
-isBoundTvTypeVar _ = False
-
 -- TODO ^ use only necessary constraints?
 
 -- | Extends the substitution by side effect (p. 43)
@@ -258,99 +253,3 @@ quantify = error "Not implemented!"
 -- can all be found without involving the substitution.
 --
 -- So, perhaps yes, it should use 'BoundTv'.
-
--- ==============================================
--- Creating type variables
--- ==============================================
-
--- | Similar to @mkTcTyVar@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L1046
-mkTcTyVar :: Name -> TcTyVarDetails -> TcTyVar
-mkTcTyVar name details =
-  TcTyVar
-    { varName = name
-    , varDetails = details
-    }
-
--- ========================
--- [Creating metavariables]
--- ========================
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L261
-tvName :: NameSpace
-tvName = NameSpace'TypeVar
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L488
-mkTyVarOccFS :: FastString -> OccName
-mkTyVarOccFS fs = mkOccNameFS tvName fs
-
-mkOccNameFS :: NameSpace -> FastString -> OccName
-mkOccNameFS occ_sp fs = OccName occ_sp fs
-
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L728
-newMetaTyVarName :: FastString -> TcM Name
-newMetaTyVarName str = newSysName (mkTyVarOccFS str)
-
--- | Similar to @newMutVar@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/IOEnv.hs#L218
-newMutVar :: a -> TcM (IORef a)
-newMutVar val = newIORef val
-
--- | Similar to @newTauTvDetailsAtLevel@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L844
-newMetaDetails :: MetaInfo -> TcM TcTyVarDetails
-newMetaDetails info =
-  do
-    ref <- newMutVar Flexi
-    pure
-      MetaTv
-        { metaTvInfo = info
-        , metaTvRef = ref
-        , tcLevel = ?tcLevel
-        }
-
--- | Similar to @newMetaTyVarTyAtLevel@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1069
-newMetaTyVar' :: FastString -> TcM TcTyVarMeta
-newMetaTyVar' str = do
-  name <- newMetaTyVarName str
-  details <- newMetaDetails TyVarTv
-  pure $ mkTcTyVar name details
-
--- TODO how to remember the origin of a metavariable?
-
-tyVarToMetaTyVar :: TcTyVar -> TcM TcTyVar
-tyVarToMetaTyVar x = do
-  x' <- newMetaTyVar' x.varName.nameOcc.occNameFS
-  debug'
-    "tyVarToMetaTyVar"
-    [ ("x", pretty' x)
-    , ("x'", pretty' x')
-    ]
-  pure x'
-
--- ==============================================
--- Creating skolems
--- ==============================================
-
--- | Makes a new skolem type variable.
---
--- Similar to @newSkolemTyVar@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L765
-newSkolemTyVar' :: (CtxTcLevel) => SkolemInfo -> Name -> TcTyVar
-newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
-
--- | Converts a 'BoundTv' to a 'SkolemTv'.
---
--- Similar to @cloneTyVarTyVar@ in GHC.
--- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L779
-newSkolemTyVar :: SkolemInfoAnon -> TcBoundVar -> TcM TcTyVar
-newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv{}} = do
-  uniq <- newUnique
-  let name = tv.varName{nameUnique = uniq}
-      -- TODO should this skolemInfo contain the uniq of the original tyvar?
-      -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L343
-      skolemInfo = SkolemInfo tv.varName.nameUnique infoAnon
-  pure $ newSkolemTyVar' skolemInfo name
-newSkolemTyVar _ x =
-  dieTc (TcError'UnboundVariable x)

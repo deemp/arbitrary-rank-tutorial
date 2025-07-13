@@ -3,75 +3,49 @@
 module Language.Arralac.Typechecker.Run where
 
 import Data.IORef (newIORef, readIORef)
-import Data.Text qualified as T
-import GHC.Stack
-import Language.Arralac.Parser.Parse
+import GHC.Stack (HasCallStack)
 import Language.Arralac.Prelude.Debug (debug')
 import Language.Arralac.Prelude.Pass
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
-import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
-import Language.Arralac.Renamer.Run (convertRenameAbs)
-import Language.Arralac.Solver.Types (CtxSolverIterations)
+import Language.Arralac.Prelude.Unique.Supply
+import Language.Arralac.Solver.Run
+import Language.Arralac.Solver.Types
 import Language.Arralac.Syntax.TTG.SynTerm
-import Language.Arralac.Typechecker.Constraints (CtxWantedConstraints, emptyWantedConstraints)
-import Language.Arralac.Typechecker.Error (CtxTcErrorPropagated)
-import Language.Arralac.Typechecker.Solver (solveIteratively)
+import Language.Arralac.Typechecker.Constraints (emptyWantedConstraints)
 import Language.Arralac.Typechecker.TcTerm (inferRho)
-import Language.Arralac.Typechecker.TcTyVarEnv (CtxTcTyVarEnv, emptyTcTyVarEnv)
-import Language.Arralac.Typechecker.Types (TcLevel (..))
-import Language.Arralac.Zonker.Zn.Zonk (Zonk (..))
-import UnliftIO.Exception (finally)
+import Language.Arralac.Typechecker.TcTyVarEnv (emptyTcTyVarEnv)
+import Language.Arralac.Typechecker.Types
+import UnliftIO (finally)
 
 -- TODO use bluefin to expose exceptions
 
 -- TODO report many independent errors, not fail on the first error
-typecheck ::
-  ( CtxSolverIterations
+runTypechecker ::
+  ( HasCallStack
+  , CtxSolverIterations
   , CtxDebug
   , CtxPrettyVerbosity
   , CtxUniqueSupply
-  , CtxTcTyVarEnv
-  , CtxTcErrorPropagated
-  , CtxWantedConstraints
   ) =>
-  SynTerm CompRn -> IO (SynTerm CompZn)
-typecheck term =
-  do
-    constraints <- newIORef emptyWantedConstraints
-    let ?constraints = constraints
-        ?tcLevel = TcLevel 0
-    -- TODO run inferSigma
-    (tcTerm, _) <- inferRho term
-    constraintsNew <- readIORef ?constraints
-    _ <- solveIteratively ?solverIterations constraintsNew
-
-    zonk tcTerm
-    `finally` do
-      constraints <- readIORef ?constraints
-      debug'
-        "typecheck"
-        [ ("constraints", pretty' constraints)
-        ]
-
-runTypechecker :: (HasCallStack, CtxDebug, CtxUniqueSupply, CtxPrettyVerbosity, CtxSolverIterations) => SynTerm CompRn -> IO (SynTerm CompZn)
-runTypechecker program = do
+  SynTerm CompRn -> IO (SynTerm CompTc)
+runTypechecker term = do
   constraints <- newIORef emptyWantedConstraints
-  tcError <- newIORef Nothing
-  let
-    ?tcLevel = TcLevel 0
-    ?tcTyVarEnv = emptyTcTyVarEnv
-    ?constraints = constraints
-    ?tcErrorPropagated = tcError
-  typecheck program
-
--- TODO use filepath from implicit params
-runTypechecker' :: (HasCallStack, CtxDebug, CtxPrettyVerbosity, CtxSolverIterations) => FastString -> T.Text -> IO (SynTerm CompZn)
-runTypechecker' filePath content = do
-  uniqueSupply <- newIORef 0
-  let ?uniqueSupply = uniqueSupply
-      ?currentFilePath = filePath
-  program <- do
-    let
-    parseText content >>= convertRenameAbs
-  runTypechecker program
+  let ?constraints = constraints
+      ?tcLevel = TcLevel 0
+      ?tcTyVarEnv = emptyTcTyVarEnv
+      ?tcErrorPropagated = Nothing
+   in do
+        -- TODO run inferSigma
+        (tcTerm, _) <- do
+          let
+          inferRho term
+        constraintsNew <- readIORef constraints
+        _ <- runSolver ?solverIterations constraintsNew
+        pure tcTerm
+        `finally` do
+          constraints' <- readIORef ?constraints
+          debug'
+            "typecheck"
+            [ ("constraints", pretty' constraints')
+            ]

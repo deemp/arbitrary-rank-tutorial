@@ -1,14 +1,14 @@
-module Language.Arralac.Typechecker.Main where
+module Language.Arralac.Examples where
 
 import Control.Monad.Foil (emptyScope)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
+import Language.Arralac.Driver.ReaderToZonker.Run (runReaderToZonker)
 import Language.Arralac.Interpreter.Main (convertASTToCore, whnf)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Renamer.Error (RnErrorWithCallStack)
+import Language.Arralac.Solver.Error (SolverErrorWithCallStack)
 import Language.Arralac.Typechecker.Error (TcErrorWithCallStack)
-import Language.Arralac.Typechecker.Run (runTypechecker')
-import Language.Arralac.Typechecker.Solver (SolverErrorWithCallStack)
 import Prettyprinter (line)
 import Prettyprinter.Render.Text (putDoc)
 import Prettyprinter.Util (putDocW)
@@ -24,7 +24,7 @@ main = do
       ?solverIterations = 10
   programZn <- do
     let prettyError x = putDocW 100 (pretty' x) >> error "Error!"
-    runTypechecker' (T.pack filePath) content
+    runReaderToZonker (T.pack filePath) content
       `catch` (\(x :: RnErrorWithCallStack) -> prettyError x)
       `catch` (\(x :: TcErrorWithCallStack) -> prettyError x)
       `catch` (\(x :: SolverErrorWithCallStack) -> prettyError x)

@@ -53,14 +53,14 @@ runWithScope :: NameSpace -> Scope -> RnM a -> RnM a
 runWithScope ns scope act =
   case ns of
     NameSpace'TermVar -> let ?termVarScope = scope in act
-    NameSpace'TypeVar -> let ?tyVarScope = scope in act
-    NameSpace'TypeConcrete -> let ?tyConcreteScope = scope in act
+    NameSpace'TyVar -> let ?tyVarScope = scope in act
+    NameSpace'TyConcrete -> let ?tyConcreteScope = scope in act
 
 selectScope :: (CtxRnScopes) => NameSpace -> Scope
 selectScope = \case
   NameSpace'TermVar -> ?termVarScope
-  NameSpace'TypeVar -> ?tyVarScope
-  NameSpace'TypeConcrete -> ?tyConcreteScope
+  NameSpace'TyVar -> ?tyVarScope
+  NameSpace'TyConcrete -> ?tyConcreteScope
 
 withVarInScope :: NameSpace -> RnVar -> RnM a -> RnM a
 withVarInScope ns var act = do
@@ -169,7 +169,7 @@ instance ConvertRename Abs.TypeVariable where
       Name
         { nameOcc =
             OccName
-              { occNameSpace = NameSpace'TypeVar
+              { occNameSpace = NameSpace'TyVar
               , occNameFS = name
               }
         , nameUnique
@@ -214,7 +214,7 @@ instance ConvertRename Abs.Type where
     -- TODO not a variable
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
       -- TODO should all mentions of a type have the same uniques?
-      let ns = NameSpace'TypeConcrete
+      let ns = NameSpace'TyConcrete
           srcSpan = convertPositionToSrcSpan pos
           concreteType = parseTypeConcrete name
       nameUnique <- getExistingOrNewUnique ns name
@@ -235,7 +235,7 @@ instance ConvertRename Abs.Type where
                   }
             }
     Abs.TypeVariable pos (Abs.NameLowerCase name) -> do
-      let ns = NameSpace'TypeVar
+      let ns = NameSpace'TyVar
       -- Each type variable in the type body must be bound.
       nameUnique <- getExistingUnique ns pos name
       pure $
@@ -258,7 +258,7 @@ instance ConvertRename Abs.Type where
             { srcSpan = convertPositionToSrcSpan pos
             }
       tys' <- forM tys convertRename
-      ty' <- withNamesInScope NameSpace'TypeVar tys' (convertRename ty)
+      ty' <- withNamesInScope NameSpace'TyVar tys' (convertRename ty)
       pure $ SynType'ForAll (convertPositionToSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 ->
       SynType'Fun (convertPositionToSrcSpan pos)

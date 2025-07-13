@@ -3,7 +3,6 @@
 module Language.Arralac.Typechecker.Error where
 
 import Control.Exception (Exception, throw)
-import Data.IORef (IORef, readIORef, writeIORef)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Prelude.Pretty
@@ -16,11 +15,11 @@ import Language.Arralac.Syntax.TTG.SynTerm (SynTerm (..))
 import Language.Arralac.Typechecker.Constraints
 import Prettyprinter (Doc)
 
--- =====================
--- [Type checker errors]
--- =====================
+-- ====================
+-- [Typechecker errors]
+-- ====================
 
-type CtxTcErrorPropagated = (?tcErrorPropagated :: IORef (Maybe TcError))
+type CtxTcErrorPropagated = (?tcErrorPropagated :: Maybe TcError)
 
 data TcError
   = TcError'UndefinedVariable {rnVar :: RnVar}
@@ -33,33 +32,31 @@ data TcError
   | TcError'ExpectedAllMetavariables {tvs :: [TcTyVar]}
   | TcError'CannotUnify {ty1 :: TcType, ty2 :: TcType, thing :: Maybe TypedThing}
 
--- Capture current callstack in GADT
+-- | A typechecker error.
+--
+-- Capture current callstack in GADT.
 -- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
 data TcErrorWithCallStack where
   TcErrorWithCallStack :: (HasCallStack) => TcError -> TcErrorWithCallStack
 
 dieTc :: (CtxTcErrorPropagated, HasCallStack) => TcError -> IO a -- Fail unconditionally
 dieTc tcErrorCurrent = do
-  tcErrorPropagated <- readIORef ?tcErrorPropagated
   -- TODO Currently, a newer error can not overwrite the propagated error.
   -- We need this behavior to propagate actual vs expected type errors.
   -- If there's a mismatch during unification, we can immediately report.
   -- Should we choose the error for each combination of types of errors (new, propagated)?
   let error' =
-        case tcErrorPropagated of
+        case ?tcErrorPropagated of
           Nothing -> tcErrorCurrent
           Just err -> err
   throw (TcErrorWithCallStack error')
 
 withTcError :: (CtxTcErrorPropagated) => TcError -> ((CtxTcErrorPropagated) => IO a) -> IO a
 withTcError err tcAction = do
-  tcErrorCurrent <- readIORef ?tcErrorPropagated
-  case tcErrorCurrent of
+  case ?tcErrorPropagated of
     Nothing -> do
-      writeIORef ?tcErrorPropagated (Just err)
-      res <- tcAction
-      writeIORef ?tcErrorPropagated Nothing
-      pure res
+      let ?tcErrorPropagated = Just err
+      tcAction
     Just _ -> do
       tcAction
 

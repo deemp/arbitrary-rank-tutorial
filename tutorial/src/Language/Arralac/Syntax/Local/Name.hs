@@ -40,15 +40,17 @@ data OccName = OccName
   }
   deriving stock (Show, Generic)
 
+-- | Variables namespace.
+--
 -- Similar to @NameSpace@ in GHC.
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
 data NameSpace
-  = -- | Terms namespace.
+  = -- | Term variables.
     NameSpace'TermVar
-  | -- | Types namespace.
-    NameSpace'TypeVar
-  | -- | Built-in types namespace.
-    NameSpace'TypeConcrete
+  | -- | Type variables.
+    NameSpace'TyVar
+  | -- | Built-in types.
+    NameSpace'TyConcrete
   deriving stock (Eq, Show)
 
 -- ===================
@@ -160,7 +162,7 @@ instance Pretty' Name where
     case ?prettyVerbosity of
       PrettyVerbosity'Normal ->
         case name.nameOcc.occNameSpace of
-          NameSpace'TypeConcrete -> pretty' name.nameOcc.occNameFS
+          NameSpace'TyConcrete -> pretty' name.nameOcc.occNameFS
           _ -> pretty' name.nameOcc.occNameFS <> "_" <> pretty' name.nameUnique
       PrettyVerbosity'Detailed ->
         pretty' name.nameOcc.occNameFS

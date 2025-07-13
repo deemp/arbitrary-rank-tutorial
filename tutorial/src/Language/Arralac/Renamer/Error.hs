@@ -24,7 +24,7 @@ data RnErrorWithCallStack where
 
 -- | Fail unconditionally with a 'RnErrorWithCallStack'.
 dieRn :: (HasCallStack) => RnError -> IO a
-dieRn rnError = throw (RnErrorWithCallStack rnError)
+dieRn err = throw (RnErrorWithCallStack err)
 
 instance Pretty' RnError where
   pretty' err = case err of

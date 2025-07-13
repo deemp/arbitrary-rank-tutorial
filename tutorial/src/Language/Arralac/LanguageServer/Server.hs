@@ -17,7 +17,6 @@ import GHC.Stack (HasCallStack)
 import Language.Arralac.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
-import Language.Arralac.Typechecker.Run (runTypechecker')
 import Language.LSP.Logging (defaultClientLogger)
 import Language.LSP.Protocol.Lens qualified as L
 import Language.LSP.Protocol.Message (SMethod (..), TRequestMessage (..))
@@ -29,6 +28,7 @@ import Language.LSP.VFS (virtualFileText)
 import Prettyprinter (Doc, defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
 import UnliftIO (catch)
+import Language.Arralac.Driver.ReaderToZonker.Run
 
 -- | The server's state.
 --
@@ -149,12 +149,12 @@ documentChangeHandler =
 updateStateForFile :: NormalizedUri -> FastString -> T.Text -> LspM ()
 updateStateForFile docUri filePath docText =
   do
-    let ?debug = False
-
     ast <- do
       config <- getConfig
-      let ?solverIterations = config.solverIterations
-      liftIO $ runTypechecker' filePath docText
+      let 
+          ?solverIterations = config.solverIterations
+          ?debug = False
+      liftIO $ runReaderToZonker filePath docText
 
     let mp = toIntervalMap ast
 

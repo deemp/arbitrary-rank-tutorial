@@ -2,23 +2,24 @@ module Language.Arralac.Renamer.Run where
 
 import Data.Map qualified as Map
 import GHC.Stack (HasCallStack)
+import Language.Arralac.Parser.Abs qualified as Abs
+import Language.Arralac.Prelude.Pass
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
 import Language.Arralac.Renamer.ConvertRename
+import Language.Arralac.Syntax.TTG.SynTerm
 
-convertRenameAbs ::
+runRenamer ::
   ( HasCallStack
   , CtxCurrentFilePath
   , CtxDebug
   , CtxUniqueSupply
-  , ConvertRename a
   ) =>
-  a -> ConvertRenameTo a
-convertRenameAbs a = do
+  Abs.Program -> IO (SynTerm CompRn)
+runRenamer a = do
   let
     ?termVarScope = Map.empty
     ?tyVarScope = Map.empty
-    -- TODO put existing types here?
     ?tyConcreteScope = Map.empty
     ?letOccursCheckInfo = Nothing
   convertRename a
