@@ -1,4 +1,4 @@
-module Language.Arralac.Interpreter.FreeFoil where
+module Language.Arralac.Core.CoreNameBinder where
 
 import Control.Monad.Foil (CoSinkable (..), DistinctEvidence (..), ExtEvidence (..))
 import Control.Monad.Foil.Internal (DExt, Name (..), NameBinder (..), Scope (..), SinkableK, Substitution (..), unsafeDistinct, unsafeExt)
@@ -93,18 +93,18 @@ instance CoSinkable CoreNameBinder where
 
 instance SinkableK CoreNameBinder
 
-newtype PrettyName n = PrettyName (Name n)
+instance Pretty' (CoreNameBinder n l) where
+  pretty' binder = pretty' (PrettyNameBinder binder.nameBinder)
 
 newtype PrettyNameBinder n l = PrettyNameBinder (NameBinder n l)
+
+newtype PrettyName n = PrettyName (Name n)
 
 instance Pretty' (PrettyName n) where
   pretty' (PrettyName (UnsafeName n)) = "x_" <> pretty' n
 
 instance Pretty' (PrettyNameBinder n l) where
   pretty' (PrettyNameBinder (UnsafeNameBinder name)) = pretty' (PrettyName name)
-
-instance Pretty' (CoreNameBinder n l) where
-  pretty' binder = pretty' (PrettyNameBinder binder.nameBinder)
 
 -- TODO allow bind
 
