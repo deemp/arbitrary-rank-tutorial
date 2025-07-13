@@ -6,7 +6,7 @@ import Language.Arralac.Parser.Abs qualified as Abs
 import Language.Arralac.Prelude.Pass
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
-import Language.Arralac.Renamer.ConvertRename
+import Language.Arralac.Renamer.ConvertParsed
 import Language.Arralac.Syntax.TTG.SynTerm
 
 runRenamer ::
@@ -22,4 +22,4 @@ runRenamer a = do
     ?tyVarScope = Map.empty
     ?tyConcreteScope = Map.empty
     ?letOccursCheckInfo = Nothing
-  convertRename a
+  convertParsed a

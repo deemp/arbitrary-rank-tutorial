@@ -1,4 +1,4 @@
-module Language.Arralac.Renamer.ConvertRename where
+module Language.Arralac.Renamer.ConvertParsed where
 
 import Control.Monad (forM)
 import Data.Map qualified as Map
@@ -26,14 +26,14 @@ import Language.Arralac.Syntax.TTG.Type
 -- [Convert and rename the parser AST]
 -- ===================================
 
-class ConvertRename a where
-  type ConvertRenameTo a
-  convertRename :: (CtxRnConstraints) => a -> (ConvertRenameTo a)
+class ConvertParsed a where
+  type ConvertParsedTo a
+  convertParsed :: (CtxRnConstraints) => a -> (ConvertParsedTo a)
 
-instance ConvertRename Abs.Program where
-  type ConvertRenameTo Abs.Program = IO (SynTerm CompRn)
-  convertRename (Abs.Program _ program) =
-    convertRename program
+instance ConvertParsed Abs.Program where
+  type ConvertParsedTo Abs.Program = IO (SynTerm CompRn)
+  convertParsed (Abs.Program _ program) =
+    convertParsed program
 
 convertPositionToSrcSpan :: (CtxInputFilePath) => Abs.BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
@@ -82,11 +82,11 @@ letOccursCheck var = do
             }
     _ -> pure ()
 
-instance ConvertRename Abs.Exp where
-  type ConvertRenameTo Abs.Exp = IO (SynTerm CompRn)
-  convertRename = \case
+instance ConvertParsed Abs.Exp where
+  type ConvertParsedTo Abs.Exp = IO (SynTerm CompRn)
+  convertParsed = \case
     Abs.ExpVar _pos var -> do
-      var' <- convertRename var False
+      var' <- convertParsed var False
       letOccursCheck var'
       pure $ SynTerm'Var () var'
     Abs.ExpInt pos val ->
@@ -101,20 +101,20 @@ instance ConvertRename Abs.Exp where
     Abs.ExpCon _ (Abs.Con pos (Abs.NameUpperCase name)) ->
       pure $ SynTerm'Lit (convertPositionToSrcSpan pos) (SynLit'Con name)
     Abs.ExpApp pos term1 term2 -> do
-      term1' <- convertRename term1
-      term2' <- convertRename term2
+      term1' <- convertParsed term1
+      term2' <- convertParsed term2
       pure $ SynTerm'App (convertPositionToSrcSpan pos) term1' term2'
     Abs.ExpAbs pos var term -> do
-      var' <- convertRename var True
-      term' <- withVarInScope NameSpace'TermVar var' (convertRename term)
+      var' <- convertParsed var True
+      term' <- withVarInScope NameSpace'TermVar var' (convertParsed term)
       pure $ SynTerm'Lam (convertPositionToSrcSpan pos) var' term'
     Abs.ExpAbsAnno pos var ty term -> do
-      var' <- convertRename var True
-      ty' <- convertRename ty
-      term' <- withVarInScope NameSpace'TermVar var' (convertRename term)
+      var' <- convertParsed var True
+      ty' <- convertParsed ty
+      term' <- withVarInScope NameSpace'TermVar var' (convertParsed term)
       pure $ SynTerm'ALam (convertPositionToSrcSpan pos) var' ty' term'
     Abs.ExpLet pos var term1 term2 -> do
-      var' <- convertRename var True
+      var' <- convertParsed var True
       -- TODO should the let-expression be recursive
       -- and the var be brought into scope of the assigned term?
       let pos' = convertPositionToSrcSpan pos
@@ -125,12 +125,12 @@ instance ConvertRename Abs.Exp where
                   { letSrcSpan = pos'
                   , letLhs = var'
                   }
-        convertRename term1
-      term2' <- withVarInScope NameSpace'TermVar var' (convertRename term2)
+        convertParsed term1
+      term2' <- withVarInScope NameSpace'TermVar var' (convertParsed term2)
       pure $ SynTerm'Let pos' var' term1' term2'
     Abs.ExpAnno pos term ty -> do
-      term' <- convertRename term
-      ty' <- convertRename ty
+      term' <- convertParsed term
+      ty' <- convertParsed ty
       pure $ SynTerm'Ann (convertPositionToSrcSpan pos) term' ty'
 
 getVarId :: (CtxRnScopes) => NameSpace -> NameFs -> Maybe Unique
@@ -139,9 +139,9 @@ getVarId ns k = Map.lookup k (selectScope ns)
 getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Unique
 getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
 
-instance ConvertRename Abs.Var where
-  type ConvertRenameTo Abs.Var = Bool -> IO RnVar
-  convertRename (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
+instance ConvertParsed Abs.Var where
+  type ConvertParsedTo Abs.Var = Bool -> IO RnVar
+  convertParsed (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
     let ns = NameSpace'TermVar
     nameUnique <-
       if needUnique
@@ -159,9 +159,9 @@ instance ConvertRename Abs.Var where
           , nameLoc = (convertPositionToSrcSpan pos)
           }
 
-instance ConvertRename Abs.TypeVariable where
-  type ConvertRenameTo Abs.TypeVariable = IO Name
-  convertRename (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
+instance ConvertParsed Abs.TypeVariable where
+  type ConvertParsedTo Abs.TypeVariable = IO Name
+  convertParsed (Abs.TypeVariableName pos (Abs.NameLowerCase name)) = do
     -- Each type variable in a `forall`
     -- must have a globally unique identifier.
     nameUnique <- newUnique
@@ -208,9 +208,9 @@ getExistingUnique ns pos name =
           }
     Just u -> pure u
 
-instance ConvertRename Abs.Type where
-  type ConvertRenameTo Abs.Type = IO (SynType CompRn)
-  convertRename = \case
+instance ConvertParsed Abs.Type where
+  type ConvertParsedTo Abs.Type = IO (SynType CompRn)
+  convertParsed = \case
     -- TODO not a variable
     Abs.TypeConcrete pos (Abs.NameUpperCase name) -> do
       -- TODO should all mentions of a type have the same uniques?
@@ -257,10 +257,10 @@ instance ConvertRename Abs.Type where
           RnError'ForallBindsNoTvs
             { srcSpan = convertPositionToSrcSpan pos
             }
-      tys' <- forM tys convertRename
-      ty' <- withNamesInScope NameSpace'TyVar tys' (convertRename ty)
+      tys' <- forM tys convertParsed
+      ty' <- withNamesInScope NameSpace'TyVar tys' (convertParsed ty)
       pure $ SynType'ForAll (convertPositionToSrcSpan pos) tys' ty'
     Abs.TypeFunc pos ty1 ty2 ->
       SynType'Fun (convertPositionToSrcSpan pos)
-        <$> (convertRename ty1)
-        <*> (convertRename ty2)
+        <$> (convertParsed ty1)
+        <*> (convertParsed ty2)
