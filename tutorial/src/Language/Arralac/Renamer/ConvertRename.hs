@@ -35,12 +35,12 @@ instance ConvertRename Abs.Program where
   convertRename (Abs.Program _ program) =
     convertRename program
 
-convertPositionToSrcSpan :: (CtxCurrentFilePath) => Abs.BNFC'Position -> SrcSpan
+convertPositionToSrcSpan :: (CtxInputFilePath) => Abs.BNFC'Position -> SrcSpan
 convertPositionToSrcSpan = \case
   Just ((sLine, sCol), (eLine, eCol)) ->
     RealSrcSpan
       RealSrcSpan'
-        { srcSpanFile = ?currentFilePath
+        { srcSpanFile = ?inputFilePath
         , srcSpanSLine = sLine - 1
         , srcSpanSCol = sCol - 1
         , srcSpanELine = eLine - 1

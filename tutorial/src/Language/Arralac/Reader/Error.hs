@@ -8,8 +8,7 @@ import Language.Arralac.Prelude.Pretty (Pretty' (..), prettyIndent, vsep')
 import Language.Arralac.Prelude.Types (FastFilePath)
 
 data ReaderError
-  = ReaderError'CouldNotReadStdin
-  | ReaderError'CouldNotReadFile {filePath :: FastFilePath}
+  = ReaderError'CouldNotReadFile {filePath :: FastFilePath}
 
 data ReaderErrorWithCallStack where
   ReaderErrorWithCallStack :: (HasCallStack) => ReaderError -> ReaderErrorWithCallStack
@@ -23,8 +22,6 @@ instance Exception ReaderErrorWithCallStack
 
 instance Pretty' ReaderError where
   pretty' err = case err of
-    ReaderError'CouldNotReadStdin ->
-      "Could not read program from stdin."
     ReaderError'CouldNotReadFile{} ->
       vsep'
         [ "Could not read file at path:"

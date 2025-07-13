@@ -42,7 +42,7 @@ type CtxRnScopes = (CtxTermVarScope, CtxTyVarScope, CtxTyConcreteScope)
 type CtxRnConstraints =
   ( HasCallStack
   , CtxUniqueSupply
-  , CtxCurrentFilePath
+  , CtxInputFilePath
   , CtxDebug
   , CtxRnScopes
   , CtxLetOccursCheckInfo

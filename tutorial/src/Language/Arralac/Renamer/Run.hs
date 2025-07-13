@@ -11,7 +11,7 @@ import Language.Arralac.Syntax.TTG.SynTerm
 
 runRenamer ::
   ( HasCallStack
-  , CtxCurrentFilePath
+  , CtxInputFilePath
   , CtxDebug
   , CtxUniqueSupply
   ) =>

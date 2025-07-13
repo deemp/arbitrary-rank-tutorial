@@ -13,7 +13,7 @@ import Language.Arralac.Parser.Generated.Par
 import Language.Arralac.Prelude.Types
 
 runParser ::
-  (HasCallStack, CtxCurrentFilePath) =>
+  (HasCallStack, CtxInputFilePath) =>
   Text -> IO Program
 runParser input = do
   let
@@ -27,7 +27,7 @@ runParser input = do
           ParserError'LexerError
             { lineNumber = lineNumber - 1
             , columnNumber = columnNumber - 1
-            , currentFilePath = ?currentFilePath
+            , currentFilePath = ?inputFilePath
             }
         Nothing -> ParserError'Unknown{message = T.pack err}
     Right prog -> pure prog

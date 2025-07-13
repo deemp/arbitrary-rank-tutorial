@@ -7,16 +7,12 @@ type FastString = Text
 
 type FastFilePath = Text
 
-data Input
-  = Input'FilePath FastFilePath
-  | Input'Stdin
-
 -- ==============================================
 -- [Implicit parameters]
 -- ==============================================
 
 -- | Current file path.
-type CtxCurrentFilePath = (?currentFilePath :: FastFilePath)
+type CtxInputFilePath = (?inputFilePath :: FastFilePath)
 
 -- | Whether to output debug logs.
 type CtxDebug = (?debug :: Bool)

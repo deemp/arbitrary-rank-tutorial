@@ -154,7 +154,7 @@ updateStateForFile docUri filePath docText =
       let 
           ?solverIterations = config.solverIterations
           ?debug = False
-      liftIO $ runReaderToZonker filePath docText
+      liftIO $ runReaderToZonker filePath
 
     let mp = toIntervalMap ast
 

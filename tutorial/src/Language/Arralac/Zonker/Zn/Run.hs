@@ -8,6 +8,9 @@ import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Zonker.Zn.Zonk
 
 runZonker ::
-  (HasCallStack, CtxDebug, CtxPrettyVerbosity) =>
+  ( HasCallStack
+  , CtxDebug
+  , CtxPrettyVerbosity
+  ) =>
   SynTerm CompTc -> IO (SynTerm CompZn)
 runZonker = zonk

@@ -4,17 +4,14 @@ import Control.Exception (SomeException)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
+import Language.Arralac.Prelude.Types
 import Language.Arralac.Reader.Error
 import UnliftIO (catch)
 
-runReader :: Maybe FilePath -> IO Text
-runReader mbFilePath =
+runReader :: FastFilePath -> IO Text
+runReader filePath =
   catch
-    (maybe T.getContents T.readFile mbFilePath)
+    (T.readFile (T.unpack filePath))
     ( \(_ :: SomeException) ->
-        case mbFilePath of
-          Nothing ->
-            dieReader ReaderError'CouldNotReadStdin{}
-          Just filePath ->
-            dieReader ReaderError'CouldNotReadFile{filePath = T.pack filePath}
+        dieReader ReaderError'CouldNotReadFile{filePath}
     )
