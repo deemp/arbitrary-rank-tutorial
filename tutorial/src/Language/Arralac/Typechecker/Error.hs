@@ -79,56 +79,56 @@ getThingStart (TypedThing'SynTermRn thing) =
     SynTerm'Ann anno _ _ -> anno
 
 instance Pretty' TcError where
-  pretty' = \case
-    TcError'UndefinedVariable{rnVar} ->
+  pretty' err = case err of
+    TcError'UndefinedVariable{} ->
       vsep'
         [ "Not in scope:"
-        , prettyIndent rnVar.varName
+        , prettyIndent err.rnVar.varName
         ]
-    TcError'UnboundVariable{var} ->
+    TcError'UnboundVariable{} ->
       vsep'
         [ "Expected a bound variable, but got:"
-        , prettyIndent var
+        , prettyIndent err.var
         ]
-    TcError'UnexpectedType{expected, actual, thing} ->
+    TcError'UnexpectedType{} ->
       vsep' $
         [ "Expected the type:"
-        , prettyIndent expected
+        , prettyIndent err.expected
         , "but got the type:"
-        , prettyIndent actual
+        , prettyIndent err.actual
         ]
-          <> prettyThingLocation thing
-    TcError'UnifyingBoundTypes{ty1, ty2, thing} ->
+          <> prettyThingLocation err.thing
+    TcError'UnifyingBoundTypes{} ->
       vsep' $
         [ "Trying to unify type:"
-        , prettyIndent ty1
+        , prettyIndent err.ty1
         , "with type:"
-        , prettyIndent ty2
+        , prettyIndent err.ty2
         ]
-          <> prettyThingLocation thing
-    TcError'ExpectedFlexiVariables{tvs} ->
+          <> prettyThingLocation err.thing
+    TcError'ExpectedFlexiVariables{} ->
       vsep'
         [ "Expected all variables to be Flexi, but these are not:"
-        , prettyIndent tvs
+        , prettyIndent err.tvs
         ]
-    TcError'UnknownConcreteType{name} ->
+    TcError'UnknownConcreteType{} ->
       vsep'
         [ "Unknown concrete type:"
-        , prettyIndent name
+        , prettyIndent err.name
         ]
-    TcError'ExpectedAllMetavariables{tvs} ->
+    TcError'ExpectedAllMetavariables{} ->
       vsep'
         [ "Expected all variables to be metavariables, but got:"
-        , prettyIndent tvs
+        , prettyIndent err.tvs
         ]
-    TcError'CannotUnify{ty1, ty2, thing} ->
+    TcError'CannotUnify{} ->
       vsep' $
         [ "Cannot unify type:"
-        , prettyIndent ty1
+        , prettyIndent err.ty1
         , "with type:"
-        , prettyIndent ty2
+        , prettyIndent err.ty2
         ]
-          <> prettyThingLocation thing
+          <> prettyThingLocation err.thing
    where
     prettyThingLocation :: Maybe TypedThing -> [Doc ann]
     prettyThingLocation = \case

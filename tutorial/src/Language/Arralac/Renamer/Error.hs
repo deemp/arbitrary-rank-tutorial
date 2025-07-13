@@ -27,29 +27,29 @@ dieRn :: (HasCallStack) => RnError -> IO a
 dieRn rnError = throw (RnErrorWithCallStack rnError)
 
 instance Pretty' RnError where
-  pretty' = \case
-    RnError'ForallBindsNoTvs{srcSpan} ->
+  pretty' err = case err of
+    RnError'ForallBindsNoTvs{} ->
       vsep'
         [ "`forall' binds no type variables at:"
-        , prettyIndent srcSpan
+        , prettyIndent err.srcSpan
         ]
-    RnError'UnboundTypeVariable{srcSpan, name} ->
+    RnError'UnboundTypeVariable{} ->
       vsep'
         [ "Unbound type variable:"
-        , prettyIndent name
+        , prettyIndent err.name
         , "at:"
-        , prettyIndent srcSpan
+        , prettyIndent err.srcSpan
         ]
-    RnError'LetOccursCheckFailed{letOccursCheckInfo, letLhsOcc} ->
+    RnError'LetOccursCheckFailed{} ->
       vsep'
         [ "Recursive `let'-binding at:"
-        , prettyIndent letOccursCheckInfo.letSrcSpan
+        , prettyIndent err.letOccursCheckInfo.letSrcSpan
         , "Variable:"
-        , prettyIndent letOccursCheckInfo.letLhs
+        , prettyIndent err.letOccursCheckInfo.letLhs
         , "bound in a `let'-expression at:"
-        , prettyIndent letOccursCheckInfo.letLhs.varName.nameLoc
+        , prettyIndent err.letOccursCheckInfo.letLhs.varName.nameLoc
         , "occurs in the RHS-expression at:"
-        , prettyIndent letLhsOcc.varName.nameLoc
+        , prettyIndent err.letLhsOcc.varName.nameLoc
         ]
 
 instance Exception RnError

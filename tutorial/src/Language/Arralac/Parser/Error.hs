@@ -10,8 +10,8 @@ import Prettyprinter
 
 -- | A parser error.
 data ParserError
-  = ParserError'LexerError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
-  | ParserError'ParserError {currentFilePath :: FastString, lineNumber :: Int, columnNumber :: Int}
+  = ParserError'LexerError {currentFilePath :: FastFilePath, lineNumber :: Int, columnNumber :: Int}
+  | ParserError'ParserError {currentFilePath :: FastFilePath, lineNumber :: Int, columnNumber :: Int}
   | ParserError'Unknown {message :: FastString}
 
 -- | A parser error that can capture the 'callStack' at the 'throw' site.
@@ -21,21 +21,21 @@ data ParserErrorWithCallStack where
   ParserErrorWithCallStack :: (HasCallStack) => ParserError -> ParserErrorWithCallStack
 
 instance Pretty' ParserError where
-  pretty' = \case
-    ParserError'LexerError{currentFilePath, lineNumber, columnNumber} ->
+  pretty' err = case err of
+    ParserError'LexerError{} ->
       vsep'
         [ "Lexer error at:"
-        , mkLocatedError currentFilePath lineNumber columnNumber
+        , mkLocatedError err.currentFilePath err.lineNumber err.columnNumber
         ]
-    ParserError'ParserError{currentFilePath, lineNumber, columnNumber} ->
+    ParserError'ParserError{} ->
       vsep'
         [ "Parser error at:"
-        , mkLocatedError currentFilePath lineNumber columnNumber
+        , mkLocatedError err.currentFilePath err.lineNumber err.columnNumber
         ]
-    ParserError'Unknown{message} ->
+    ParserError'Unknown{} ->
       vsep'
         [ "Unknown error:"
-        , prettyIndent message
+        , prettyIndent err.message
         ]
    where
     mkLocatedError currentFilePath lineNumber columnNumber =
