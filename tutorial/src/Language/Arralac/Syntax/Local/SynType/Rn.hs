@@ -2,11 +2,11 @@
 
 module Language.Arralac.Syntax.Local.SynType.Rn where
 
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
 import Prettyprinter (hsep, parens, (<+>))
 
 type instance XSynType'Var CompRn = Name

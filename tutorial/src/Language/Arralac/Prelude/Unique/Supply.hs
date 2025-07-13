@@ -1,7 +1,7 @@
-module Language.Arralac.Utils.Unique.Supply where
+module Language.Arralac.Prelude.Unique.Supply where
 
 import Data.IORef (IORef, readIORef, writeIORef)
-import Language.Arralac.Utils.Unique.Types (Unique (Unique))
+import Language.Arralac.Prelude.Unique.Types (Unique (Unique))
 
 -- | A global counter used for creating globally unique names.
 --

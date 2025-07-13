@@ -2,10 +2,10 @@
 
 module Language.Arralac.Syntax.Local.Extension.Tc where
 
+import Language.Arralac.Prelude.Pass
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Extension
-import Language.Arralac.Utils.Pass
 
 type instance XSynType'Var' CompTc = ()
 type instance XSynType'ForAll' CompTc = SrcSpan

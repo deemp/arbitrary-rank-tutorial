@@ -5,9 +5,9 @@ import Control.Monad.Foil.Internal (DExt, Name (..), NameBinder (..), Scope (..)
 import Data.IntMap qualified as IntMap
 import Data.IntSet qualified as IntSet
 import Generics.Kind.TH
+import Language.Arralac.Prelude.Pretty (Pretty' (..))
+import Language.Arralac.Prelude.Unique (Unique (..))
 import Language.Arralac.Syntax.Local.Name qualified as BT
-import Language.Arralac.Utils.Pretty (Pretty' (..))
-import Language.Arralac.Utils.Unique (Unique (..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | A wrapper around 'NameBinder' that stores additional information.

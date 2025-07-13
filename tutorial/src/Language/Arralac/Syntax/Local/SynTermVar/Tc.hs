@@ -3,12 +3,12 @@
 
 module Language.Arralac.Syntax.Local.SynTermVar.Tc where
 
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.TyVar.Tc ()
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTermVar
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
 import Prettyprinter
 
 type instance XSynTerm'Var CompTc = TcTermVar

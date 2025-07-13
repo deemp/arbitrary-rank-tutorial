@@ -6,6 +6,11 @@ import Data.IORef (newIORef, readIORef)
 import Data.Text qualified as T
 import GHC.Stack
 import Language.Arralac.Parser.Parse
+import Language.Arralac.Prelude.Debug (debug')
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types
+import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
 import Language.Arralac.Renamer.Run (convertRenameAbs)
 import Language.Arralac.Solver.Types (CtxSolverIterations)
 import Language.Arralac.Syntax.TTG.SynTerm
@@ -15,11 +20,6 @@ import Language.Arralac.Typechecker.Solver (solveIteratively)
 import Language.Arralac.Typechecker.TcTerm (inferRho)
 import Language.Arralac.Typechecker.TcTyVarEnv (CtxTcTyVarEnv, emptyTcTyVarEnv)
 import Language.Arralac.Typechecker.Types (TcLevel (..))
-import Language.Arralac.Utils.Debug (debug')
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply)
 import Language.Arralac.Zonker.Zn.Zonk (Zonk (..))
 import UnliftIO.Exception (finally)
 

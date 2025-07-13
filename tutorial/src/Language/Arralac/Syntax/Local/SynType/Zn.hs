@@ -2,11 +2,11 @@
 
 module Language.Arralac.Syntax.Local.SynType.Zn where
 
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.TyVar.Zn (ZnTyVar)
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
 import Prettyprinter (hsep, (<+>))
 
 type instance XSynType'Var CompZn = ZnTyVar

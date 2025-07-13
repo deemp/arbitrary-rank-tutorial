@@ -6,10 +6,10 @@ module Language.Arralac.Syntax.Local.Type where
 import Language.Arralac.Syntax.TTG.Type
 
 import Data.IORef (IORef)
+import Language.Arralac.Prelude.Pass (CompRn, CompTc, CompZn)
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.TTG.TyVar
-import Language.Arralac.Utils.Pass (CompRn, CompTc, CompZn)
-import Language.Arralac.Utils.Pretty
 import Prettyprinter
 
 -- | Expected type.

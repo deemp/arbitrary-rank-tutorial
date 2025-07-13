@@ -6,14 +6,14 @@ module Language.Arralac.Syntax.Local.TyVar.Tc where
 import Data.IORef (IORef)
 import Data.Text
 import GHC.Generics
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Unique
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.TyVar
 import Language.Arralac.Syntax.TTG.Type (Type)
 import Language.Arralac.Typechecker.Types
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Unique
 import Prettyprinter
 
 type instance XTyVar CompTc = TcTyVar

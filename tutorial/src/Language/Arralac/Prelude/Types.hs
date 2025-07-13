@@ -1,4 +1,4 @@
-module Language.Arralac.Utils.Types where
+module Language.Arralac.Prelude.Types where
 
 import Data.Text (Text)
 

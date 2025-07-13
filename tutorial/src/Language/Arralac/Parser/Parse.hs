@@ -10,7 +10,7 @@ import Language.Arralac.Parser.Abs as Abs
 import Language.Arralac.Parser.Error
 import Language.Arralac.Parser.Generated.Lex (Token)
 import Language.Arralac.Parser.Generated.Par
-import Language.Arralac.Utils.Types
+import Language.Arralac.Prelude.Types
 
 type ParserM a = (CtxCurrentFilePath) => IO a
 

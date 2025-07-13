@@ -1,6 +1,10 @@
 module Language.Arralac.Typechecker.TcTerm where
 
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Language.Arralac.Prelude.Bag
+import Language.Arralac.Prelude.Debug
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Extension.Tc
 import Language.Arralac.Syntax.Local.RnVar
 import Language.Arralac.Syntax.Local.SynLit
@@ -15,10 +19,6 @@ import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.Error
 import Language.Arralac.Typechecker.TcMonad
 import Language.Arralac.Typechecker.TcTyVarEnv
-import Language.Arralac.Utils.Bag
-import Language.Arralac.Utils.Debug
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
 import Prettyprinter
 
 -- ========================

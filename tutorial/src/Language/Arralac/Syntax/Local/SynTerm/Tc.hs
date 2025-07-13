@@ -2,6 +2,8 @@
 
 module Language.Arralac.Syntax.Local.SynTerm.Tc where
 
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Extension.Tc
 import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTermVar.Tc
@@ -10,8 +12,6 @@ import Language.Arralac.Syntax.TTG.Lit
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynTermVar
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
 import Prettyprinter
 
 -- In GHC, the extension field for the variable AST node constructor

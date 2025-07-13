@@ -2,11 +2,11 @@
 
 module Language.Arralac.Syntax.Local.RnVar where
 
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.TTG.SynTermVar
 import Language.Arralac.Syntax.TTG.TyVar
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
 
 type instance XTyVar CompRn = RnVar
 type instance XSynTerm'Var CompRn = RnVar

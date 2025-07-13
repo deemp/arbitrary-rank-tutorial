@@ -1,6 +1,6 @@
-module Language.Arralac.Utils.Unique.Types where
+module Language.Arralac.Prelude.Unique.Types where
 
-import Language.Arralac.Utils.Pretty.Class (Pretty')
+import Language.Arralac.Prelude.Pretty.Class (Pretty')
 
 -- | A globally unique identifier.
 --

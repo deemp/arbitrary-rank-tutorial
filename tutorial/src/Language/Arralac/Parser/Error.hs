@@ -4,8 +4,8 @@ module Language.Arralac.Parser.Error where
 
 import Control.Exception (Exception, throw)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types
 import Prettyprinter
 
 -- | A parser error.

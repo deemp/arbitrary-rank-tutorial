@@ -1,9 +1,9 @@
-module Language.Arralac.Utils.Debug where
+module Language.Arralac.Prelude.Debug where
 
 import Control.Monad (when)
 import GHC.Stack (callStack, prettyCallStack)
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types
 import Prettyprinter
 import Prettyprinter.Util (putDocW)
 

@@ -1,7 +1,7 @@
-module Language.Arralac.Utils.Bag where
+module Language.Arralac.Prelude.Bag where
 
 import Data.List (intersperse)
-import Language.Arralac.Utils.Pretty (Pretty' (..))
+import Language.Arralac.Prelude.Pretty (Pretty' (..))
 import Prettyprinter (indent, vsep)
 
 -- | A list of something.

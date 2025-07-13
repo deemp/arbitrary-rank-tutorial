@@ -2,9 +2,9 @@
 
 module Language.Arralac.Syntax.Local.Extension.Rn where
 
+import Language.Arralac.Prelude.Pass
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.TTG.Extension
-import Language.Arralac.Utils.Pass
 
 type instance XSynType'Var' CompRn = ()
 type instance XSynType'ForAll' CompRn = SrcSpan

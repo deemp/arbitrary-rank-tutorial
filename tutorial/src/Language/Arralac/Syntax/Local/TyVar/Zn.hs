@@ -2,11 +2,11 @@
 
 module Language.Arralac.Syntax.Local.TyVar.Zn where
 
+import Language.Arralac.Prelude.Pass (CompZn)
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name (Name)
 import Language.Arralac.Syntax.Local.Type ()
 import Language.Arralac.Syntax.TTG.TyVar
-import Language.Arralac.Utils.Pass (CompZn)
-import Language.Arralac.Utils.Pretty
 
 type instance XTyVar CompZn = ZnTyVar
 
@@ -21,7 +21,6 @@ data ZnTyVar
     ZnTyVar
     { varName :: !Name
     }
-
 
 instance Eq ZnTyVar where
   var1 == var2 = var1.varName == var2.varName

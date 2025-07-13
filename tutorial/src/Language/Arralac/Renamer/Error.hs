@@ -5,19 +5,18 @@ module Language.Arralac.Renamer.Error where
 import Control.Exception (Exception, throw)
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
+import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.RnVar
-import Language.Arralac.Utils.Pretty
 
--- | A renamer exception.
+-- | A renamer error.
 data RnError
-  = -- TODO make a parser error
-    RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
+  = RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
   | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
   | RnError'LetOccursCheckFailed {letOccursCheckInfo :: LetOccursCheckInfo, letLhsOcc :: RnVar}
 
--- | A renamer exception that can capture the 'callStack' at the 'throw' site.
+-- | A renamer error that can capture the 'callStack' at the 'throw' site.
 --
 -- https://maksbotan.github.io/posts/2021-01-20-callstacks.html
 data RnErrorWithCallStack where

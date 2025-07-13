@@ -1,6 +1,6 @@
-module Language.Arralac.Utils.Pretty.Class where
+module Language.Arralac.Prelude.Pretty.Class where
 
-import Language.Arralac.Utils.Types (FastString)
+import Language.Arralac.Prelude.Types (FastString)
 import Language.LSP.Protocol.Types (UInt)
 import Prettyprinter
 

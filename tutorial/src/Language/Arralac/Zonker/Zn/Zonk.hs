@@ -8,6 +8,10 @@ import Data.Generics.Labels ()
 import Data.Generics.Product ()
 import Data.IORef (readIORef)
 import GHC.Stack (HasCallStack)
+import Language.Arralac.Prelude.Debug (debug')
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types
 import Language.Arralac.Syntax.Local.Anno ()
 import Language.Arralac.Syntax.Local.Extension.Tc
 import Language.Arralac.Syntax.Local.Extension.Zn
@@ -22,10 +26,6 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Utils.Debug (debug')
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types
 
 -- Substitute metavariables with their Indirect types after typechecking
 -- to produce a term without metavariables.

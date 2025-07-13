@@ -1,10 +1,10 @@
 module Language.Arralac.Syntax.Local.Name where
 
 import GHC.Generics (Generic)
-import Language.Arralac.Utils.Pretty (Pretty' (..), PrettyVerbosity (..))
-import Language.Arralac.Utils.Types (FastString)
-import Language.Arralac.Utils.Unique (Unique)
-import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
+import Language.Arralac.Prelude.Pretty (Pretty' (..), PrettyVerbosity (..))
+import Language.Arralac.Prelude.Types (FastString)
+import Language.Arralac.Prelude.Unique (Unique)
+import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply, newUnique)
 import Prettyprinter
 
 -- =======

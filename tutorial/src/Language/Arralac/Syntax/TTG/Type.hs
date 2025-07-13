@@ -1,8 +1,8 @@
 module Language.Arralac.Syntax.TTG.Type where
 
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types (FastString)
 import Language.Arralac.Syntax.TTG.TyVar
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types (FastString)
 
 -- | Type of expressions parameterised over the compiler pass.
 --

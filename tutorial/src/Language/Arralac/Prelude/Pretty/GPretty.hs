@@ -1,7 +1,7 @@
-module Language.Arralac.Utils.Pretty.GPretty where
+module Language.Arralac.Prelude.Pretty.GPretty where
 
 import GHC.Generics (C, Constructor (..), D, Generic (Rep, from), K1 (..), M1 (..), R, S, Selector (..), U1 (..), (:*:) (..), type (:+:) (..))
-import Language.Arralac.Utils.Pretty.Class (CtxPrettyVerbosity, Pretty' (..))
+import Language.Arralac.Prelude.Pretty.Class (CtxPrettyVerbosity, Pretty' (..))
 import Prettyprinter (Doc, indent, line, vsep, (<+>))
 
 prettyField :: (CtxPrettyVerbosity, Pretty' a) => a -> Doc ann

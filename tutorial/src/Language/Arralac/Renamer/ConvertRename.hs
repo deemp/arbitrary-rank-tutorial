@@ -5,6 +5,10 @@ import Data.Map qualified as Map
 import Data.Text qualified as T
 import GHC.Base (when)
 import Language.Arralac.Parser.Abs qualified as Abs
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Types
+import Language.Arralac.Prelude.Unique (Unique)
+import Language.Arralac.Prelude.Unique.Supply (newUnique)
 import Language.Arralac.Renamer.Error
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Extension.Rn ()
@@ -17,10 +21,6 @@ import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
 import Language.Arralac.Syntax.TTG.Type
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Unique (Unique)
-import Language.Arralac.Utils.Unique.Supply (newUnique)
 
 -- ===================================
 -- [Convert and rename the parser AST]

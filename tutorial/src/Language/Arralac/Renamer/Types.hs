@@ -2,9 +2,9 @@ module Language.Arralac.Renamer.Types where
 
 import Data.Map
 import GHC.Stack (HasCallStack)
+import Language.Arralac.Prelude.Types
+import Language.Arralac.Prelude.Unique
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Unique
 import Language.Arralac.Syntax.Local.RnVar
 
 -- | A name.

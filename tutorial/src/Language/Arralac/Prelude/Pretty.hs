@@ -1,4 +1,4 @@
-module Language.Arralac.Utils.Pretty (
+module Language.Arralac.Prelude.Pretty (
   module Class,
   module GPretty,
   prettyCompact,
@@ -9,8 +9,8 @@ module Language.Arralac.Utils.Pretty (
   vsep',
 ) where
 
-import Language.Arralac.Utils.Pretty.Class as Class
-import Language.Arralac.Utils.Pretty.GPretty as GPretty
+import Language.Arralac.Prelude.Pretty.Class as Class
+import Language.Arralac.Prelude.Pretty.GPretty as GPretty
 import Prettyprinter
 
 prettyCompact :: (Pretty' a) => a -> Doc ann

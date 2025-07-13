@@ -1,4 +1,4 @@
-module Language.Arralac.Utils.Pass where
+module Language.Arralac.Prelude.Pass where
 
 import Data.Data (Data)
 

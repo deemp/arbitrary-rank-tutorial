@@ -2,10 +2,10 @@
 
 module Language.Arralac.Syntax.Local.SynLit where
 
+import Language.Arralac.Prelude.Pass
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types
 import Language.Arralac.Syntax.TTG.Lit
-import Language.Arralac.Utils.Pass
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types
 
 type instance XSynTerm'Lit CompRn = SynLit
 type instance XSynTerm'Lit CompTc = SynLit

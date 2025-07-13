@@ -8,6 +8,11 @@ import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Traversable (forM)
 import GHC.Stack (HasCallStack)
+import Language.Arralac.Prelude.Bag
+import Language.Arralac.Prelude.Debug
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types
+import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply, newUnique)
 import Language.Arralac.Solver.Types
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.TyVar.Tc
@@ -17,11 +22,6 @@ import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.Error
 import Language.Arralac.Typechecker.TcTyVarEnv
 import Language.Arralac.Typechecker.Types
-import Language.Arralac.Utils.Bag
-import Language.Arralac.Utils.Debug
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types
-import Language.Arralac.Utils.Unique.Supply (CtxUniqueSupply, newUnique)
 
 -- =========================
 -- [The Type Checking Monad]

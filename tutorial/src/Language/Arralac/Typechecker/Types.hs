@@ -1,6 +1,6 @@
 module Language.Arralac.Typechecker.Types where
 
-import Language.Arralac.Utils.Pretty
+import Language.Arralac.Prelude.Pretty
 import Prettyprinter
 
 -- | Similar to @TcLevel@ in GHC.

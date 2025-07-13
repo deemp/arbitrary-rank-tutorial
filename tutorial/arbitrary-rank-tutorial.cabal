@@ -43,7 +43,6 @@ flag nix
 
 library
   exposed-modules:
-      BluefinImplicit
       Language.Arralac.Interpreter.FreeFoil
       Language.Arralac.Interpreter.Main
       Language.Arralac.LanguageServer.IntervalMap
@@ -54,6 +53,16 @@ library
       Language.Arralac.Parser.Generated.Lex
       Language.Arralac.Parser.Generated.Par
       Language.Arralac.Parser.Parse
+      Language.Arralac.Prelude.Bag
+      Language.Arralac.Prelude.Debug
+      Language.Arralac.Prelude.Pass
+      Language.Arralac.Prelude.Pretty
+      Language.Arralac.Prelude.Pretty.Class
+      Language.Arralac.Prelude.Pretty.GPretty
+      Language.Arralac.Prelude.Types
+      Language.Arralac.Prelude.Unique
+      Language.Arralac.Prelude.Unique.Supply
+      Language.Arralac.Prelude.Unique.Types
       Language.Arralac.Renamer.ConvertRename
       Language.Arralac.Renamer.Error
       Language.Arralac.Renamer.Run
@@ -95,16 +104,6 @@ library
       Language.Arralac.Typechecker.TcTerm
       Language.Arralac.Typechecker.TcTyVarEnv
       Language.Arralac.Typechecker.Types
-      Language.Arralac.Utils.Bag
-      Language.Arralac.Utils.Debug
-      Language.Arralac.Utils.Pass
-      Language.Arralac.Utils.Pretty
-      Language.Arralac.Utils.Pretty.Class
-      Language.Arralac.Utils.Pretty.GPretty
-      Language.Arralac.Utils.Types
-      Language.Arralac.Utils.Unique
-      Language.Arralac.Utils.Unique.Supply
-      Language.Arralac.Utils.Unique.Types
       Language.Arralac.Zonker.Tc.Zonk
       Language.Arralac.Zonker.Zn.Zonk
   other-modules:

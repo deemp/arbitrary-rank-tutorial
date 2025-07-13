@@ -9,16 +9,16 @@ import Data.IORef (readIORef, writeIORef)
 import Data.Set qualified as Set
 import GHC.Exception (prettyCallStack)
 import GHC.Stack (HasCallStack, callStack)
+import Language.Arralac.Prelude.Bag
+import Language.Arralac.Prelude.Debug (debug')
+import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Prelude.Types
 import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Type
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.TcMonad (isBoundTvTypeVar)
 import Language.Arralac.Typechecker.Types
-import Language.Arralac.Utils.Bag
-import Language.Arralac.Utils.Debug (debug')
-import Language.Arralac.Utils.Pretty
-import Language.Arralac.Utils.Types
 import Prettyprinter ((<+>))
 
 -- Constraint solver.
