@@ -107,12 +107,6 @@
 
                   with-utf8 = prev.with-utf8_1_1_0_0;
 
-                  bluefin =
-                    packageFromHackage "bluefin" "0.0.15.0"
-                      "sha256-ahmxmrvXyK77dX6qPDflrQusyoZTas+oMgj41im8KQA=";
-                  bluefin-internal =
-                    packageFromHackage "bluefin-internal" "0.0.15.0"
-                      "sha256-grclXTRDkDJ5+oSZb37Vbd2wXgcP43yuAnzpJV9J+ng=";
 
                   # build tools
 
