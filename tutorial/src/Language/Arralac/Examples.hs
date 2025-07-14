@@ -25,7 +25,7 @@ main = do
       ?prettyVerbosity = PrettyVerbosity'Normal
       ?solverIterations = 10
   programZn <- do
-    let prettyError x = putDocW 100 (pretty' x) >> error "Error!"
+    let prettyError x = putDocW defaultPrettyWidth (pretty' x) >> error "Error!"
     runReaderToZonker filePath
       `catch` (\(x :: ReaderErrorWithCallStack) -> prettyError x)
       `catch` (\(x :: ParserErrorWithCallStack) -> prettyError x)

@@ -14,7 +14,7 @@ import Prettyprinter.Util (putDocW)
 debug :: (CtxDebug, CtxPrettyVerbosity) => Doc a -> [Doc a] -> IO ()
 debug label xs = when ?debug do
   putDocW
-    1000
+    defaultPrettyWidth
     ( vsep
         [ "[" <> label <> "]"
         , foldMap (\x -> "$ " <> x <> line) xs

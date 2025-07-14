@@ -7,6 +7,7 @@ module Language.Arralac.Prelude.Pretty (
   prettyIndent,
   parensIndent,
   vsep',
+  defaultPrettyWidth,
 ) where
 
 import Language.Arralac.Prelude.Pretty.Class as Class
@@ -30,3 +31,6 @@ parensIndent x = parens (line <> indent 2 x <> line)
 
 vsep' :: [Doc ann] -> Doc ann
 vsep' xs = encloseSep "" "" line xs <> line
+
+defaultPrettyWidth :: Int
+defaultPrettyWidth = 200
