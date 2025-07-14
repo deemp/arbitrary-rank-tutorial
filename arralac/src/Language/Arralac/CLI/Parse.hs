@@ -2,7 +2,7 @@ module Language.Arralac.CLI.Parse where
 
 import Data.Functor ((<&>))
 import Language.Arralac.CLI.Commands
-import Language.Arralac.Interpreter.Run
+import Language.Arralac.Evaluator.Run
 import Language.Arralac.Prelude.Types
 import Options.Applicative
 import PyF
@@ -12,7 +12,7 @@ cli =
   hsubparser
     ( command "language-server" commandParserInfo.languageServer
         <> command "typecheck" commandParserInfo.typecheck
-        <> command "interpret" commandParserInfo.interpret
+        <> command "evaluate" commandParserInfo.evaluate
     )
 
 cliParserInfo :: String -> ParserInfo CLI
@@ -48,10 +48,10 @@ commandParserInfo =
         info
           (CLI'Typecheck <$> parseCommand.typecheck)
           (progDesc "Typecheck an Arralac program.")
-    , interpret =
+    , evaluate =
         info
-          (CLI'Interpret <$> parseCommand.interpret)
-          (progDesc "Typecheck and interpret an Arralac program.")
+          (CLI'Evaluate <$> parseCommand.evaluate)
+          (progDesc "Typecheck and evaluate an Arralac program.")
     }
 
 data MetavarNames = MetavarNames
@@ -129,7 +129,7 @@ parseCommand =
   ParseCommand
     { languageServer
     , typecheck
-    , interpret
+    , evaluate
     }
  where
   languageServer = do
@@ -150,28 +150,28 @@ parseCommand =
         , debug
         }
 
-  interpret = do
+  evaluate = do
     hsubparser
       ( command
           "whnf"
           ( info
-              interpretWhnf
+              evaluateWhnf
               (progDesc "Evaluate weak head normal form of the program.")
           )
       )
 
-  interpret' = do
+  evaluate' = do
     inputFilePath <- parseInputFilePath
     solverIterations <- parseSolverIterations
     debug <- parseDebug
     pure (inputFilePath, solverIterations, debug)
 
-  interpretWhnf =
-    interpret'
+  evaluateWhnf =
+    evaluate'
       <&> \(inputFilePath, solverIterations, debug) ->
-        Command'Interpret
+        Command'Evaluate
           { inputFilePath
           , solverIterations
           , debug
-          , interpreterMode = InterpreterMode'Whnf
+          , evaluatorMode = EvaluatorMode'Whnf
           }

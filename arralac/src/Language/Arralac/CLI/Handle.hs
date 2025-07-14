@@ -4,7 +4,7 @@ import Data.Maybe (fromMaybe)
 import Language.Arralac.CLI.Commands
 import Language.Arralac.CLI.Defaults (Defaults (..))
 import Language.Arralac.Driver.ReaderToZonker.Run
-import Language.Arralac.Interpreter.Run
+import Language.Arralac.Evaluator.Run
 import Language.Arralac.LanguageServer.Run
 import Language.Arralac.Prelude.Pretty
 import Prettyprinter
@@ -26,12 +26,12 @@ handleCLI defaults = \case
     do
       znTerm <- runReaderToZonker cmd.inputFilePath
       putDocW defaultPrettyWidth $ pretty' znTerm <> line
-  CLI'Interpret cmd -> do
+  CLI'Evaluate cmd -> do
     let
       ?debug = cmd.debug
       ?prettyVerbosity = defaults.prettyVerbosity
       ?solverIterations = defaults.solverIterations
     do
       znTerm <- runReaderToZonker cmd.inputFilePath
-      let interpretedTerm = runInterpreter InterpreterMode'Whnf znTerm
-      putDocW defaultPrettyWidth $ pretty' interpretedTerm <> line
+      let evaluatedTerm = runEvaluator EvaluatorMode'Whnf znTerm
+      putDocW defaultPrettyWidth $ pretty' evaluatedTerm <> line

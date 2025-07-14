@@ -81,10 +81,10 @@ nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
 ) :: a_Unsolved_11 -> String
 ```
 
-### Interpret
+### Evaluate
 
 ```console
-nix run .#arralac -- interpret whnf arralac/test/data/Program1.arralac
+nix run .#arralac -- evaluate whnf arralac/test/data/Program1.arralac
 ```
 
 ```console
@@ -176,7 +176,7 @@ Run `arralac`.
 ```console
 nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
 
-nix run .#arralac -- interpret whnf arralac/test/data/Program1.arralac
+nix run .#arralac -- evaluate whnf arralac/test/data/Program1.arralac
 ```
 
 ### Build and run with Cabal
@@ -204,7 +204,7 @@ Run `arralac`.
 ```console
 cabal run arralac -- typecheck arralac/test/data/Program1.arralac
 
-cabal run arralac -- interpret whnf arralac/test/data/Program1.arralac
+cabal run arralac -- evaluate whnf arralac/test/data/Program1.arralac
 ```
 
 ### Build with Stack

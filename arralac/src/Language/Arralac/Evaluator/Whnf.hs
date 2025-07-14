@@ -1,4 +1,4 @@
-module Language.Arralac.Interpreter.Whnf where
+module Language.Arralac.Evaluator.Whnf where
 
 import Control.Monad.Foil (Distinct, Scope, identitySubst)
 import Control.Monad.Free.Foil (substitute)

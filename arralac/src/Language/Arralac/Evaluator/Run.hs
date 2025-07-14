@@ -1,17 +1,17 @@
-module Language.Arralac.Interpreter.Run where
+module Language.Arralac.Evaluator.Run where
 
 import Control.Monad.Foil (S (..), emptyScope)
 import Language.Arralac.Core.AST
 import Language.Arralac.Core.ConvertZonked
-import Language.Arralac.Interpreter.Whnf
+import Language.Arralac.Evaluator.Whnf
 import Language.Arralac.Prelude.Pass
 import Language.Arralac.Syntax.TTG.SynTerm
 
-data InterpreterMode
-  = InterpreterMode'Whnf
+data EvaluatorMode
+  = EvaluatorMode'Whnf
 
-runInterpreter :: InterpreterMode -> SynTerm CompZn -> CoreE VoidS
-runInterpreter mode znTerm =
+runEvaluator :: EvaluatorMode -> SynTerm CompZn -> CoreE VoidS
+runEvaluator mode znTerm =
   case mode of
-    InterpreterMode'Whnf ->
+    EvaluatorMode'Whnf ->
       whnf emptyScope (convertZonked emptyScope znTerm)

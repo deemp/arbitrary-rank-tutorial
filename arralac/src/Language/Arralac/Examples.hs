@@ -1,7 +1,7 @@
 module Language.Arralac.Examples where
 
 import Language.Arralac.Driver.ReaderToZonker.Run (runReaderToZonker)
-import Language.Arralac.Interpreter.Run
+import Language.Arralac.Evaluator.Run
 import Language.Arralac.Parser.Error
 import Language.Arralac.Prelude.Debug
 import Language.Arralac.Prelude.Pretty
@@ -29,5 +29,5 @@ main = do
   debug'
     "main"
     [ ("programZn", prettyCompact programZn)
-    , ("whnf", prettyUser (runInterpreter InterpreterMode'Whnf programZn))
+    , ("whnf", prettyUser (runEvaluator EvaluatorMode'Whnf programZn))
     ]

@@ -1,13 +1,13 @@
 module Language.Arralac.CLI.Commands where
 
-import Language.Arralac.Interpreter.Run (InterpreterMode (..))
+import Language.Arralac.Evaluator.Run (EvaluatorMode (..))
 import Language.Arralac.Prelude.Types
 import Options.Applicative
 
 data CLI
   = CLI'LanguageServer Command'LanguageServer
   | CLI'Typecheck Command'Typecheck
-  | CLI'Interpret Command'Interpret
+  | CLI'Evaluate Command'Evaluate
 
 data Command'LanguageServer = Command'LanguageServer
   { settingsSectionName :: Maybe FastString
@@ -19,21 +19,21 @@ data Command'Typecheck = Command'Typecheck
   , debug :: Bool
   }
 
-data Command'Interpret = Command'Interpret
+data Command'Evaluate = Command'Evaluate
   { inputFilePath :: FastFilePath
   , solverIterations :: Maybe Int
-  , interpreterMode :: InterpreterMode
+  , evaluatorMode :: EvaluatorMode
   , debug :: Bool
   }
 
 data ParseCommand = ParseCommand
   { languageServer :: Parser Command'LanguageServer
   , typecheck :: Parser Command'Typecheck
-  , interpret :: Parser Command'Interpret
+  , evaluate :: Parser Command'Evaluate
   }
 
 data CommandParserInfo = CommandParserInfo
   { languageServer :: ParserInfo CLI
   , typecheck :: ParserInfo CLI
-  , interpret :: ParserInfo CLI
+  , evaluate :: ParserInfo CLI
   }

@@ -64,7 +64,7 @@ jobs:
         run: |
           nix run .#arralac -- typecheck ${{ env.arralac-program }}
 
-          nix run .#arralac -- interpret whnf ${{ env.arralac-program }}
+          nix run .#arralac -- evaluate whnf ${{ env.arralac-program }}
 
       - name: Build and run with Cabal
         if: always()
@@ -72,7 +72,7 @@ jobs:
           nix develop .#ci-build -c bash -c '
             cabal run arralac -- typecheck ${{ env.arralac-program }}
             
-            cabal run arralac -- interpret whnf ${{ env.arralac-program }}
+            cabal run arralac -- evaluate whnf ${{ env.arralac-program }}
           '
 
       - name: Build and run with Stack
@@ -81,7 +81,7 @@ jobs:
           nix develop .#ci-build -c bash -c '
             stack run -- arralac typecheck ${{ env.arralac-program }}
 
-            stack run -- arralac interpret whnf ${{ env.arralac-program }}
+            stack run -- arralac evaluate whnf ${{ env.arralac-program }}
           '
 
       - name: Save paths from GC

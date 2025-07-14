@@ -54,9 +54,9 @@ library
       Language.Arralac.Core.PrettyScoped
       Language.Arralac.Driver.ParserToZonker.Run
       Language.Arralac.Driver.ReaderToZonker.Run
+      Language.Arralac.Evaluator.Run
+      Language.Arralac.Evaluator.Whnf
       Language.Arralac.Examples
-      Language.Arralac.Interpreter.Run
-      Language.Arralac.Interpreter.Whnf
       Language.Arralac.LanguageServer.Diagnostics
       Language.Arralac.LanguageServer.IntervalMap
       Language.Arralac.LanguageServer.Run
