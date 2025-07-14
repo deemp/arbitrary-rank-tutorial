@@ -4,15 +4,6 @@
   "latex-workshop.formatting.latex": "latexindent",
   "nix.formatterPath": "nixfmt",
   "latex-workshop.latex.recipes": [
-    // {
-    //     "name": "pdflatex -> biber -> pdflatex * 2",
-    //     "tools": [
-    //         "pdflatex",
-    //         "biber",
-    //         "pdflatex",
-    //         "pdflatex"
-    //     ]
-    // },
     {
       "name": "xelatex -> biber -> xelatex * 2",
       "tools": ["xelatex", "biber", "xelatex", "xelatex"]
@@ -24,18 +15,6 @@
       "command": "biber",
       "name": "biber"
     },
-    // {
-    //     "args": [
-    //         "-shell-escape",
-    //         "-synctex=1",
-    //         "-interaction=nonstopmode",
-    //         "-file-line-error",
-    //         "%DOC%"
-    //     ],
-    //     "command": "pdflatex",
-    //     "env": {},
-    //     "name": "pdflatex"
-    // },
     {
       "args": [
         "-shell-escape",
