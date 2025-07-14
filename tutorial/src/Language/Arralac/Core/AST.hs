@@ -3,10 +3,12 @@ module Language.Arralac.Core.AST where
 import Control.Monad.Foil
 import Control.Monad.Free.Foil (AST (..), ScopedAST (..))
 import Data.Bifunctor.TH (deriveBifunctor)
+import Data.Functor ((<&>))
 import Data.Map qualified as Map
 import Language.Arralac.Core.CoreNameBinder
 import Language.Arralac.Core.PrettyScoped
 import Language.Arralac.Prelude.Pretty
+import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTerm.Zn ()
 import Prettyprinter
@@ -62,7 +64,7 @@ instance PrettyScoped (CoreE n) where
           <+> "in"
           <+> withExtendedPrettyScope binder (prettyScoped rhs)
     Var x ->
-      pretty' (Map.lookup (nameId x) ?prettyScope)
+      pretty' ((Map.lookup (nameId x) ?prettyScope) <&> (.nameOcc.occNameFS))
         <> "_"
         <> pretty' (nameId x)
 
