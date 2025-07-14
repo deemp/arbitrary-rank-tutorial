@@ -199,7 +199,9 @@ arralac
 
 Supported platforms: Linux, MacOS with `Nix` installed (NixOS isn't necessary).
 
-1. Install `arralac` (See [Install arralac](#install-arralac)).
+The following instructions were tested on Ubuntu 24.04 with `Nix` installed.
+
+1. Install `arralac` (see [Install arralac](#install-arralac)).
 
 1. Clone and enter the repository.
 
@@ -214,7 +216,7 @@ Supported platforms: Linux, MacOS with `Nix` installed (NixOS isn't necessary).
     code vscode-extension
     ```
 
-1. Type `Fn` + `F5` on `Linux` to start debugging the extension.
+1. Type `Fn` + `F5` to start debugging the extension.
 
 1. In the new VS Code window that opens automatically, find and open the `arbitrary-rank-tutorial/vscode-extension/demo/Program.arralac` file.
 
@@ -235,7 +237,7 @@ cd arbitrary-rank-tutorial
 
 Direnv caches flake devshell evaluation results.
 
-Install `direnv` ([link](https://direnv.net/#basic-installation)).
+Install `direnv` [^direnv].
 
 Run in the repo:
 
@@ -245,7 +247,7 @@ direnv allow
 
 ### Set up VS Code (optional)
 
-Install recommended extensions (listed [here](.vscode/extensions.json)).
+Install recommended extensions (listed in [.vscode/extensions.json](.vscode/extensions.json)).
 
 ### Build and run with Nix
 
@@ -342,3 +344,4 @@ SUM:                            82            694           1080           3866
 
 [^WhnfHaskellWiki]: <https://wiki.haskell.org/Weak_head_normal_form>
 
+[^direnv]: <https://direnv.net/#basic-installation>
