@@ -143,6 +143,8 @@
                     happy
                     bnfc
                   ];
+
+                  generateOptparseApplicativeCompletions = [ "arralac" ];
                 };
 
                 lsp-types = {
@@ -311,8 +313,7 @@
             # TODO use incremental
             # arralac = mkIncremental "arralac";
             arralac = haskellProjectsOutputs.finalPackages.arralac;
-            arralac-increment-base =
-              haskellProjectsOutputs.finalPackages.arralac;
+            arralac-increment-base = haskellProjectsOutputs.finalPackages.arralac;
 
             inherit
               (import "${inputs.cache-nix-action}/saveFromGC.nix" {
@@ -355,7 +356,9 @@
                 tools = [
                   {
                     expose = true;
-                    packages = devTools;
+                    packages = devTools // {
+                      inherit (pkgs) cloc;
+                    };
                   }
                 ];
 
@@ -375,6 +378,9 @@
             };
             demo = {
               # TODO source optparse-applicative completions in shellHook
+              bash.extra = ''
+                source ${self'.packages.arralac}/share/bash-completion/completions/${lib.getExe self'.packages.arralac}
+              '';
               commands = {
                 tools = [
                   {
