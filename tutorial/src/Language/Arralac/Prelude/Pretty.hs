@@ -30,7 +30,7 @@ parensIndent :: Doc ann -> Doc ann
 parensIndent x = parens (line <> indent 2 x <> line)
 
 vsep' :: [Doc ann] -> Doc ann
-vsep' xs = encloseSep "" "" line xs <> line
+vsep' = foldMap (\x -> x <> line)
 
 defaultPrettyWidth :: Int
 defaultPrettyWidth = 200
