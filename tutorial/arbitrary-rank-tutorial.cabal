@@ -57,6 +57,7 @@ library
       Language.Arralac.Examples
       Language.Arralac.Interpreter.Run
       Language.Arralac.Interpreter.Whnf
+      Language.Arralac.LanguageServer.Diagnostics
       Language.Arralac.LanguageServer.IntervalMap
       Language.Arralac.LanguageServer.Run
       Language.Arralac.LanguageServer.Server
@@ -199,6 +200,7 @@ library
     , mtl
     , optparse-applicative
     , prettyprinter
+    , sorted-list
     , stm
     , text
     , unliftio
@@ -286,6 +288,7 @@ executable arralac
     , mtl
     , optparse-applicative
     , prettyprinter
+    , sorted-list
     , stm
     , text
     , unliftio

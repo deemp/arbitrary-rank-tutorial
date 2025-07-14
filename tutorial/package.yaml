@@ -78,6 +78,7 @@ dependencies:
   - lsp
   - lsp-types
   - mtl
+  - sorted-list
   - optparse-applicative
   - prettyprinter
   - PyF
