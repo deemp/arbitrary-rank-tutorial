@@ -17,7 +17,7 @@ debug label xs = when ?debug do
     defaultPrettyWidth
     ( vsep
         [ "[" <> label <> "]"
-        , foldMap (\x -> "$ " <> x <> line) xs
+        , foldMap (\x -> "$ " <> x <> line <> line) xs
         , pretty' (prettyCallStack callStack)
         , line
         ]
