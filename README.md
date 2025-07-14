@@ -91,6 +91,90 @@ nix run .#arralac -- evaluate whnf arralac/test/data/Program1.arralac
 \y_2. (\x_8. "Hello") (y_2)
 ```
 
+## Pipeline: reading a file to evaluating Core
+
+The system performs several steps to transform an input text into an evaluated term.
+
+Here are these steps and associated system components.
+
+### Reading an input file
+
+- [Reader](./arralac/src/Language/Arralac/Reader/Run.hs)
+  - Reads the input file as text.
+
+### Parsing
+
+- [Parser](./arralac/src/Language/Arralac/Parser/Run.hs)
+  - An LR parser as Haskell code generated using [^BNFC] from an LBNF [^LBNF] description of the language syntax.
+  - Produces an initial program abstract syntax tree (AST) from the input text.
+
+### Renaming
+
+- [Renamer](./arralac/src/Language/Arralac/Renamer/ConvertParsed.hs)
+  - Assigns a unique identifier to each term and type variable.
+  - Supports shadowing.
+
+### Typechecking
+
+I used the bidirectional typechecking algorithm described in the paper *Practical type inference for arbitrary-rank types* [^JONES2007] and modified it to gather constraints without solving them.
+
+This approach was suggested in [^JONES2007] and mentioned by *The Glasgow Haskell Compiler* author Simon Peyton Jones at WITS'24 [^WITS2024] where he talked about solving constraint during type checking.
+
+#### Gathering constraints on types
+
+- [Typechecker](./arralac/src/Language/Arralac/Parser/Run.hs)
+  - Collects "wanted" [^WITS2024] equality constraints (where a metavariable equals a monotype) to later be solved by the `Constraint Solver`.
+  - Sets a level of each variable to enable skolem escape checking and generalization by levels.
+  - Limitations:
+    - Does not support `let`-generalization unlike [^JONES2007].
+
+      This feature may be relatively easy to implement by running the solver during  typechecking at each implication and quantifying over unsolved variables with a greater than ambient level [^WITS2024].
+
+    - Does not yet support "given" [^WITS2024] constraints (e.g., type class instances).
+
+      The implemented language doesn't have features like type equality constraints, type classes, and GADTs that could produce them[^WITS2024].
+
+#### Solving constraints on types
+
+- [Constraint Solver](./arralac/src/Language/Arralac/Solver/Run.hs)
+  - Iteratively solves equality constraints.
+  - Performs an occurs check for each constraint so that the metavariable on the left-hand side of the constraint doesn't appear in the type on the right-hand sind of the constraint.
+  - Identifies skolem escape using variable levels.
+  - Limitations:
+    - Does not solve floating-out.
+    - Unsolved metavariables remain as is.
+
+#### Getting rid of metavariables
+
+- [Zonker](./arralac/src/Language/Arralac/Zonker/Zn/Zonk.hs)
+  - Runs after the `Solver`.
+  - Esures that all metavariables get replaced by their fully solved types.
+  - Converts typed terms to a representation where no metavariables may occur.
+
+### Enabling safe term transformations
+
+- [Core/AST](./arralac/src/Language/Arralac/Core/AST.hs)
+  - Provides a representation for terms based on the `free-foil` [^free-foil] library.
+
+    This representation enables capture-avoiding substitution which can be used for evaluating terms.
+
+  - Limitations:
+
+    - Does not cleanly support recursive `let`-bindings. E.g., `let a = <right-hand side contatining a> in <body>`.
+
+      It's possible to create a separate AST node for the `let`'s equality right-hand side and for the body and then use the `PatternSynonyms` extension of GHC to construct and deconstruct `let`-bindings in the AST. However, this approach slighly bloats the AST.
+- [Core/ConvertZonked](./arralac/src/Language/Arralac/Core/ConvertZonked.hs)
+  - Provides functions for converting a fully zonked term into the Core representation.
+
+    Some functions from the `free-foil` [^free-foil] library were copied and modified here:
+      1. to support binders with richer information such as `CoreNameBinder`;
+      1. to use the variable identifiers from the zonked term.
+  
+### Evaluating terms
+
+- [Evaluator](arralac/src/Language/Arralac/Evaluator/Run.hs)
+  - Uses `free-foil` [^free-foil] functions for calculating the weak head normal form [^WhnfHaskellWiki] of a Core term.
+
 ## Install `arralac`
 
 ```console
@@ -245,3 +329,16 @@ Haskell                         82            694           1080           3866
 SUM:                            82            694           1080           3866
 -------------------------------------------------------------------------------
 ```
+
+[^BNFC]: <https://bnfc.readthedocs.io/en/latest/#>
+
+[^WITS2024]: <https://www.youtube.com/watch?v=OISat1b2-4k>
+
+[^JONES2007]: <https://www.cambridge.org/core/journals/journal-of-functional-programming/article/practical-type-inference-for-arbitraryrank-types/5339FB9DAB968768874D4C20FA6F8CB6>
+
+[^free-foil]: <https://hackage.haskell.org/package/free-foil>
+
+[^LBNF]: <https://bnfc.readthedocs.io/en/latest/lbnf.html>
+
+[^WhnfHaskellWiki]: <https://wiki.haskell.org/Weak_head_normal_form>
+
