@@ -1,19 +1,26 @@
 # Query-Driven Language Server Architecture using Second-Order Abstract Syntax
 
-## Run `free-foil-stlc`
+## Usage
+
+Run devshell.
 
 ```console
-nix develop github:deemp/query-driven-free-foil#demo
-free-foil-stlc
+nix develop github:deemp/arbitrary-rank-tutorial#demo
+```
+
+Run `arralac` in that devshell.
+
+```console
+arralac
 ```
 
 ## Develop the project
 
-Clone the repository.
+### Clone the repository
 
 ```console
-git clone https://github.com/deemp/query-driven-free-foil
-cd query-driven-free-foil
+git clone https://github.com/deemp/arbitrary-rank-tutorial
+cd arbitrary-rank-tutorial
 ```
 
 ### Set up direnv (optional)
@@ -34,16 +41,18 @@ Install recommended extensions (listed [here](.vscode/extensions.json)).
 
 ### Build and run with Nix
 
-Build `free-foil-stlc`.
+Build `arbitrary-rank-tutorial`.
 
 ```console
-nix build .#free-foil-stlc
+nix build .#arbitrary-rank-tutorial
 ```
 
-Run `free-foil-stlc`.
+Run `arbitrary-rank-tutorial`.
 
 ```console
-nix run .#free-foil-stlc
+nix run .#arbitrary-rank-tutorial -- typecheck tutorial/test/data/Program1.arralac
+
+nix run .#arbitrary-rank-tutorial -- interpret whnf tutorial/test/data/Program1.arralac
 ```
 
 ### Build and run with Cabal
@@ -60,16 +69,18 @@ Update the Hackage index.
 nix run .#cabalUpdate
 ```
 
-Build `free-foil-stlc`.
+Build `arbitrary-rank-tutorial`.
 
 ```console
-cabal build free-foil-stlc
+cabal build arbitrary-rank-tutorial
 ```
 
-Run `free-foil-stlc`.
+Run `arbitrary-rank-tutorial`.
 
 ```console
-cabal run free-foil-stlc
+cabal run arbitrary-rank-tutorial -- typecheck tutorial/test/data/Program1.arralac
+
+cabal run arbitrary-rank-tutorial -- interpret whnf tutorial/test/data/Program1.arralac
 ```
 
 ### Build with Stack
@@ -80,14 +91,14 @@ Start a Nix devShell.
 nix develop
 ```
 
-Build `free-foil-stlc`.
+Build `arbitrary-rank-tutorial`.
 
 ```console
-stack build free-foil-stlc
+stack build arbitrary-rank-tutorial
 ```
 
-Run `free-foil-stlc`.
+Run `arbitrary-rank-tutorial`.
 
 ```console
-stack run free-foil-stlc
+stack run --package arbitrary-rank-tutorial -- arralac typecheck tutorial/test/data/Program1.arralac
 ```
