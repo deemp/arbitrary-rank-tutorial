@@ -224,3 +224,22 @@ Run `arralac`.
 ```console
 stack run -- arralac typecheck arralac/test/data/Program1.arralac
 ```
+
+## Statistics
+
+```console
+cloc src/ --exclude-dir Generated
+
+      82 text files.
+      82 unique files.                              
+       1 file ignored.
+
+github.com/AlDanial/cloc v 2.04  T=0.02 s (4089.8 files/s, 281296.1 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+Haskell                         82            694           1080           3866
+-------------------------------------------------------------------------------
+SUM:                            82            694           1080           3866
+-------------------------------------------------------------------------------
+```
