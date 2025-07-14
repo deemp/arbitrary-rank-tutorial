@@ -77,8 +77,6 @@
                 root = ./.;
                 fileset = lib.fileset.unions [
                   ./tutorial
-                  ./free-foil-exercises
-                  ./scope-graphs-modular-stlc
                   ./cabal.project
                   ./README.md
                 ];
@@ -164,7 +162,7 @@
                 with-utf8 = {
                   check = false;
                 };
-                
+
                 PyF = {
                   check = false;
                 };
@@ -316,10 +314,6 @@
             arbitrary-rank-tutorial-increment-base =
               haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
 
-            scope-graphs-modular-stlc = mkIncremental "scope-graphs-modular-stlc";
-            scope-graphs-modular-stlc-increment-base =
-              haskellProjectsOutputs.finalPackages.scope-graphs-modular-stlc;
-
             inherit
               (import "${inputs.cache-nix-action}/saveFromGC.nix" {
                 inherit pkgs inputs;
@@ -329,7 +323,6 @@
                 ];
                 derivations = [
                   self'.packages.arbitrary-rank-tutorial
-                  self'.packages.scope-graphs-modular-stlc
                   self'.devShells.ci-build
                 ];
               })
