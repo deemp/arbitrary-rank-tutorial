@@ -107,7 +107,6 @@
 
                   with-utf8 = prev.with-utf8_1_1_0_0;
 
-
                   # build tools
 
                   alex = packageFromHackage "alex" "3.5.2.0" "sha256-hTkBDe30UkUVx1MTa4BjpYK5nyYlULCylZEniW6sSnA=";
@@ -161,7 +160,12 @@
                 free-foil = {
                   check = false;
                 };
+
                 with-utf8 = {
+                  check = false;
+                };
+                
+                PyF = {
                   check = false;
                 };
 
@@ -237,7 +241,7 @@
               );
 
               # TODO for a single ghc?
-              inherit (haskellPackages) haskell-language-server;
+              inherit (haskellPackages) haskell-language-server fourmolu;
             };
 
           # Auto formatters. This also adds a flake check to ensure that the
@@ -258,6 +262,7 @@
                   "NoPatternSynonyms"
                   "CPP"
                 ];
+                package = haskellPackages.fourmolu;
               };
               prettier.enable = true;
             };
@@ -304,7 +309,7 @@
           # TODO generateOptparseApplicativeCompletions
           packages = mkShellApps {
             # TODO update the arbitrary-rank-tutorial flake input sometimes
-            # 
+            #
             # TODO use incremental
             # arbitrary-rank-tutorial = mkIncremental "arbitrary-rank-tutorial";
             arbitrary-rank-tutorial = haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
@@ -348,7 +353,7 @@
             # TODO support cleaning stack and cabal cache
           };
 
-          # TODO 
+          # TODO
           # move saveFromGC and copy mkShellApplications to deemp:devshells
 
           devshells = {
@@ -393,7 +398,7 @@
           devShells = {
             # If need C libraries, use LD_LIBRARY_PATH + pkgs.lib.makeLibraryPath.
             # https://docs.haskellstack.org/en/stable/topics/nix_integration/#supporting-both-nix-and-non-nix-developers
-            # 
+            #
             # In stack.yaml, use ghc-* resolver that matches ghcWithPackages available in the devShell.
             # https://discourse.nixos.org/t/using-yesod-devel-without-building-dependencies/5827/3
             # Otherwise, stack will use its resolver and build missing packages.
@@ -406,7 +411,7 @@
                 alex
                 happy
                 bnfc
-                node
+                pkgs.nodejs_20
               ];
             };
           };
