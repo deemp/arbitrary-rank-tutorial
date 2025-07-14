@@ -23,6 +23,13 @@
         ],
         "configuration": "./language-configuration.json"
       }
+    ],
+    "grammars": [
+      {
+        "language": "arralac",
+        "scopeName": "source.arralac",
+        "path": "./syntaxes/arralac.tmLanguage.json"
+      }
     ]
   },
   "scripts": {
