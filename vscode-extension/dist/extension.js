@@ -17983,6 +17983,254 @@ var require_node3 = __commonJS({
   }
 });
 
+// node_modules/which/node_modules/isexe/dist/cjs/posix.js
+var require_posix = __commonJS({
+  "node_modules/which/node_modules/isexe/dist/cjs/posix.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.sync = exports2.isexe = void 0;
+    var fs_1 = require("fs");
+    var promises_1 = require("fs/promises");
+    var isexe = async (path, options = {}) => {
+      const { ignoreErrors = false } = options;
+      try {
+        return checkStat(await (0, promises_1.stat)(path), options);
+      } catch (e) {
+        const er = e;
+        if (ignoreErrors || er.code === "EACCES")
+          return false;
+        throw er;
+      }
+    };
+    exports2.isexe = isexe;
+    var sync = (path, options = {}) => {
+      const { ignoreErrors = false } = options;
+      try {
+        return checkStat((0, fs_1.statSync)(path), options);
+      } catch (e) {
+        const er = e;
+        if (ignoreErrors || er.code === "EACCES")
+          return false;
+        throw er;
+      }
+    };
+    exports2.sync = sync;
+    var checkStat = (stat, options) => stat.isFile() && checkMode(stat, options);
+    var checkMode = (stat, options) => {
+      const myUid = options.uid ?? process.getuid?.();
+      const myGroups = options.groups ?? process.getgroups?.() ?? [];
+      const myGid = options.gid ?? process.getgid?.() ?? myGroups[0];
+      if (myUid === void 0 || myGid === void 0) {
+        throw new Error("cannot get uid or gid");
+      }
+      const groups = /* @__PURE__ */ new Set([myGid, ...myGroups]);
+      const mod = stat.mode;
+      const uid = stat.uid;
+      const gid = stat.gid;
+      const u = parseInt("100", 8);
+      const g = parseInt("010", 8);
+      const o = parseInt("001", 8);
+      const ug = u | g;
+      return !!(mod & o || mod & g && groups.has(gid) || mod & u && uid === myUid || mod & ug && myUid === 0);
+    };
+  }
+});
+
+// node_modules/which/node_modules/isexe/dist/cjs/win32.js
+var require_win32 = __commonJS({
+  "node_modules/which/node_modules/isexe/dist/cjs/win32.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.sync = exports2.isexe = void 0;
+    var fs_1 = require("fs");
+    var promises_1 = require("fs/promises");
+    var isexe = async (path, options = {}) => {
+      const { ignoreErrors = false } = options;
+      try {
+        return checkStat(await (0, promises_1.stat)(path), path, options);
+      } catch (e) {
+        const er = e;
+        if (ignoreErrors || er.code === "EACCES")
+          return false;
+        throw er;
+      }
+    };
+    exports2.isexe = isexe;
+    var sync = (path, options = {}) => {
+      const { ignoreErrors = false } = options;
+      try {
+        return checkStat((0, fs_1.statSync)(path), path, options);
+      } catch (e) {
+        const er = e;
+        if (ignoreErrors || er.code === "EACCES")
+          return false;
+        throw er;
+      }
+    };
+    exports2.sync = sync;
+    var checkPathExt = (path, options) => {
+      const { pathExt = process.env.PATHEXT || "" } = options;
+      const peSplit = pathExt.split(";");
+      if (peSplit.indexOf("") !== -1) {
+        return true;
+      }
+      for (let i = 0; i < peSplit.length; i++) {
+        const p = peSplit[i].toLowerCase();
+        const ext = path.substring(path.length - p.length).toLowerCase();
+        if (p && ext === p) {
+          return true;
+        }
+      }
+      return false;
+    };
+    var checkStat = (stat, path, options) => stat.isFile() && checkPathExt(path, options);
+  }
+});
+
+// node_modules/which/node_modules/isexe/dist/cjs/options.js
+var require_options = __commonJS({
+  "node_modules/which/node_modules/isexe/dist/cjs/options.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+  }
+});
+
+// node_modules/which/node_modules/isexe/dist/cjs/index.js
+var require_cjs = __commonJS({
+  "node_modules/which/node_modules/isexe/dist/cjs/index.js"(exports2) {
+    "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    } : function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    });
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    } : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    var __exportStar = exports2 && exports2.__exportStar || function(m, exports3) {
+      for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m, p);
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.sync = exports2.isexe = exports2.posix = exports2.win32 = void 0;
+    var posix = __importStar(require_posix());
+    exports2.posix = posix;
+    var win32 = __importStar(require_win32());
+    exports2.win32 = win32;
+    __exportStar(require_options(), exports2);
+    var platform = process.env._ISEXE_TEST_PLATFORM_ || process.platform;
+    var impl = platform === "win32" ? win32 : posix;
+    exports2.isexe = impl.isexe;
+    exports2.sync = impl.sync;
+  }
+});
+
+// node_modules/which/lib/index.js
+var require_lib = __commonJS({
+  "node_modules/which/lib/index.js"(exports2, module2) {
+    var { isexe, sync: isexeSync } = require_cjs();
+    var { join, delimiter, sep, posix } = require("path");
+    var isWindows = process.platform === "win32";
+    var rSlash = new RegExp(`[${posix.sep}${sep === posix.sep ? "" : sep}]`.replace(/(\\)/g, "\\$1"));
+    var rRel = new RegExp(`^\\.${rSlash.source}`);
+    var getNotFoundError = (cmd) => Object.assign(new Error(`not found: ${cmd}`), { code: "ENOENT" });
+    var getPathInfo = (cmd, {
+      path: optPath = process.env.PATH,
+      pathExt: optPathExt = process.env.PATHEXT,
+      delimiter: optDelimiter = delimiter
+    }) => {
+      const pathEnv = cmd.match(rSlash) ? [""] : [
+        // windows always checks the cwd first
+        ...isWindows ? [process.cwd()] : [],
+        ...(optPath || /* istanbul ignore next: very unusual */
+        "").split(optDelimiter)
+      ];
+      if (isWindows) {
+        const pathExtExe = optPathExt || [".EXE", ".CMD", ".BAT", ".COM"].join(optDelimiter);
+        const pathExt = pathExtExe.split(optDelimiter).flatMap((item) => [item, item.toLowerCase()]);
+        if (cmd.includes(".") && pathExt[0] !== "") {
+          pathExt.unshift("");
+        }
+        return { pathEnv, pathExt, pathExtExe };
+      }
+      return { pathEnv, pathExt: [""] };
+    };
+    var getPathPart = (raw, cmd) => {
+      const pathPart = /^".*"$/.test(raw) ? raw.slice(1, -1) : raw;
+      const prefix = !pathPart && rRel.test(cmd) ? cmd.slice(0, 2) : "";
+      return prefix + join(pathPart, cmd);
+    };
+    var which2 = async (cmd, opt = {}) => {
+      const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
+      const found = [];
+      for (const envPart of pathEnv) {
+        const p = getPathPart(envPart, cmd);
+        for (const ext of pathExt) {
+          const withExt = p + ext;
+          const is = await isexe(withExt, { pathExt: pathExtExe, ignoreErrors: true });
+          if (is) {
+            if (!opt.all) {
+              return withExt;
+            }
+            found.push(withExt);
+          }
+        }
+      }
+      if (opt.all && found.length) {
+        return found;
+      }
+      if (opt.nothrow) {
+        return null;
+      }
+      throw getNotFoundError(cmd);
+    };
+    var whichSync = (cmd, opt = {}) => {
+      const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
+      const found = [];
+      for (const pathEnvPart of pathEnv) {
+        const p = getPathPart(pathEnvPart, cmd);
+        for (const ext of pathExt) {
+          const withExt = p + ext;
+          const is = isexeSync(withExt, { pathExt: pathExtExe, ignoreErrors: true });
+          if (is) {
+            if (!opt.all) {
+              return withExt;
+            }
+            found.push(withExt);
+          }
+        }
+      }
+      if (opt.all && found.length) {
+        return found;
+      }
+      if (opt.nothrow) {
+        return null;
+      }
+      throw getNotFoundError(cmd);
+    };
+    module2.exports = which2;
+    which2.sync = whichSync;
+  }
+});
+
 // src/extension.ts
 var extension_exports = {};
 __export(extension_exports, {
@@ -17992,34 +18240,44 @@ __export(extension_exports, {
 module.exports = __toCommonJS(extension_exports);
 var import_vscode = require("vscode");
 var import_node = __toESM(require_node3());
+var import_which = __toESM(require_lib());
 var client;
 function activate(context) {
-  const serverCommand = "/home/eyjafjallajokull/Desktop/gh/arbitrary-rank-tutorial/dist-newstyle/build/x86_64-linux/ghc-9.10.1/arbitrary-rank-tutorial-0.0.1/build/arralac/arralac";
-  const serverArgs = [];
+  const serverExecutableName = "arralac";
+  let serverCommand = "";
+  const serverArgs = ["language-server"];
+  try {
+    serverCommand = import_which.default.sync(serverExecutableName);
+  } catch (err) {
+    import_vscode.window.showErrorMessage(
+      `The '${serverExecutableName}' executable was not found in your PATH. Please make sure it is installed.`
+    );
+    return;
+  }
   const serverOptions = {
     command: serverCommand,
     args: serverArgs,
     transport: import_node.TransportKind.stdio
   };
   const clientOptions = {
-    // Register the server for 'lambda-calculus' documents.
-    // This MUST match the "id" you defined in your package.json
+    // Register the server for 'arralac' documents.
+    // This MUST match the "id" defined in the package.json
     documentSelector: [{ scheme: "file", language: "arralac" }],
     // Synchronize the 'files.associations' setting from VS Code to the server.
-    // This is useful if the user maps more file extensions to your language.
+    // This is useful if the user maps more file extensions to the language.
     synchronize: {
       fileEvents: import_vscode.workspace.createFileSystemWatcher("**/.clientrc")
     }
   };
   client = new import_node.LanguageClient(
-    "lambdaCalculusLanguageServer",
+    "arralacLanguageServer",
     // An internal ID for the client.
-    "Lambda Calculus Language Server",
+    "Arralac Language Server",
     // The name displayed to the user.
     serverOptions,
     clientOptions
   );
-  console.log("Lambda Calculus extension is now active!");
+  console.log("Arralac extension is now active!");
   client.start();
 }
 function deactivate() {

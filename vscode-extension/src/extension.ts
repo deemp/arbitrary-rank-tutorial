@@ -1,4 +1,4 @@
-import { workspace, ExtensionContext } from "vscode";
+import { workspace, ExtensionContext, window } from "vscode";
 
 import {
   LanguageClient,
@@ -6,6 +6,7 @@ import {
   ServerOptions,
   TransportKind,
 } from "vscode-languageclient/node";
+import which from "which";
 
 let client: LanguageClient;
 
@@ -14,9 +15,22 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
   // --- SERVER LAUNCHING ---
 
-  const serverCommand =
-    "/home/eyjafjallajokull/Desktop/gh/arbitrary-rank-tutorial/dist-newstyle/build/x86_64-linux/ghc-9.10.1/arbitrary-rank-tutorial-0.0.1/build/arralac/arralac";
+  const serverExecutableName = "arralac";
+  let serverCommand: string = "";
   const serverArgs: string[] = ["language-server"];
+
+  // Find the executable in the system's PATH.
+  try {
+    // which.sync throws an error if the command is not found.
+    serverCommand = which.sync(serverExecutableName);
+  } catch (err) {
+    // If the executable is not found, show an error message and exit.
+    window.showErrorMessage(
+      `The '${serverExecutableName}' executable was not found in your PATH. Please make sure it is installed.`,
+    );
+    // Stop the activation.
+    return;
+  }
 
   // ServerOptions configure how to start the server.
   // We use stdio transport, meaning the client and server will talk over stdin/stdout.
@@ -48,7 +62,7 @@ export function activate(context: ExtensionContext) {
     "arralacLanguageServer", // An internal ID for the client.
     "Arralac Language Server", // The name displayed to the user.
     serverOptions,
-    clientOptions
+    clientOptions,
   );
 
   console.log("Arralac extension is now active!");
