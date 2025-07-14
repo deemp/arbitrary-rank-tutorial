@@ -1,22 +1,16 @@
 module Language.Arralac.Examples where
 
-import Control.Monad.Foil (emptyScope)
-import Data.Text qualified as T
-import Data.Text.IO qualified as T
 import Language.Arralac.Driver.ReaderToZonker.Run (runReaderToZonker)
 import Language.Arralac.Interpreter.Run
-import Language.Arralac.Interpreter.Whnf (whnf)
 import Language.Arralac.Parser.Error
+import Language.Arralac.Prelude.Debug
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Reader.Error
 import Language.Arralac.Renamer.Error (RnErrorWithCallStack)
 import Language.Arralac.Solver.Error (SolverErrorWithCallStack)
 import Language.Arralac.Typechecker.Error (TcErrorWithCallStack)
-import Prettyprinter (line)
-import Prettyprinter.Render.Text (putDoc)
 import Prettyprinter.Util (putDocW)
 import UnliftIO (catch)
-import Prelude hiding (exp)
 
 main :: IO ()
 main = do
@@ -32,5 +26,8 @@ main = do
       `catch` (\(x :: RnErrorWithCallStack) -> prettyError x)
       `catch` (\(x :: TcErrorWithCallStack) -> prettyError x)
       `catch` (\(x :: SolverErrorWithCallStack) -> prettyError x)
-  putDoc $ line <> prettyUser programZn <> line
-  putDoc $ line <> prettyUser (runInterpreter InterpreterMode'Whnf programZn) <> line
+  debug'
+    "main"
+    [ ("programZn", prettyCompact programZn)
+    , ("whnf", prettyUser (runInterpreter InterpreterMode'Whnf programZn))
+    ]
