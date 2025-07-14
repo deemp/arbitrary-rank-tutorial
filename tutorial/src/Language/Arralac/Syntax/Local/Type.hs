@@ -15,6 +15,7 @@ import Prettyprinter
 -- | Expected type.
 --
 -- Similar to @ExpType@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L401
 data Expected a = Infer (IORef a) | Check a
 
@@ -28,6 +29,7 @@ data Expected a = Infer (IORef a) | Check a
 -- | A type that can have mutable type variables.
 --
 -- Similar to @TcType@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L346
 --
 -- GHC also has 'Kind's, but we don't have them.

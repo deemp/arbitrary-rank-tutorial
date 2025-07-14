@@ -11,6 +11,7 @@ import Data.Data (Data)
 -- | Pass of the compiler.
 --
 -- Similar to @CompPass@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L169
 data Pass = Renamed | Typechecked | Zonked
   deriving stock (Data)
@@ -26,6 +27,7 @@ data CompPass (c :: Pass) where
 -- Type synonyms as a shorthand for tagging
 --
 -- Similar to @GhcPs@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Hs/Extension.hs#L173
 
 -- | Output of renamer

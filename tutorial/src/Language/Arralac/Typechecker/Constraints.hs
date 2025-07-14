@@ -19,6 +19,7 @@ type CtxWantedConstraints = (?constraints :: IORef WantedConstraints)
 -- | Constraints that we want to solve.
 --
 -- Similar to @WantedConstraints@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L1089
 data WantedConstraints = WantedCts
   { wc_simple :: Cts
@@ -29,6 +30,7 @@ data WantedConstraints = WantedCts
 -- | A 'Bag' of constraints ('Ct').
 --
 -- Similar to @Cts@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L164
 type Cts = Bag Ct
 
@@ -40,11 +42,13 @@ type Impls = Bag Implication
 -- | A constraint.
 --
 -- Similar to @Ct@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L198
 --
 -- Out of simple constraints, we only have equality constraints.
 --
 -- See @WantedConstraints@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L1090
 data Ct = CEqCan
   { ct_eq_can :: EqCt
@@ -63,6 +67,7 @@ data Ct = CEqCan
 -- | Equality constraint.
 --
 -- Similar to @EqCt@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L299
 data EqCt = EqCt
   { eq_ev :: CtEvidence
@@ -74,6 +79,7 @@ data EqCt = EqCt
 -- | Constraint evidence.
 --
 -- Similar to @CtEvidence@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2166
 --
 -- We don't have given constraints
@@ -88,11 +94,13 @@ data CtEvidence = CtWanted
 -- | Evidence for a Wanted constraint.
 --
 -- Similar to @WantedCtEvidence@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2178
 --
 -- We want to keep things simple, so we don't rewrite wanteds.
 --
 -- See Note [Wanteds rewrite Wanteds] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L2415
 data WantedCtEvidence
   = WantedCt
@@ -107,6 +115,7 @@ data WantedCtEvidence
 -- `ctl_depth` because we don't have equalities involving type functions.
 --
 -- Similar to @CtLoc@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/CtLoc.hs#L123
 data CtLoc = CtLoc
   { ctl_origin :: CtOrigin
@@ -120,6 +129,7 @@ data CtLoc = CtLoc
 -- | Constraint origin.
 --
 -- Similar to @CtOrigin@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L491
 data CtOrigin
   = TypeEqOrigin
@@ -142,6 +152,8 @@ data CtLocEnv = CtLocEnv
   }
   deriving stock (Generic)
 
+-- | Implication constraint.
+--
 -- Don't need origin because we don't mention
 -- the implication in errors.
 -- Rather, we mention type variables
@@ -192,6 +204,7 @@ data ErrCtxtMsg
 -- that something has an unexpected type.
 --
 -- Similar to @TypedThing@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Origin.hs#L467
 data TypedThing
   = TypedThing'SynTermRn (SynTerm CompRn)

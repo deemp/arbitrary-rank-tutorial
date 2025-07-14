@@ -18,6 +18,7 @@ import Language.Arralac.Syntax.TTG.TyVar
 -- https://gitlab.haskell.org/ghc/ghc/-/issues/15552#note_159240
 --
 -- See Note [TyVars and TcTyVars during type checking] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L558
 --
 -- We use different representations of type variables via the 'XTyVar' type family.

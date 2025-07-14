@@ -70,12 +70,15 @@ instantiate ty = pure ty
 -- skolem constants and the skolemised type.
 --
 -- Similar to @topSkolemise@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Instantiate.hs#L201
 --
 -- See Note [When to build an implication] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L628
 --
 -- See Note [Skolemisation overview] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L282
 skolemise :: Sigma -> TcM ([TcTyVar], Rho)
 -- Rule PRPOLY
@@ -142,6 +145,7 @@ subst_ty env (Type'ForAll ns rho) = do
 -- | Extends the substitution by side effect (p. 43)
 --
 -- Similar to @unifyType@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2011
 --
 -- See Note [Unification preconditions]:
@@ -221,12 +225,15 @@ emitCEqCan thing tv ty swapped = do
 -- | Solve constraints and quantify over type variables.
 --
 -- Similar to @simplifyInfer@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver.hs#L878
 --
 -- Note [quantifyTyVars] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1677
 --
 -- Note [Deciding quantification] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver.hs#L1138
 quantify :: TcLevel -> [TcTyVarMeta] -> Rho -> WantedConstraints -> TcM Sigma
 -- Quantify over the specified type variables (all flexible)

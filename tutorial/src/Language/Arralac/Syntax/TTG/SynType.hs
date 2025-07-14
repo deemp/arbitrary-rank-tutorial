@@ -9,6 +9,7 @@ import Language.Arralac.Syntax.TTG.Extension
 -- | Syntactic type.
 --
 -- Similar to @HsType@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/Language/Haskell/Syntax/Type.hs#L812
 data SynType x
   = -- | Type variable.

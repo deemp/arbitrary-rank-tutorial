@@ -28,6 +28,7 @@ type CtxTcTyVar =
 -- ================
 
 -- | Similar to @mkTcTyVar@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Var.hs#L1046
 mkTcTyVar :: Name -> TcTyVarDetails -> TcTyVar
 mkTcTyVar name details =
@@ -65,11 +66,13 @@ newMetaTyVarName :: (CtxTcTyVar) => FastString -> IO Name
 newMetaTyVarName str = newSysName (mkTyVarOccFS str)
 
 -- | Similar to @newMutVar@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Data/IOEnv.hs#L218
 newMutVar :: a -> IO (IORef a)
 newMutVar val = newIORef val
 
 -- | Similar to @newTauTvDetailsAtLevel@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L844
 newMetaDetails :: (CtxTcTyVar) => MetaInfo -> IO TcTyVarDetails
 newMetaDetails info =
@@ -83,6 +86,7 @@ newMetaDetails info =
         }
 
 -- | Similar to @newMetaTyVarTyAtLevel@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L1069
 newMetaTyVar' :: (CtxTcTyVar) => FastString -> IO TcTyVarMeta
 newMetaTyVar' str = do
@@ -109,6 +113,7 @@ tyVarToMetaTyVar x = do
 -- | Makes a new skolem type variable.
 --
 -- Similar to @newSkolemTyVar@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L765
 newSkolemTyVar' :: (CtxTcTyVar) => SkolemInfo -> Name -> TcTyVar
 newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
@@ -116,6 +121,7 @@ newSkolemTyVar' info name = mkTcTyVar name (SkolemTv info ?tcLevel)
 -- | Converts a 'BoundTv' to a 'SkolemTv'.
 --
 -- Similar to @cloneTyVarTyVar@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcMType.hs#L779
 newSkolemTyVar :: (CtxTcTyVar) => SkolemInfoAnon -> TcBoundVar -> IO TcTyVar
 newSkolemTyVar infoAnon tv@TcTyVar{varDetails = BoundTv{}} = do

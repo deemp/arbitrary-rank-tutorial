@@ -46,6 +46,7 @@ type TcTyVarMeta = TcTyVar
 type TcTyVarSkolem = TcTyVar
 
 -- | Similar to @MetaDetails@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/TcType.hs#L634
 data MetaDetails
   = -- | Flexi type variables unify to become Indirects.

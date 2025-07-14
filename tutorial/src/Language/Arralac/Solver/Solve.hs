@@ -17,7 +17,6 @@ import Language.Arralac.Solver.Unify qualified as Solver
 import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Typechecker.Constraints
 
-
 type SolveM a = (CtxDebug, CtxPrettyVerbosity) => IO a
 
 -- | Solve constraints.
@@ -25,6 +24,7 @@ type SolveM a = (CtxDebug, CtxPrettyVerbosity) => IO a
 -- Limitations:
 --
 -- No promotion. See Note [Promotion and level-checking] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3588
 class Solve a where
   type SolveTo a

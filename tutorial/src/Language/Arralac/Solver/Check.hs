@@ -16,6 +16,7 @@ import Language.Arralac.Typechecker.Constraints
 -- | Perform occurs and level check.
 --
 -- Similar to @checkTypeEq@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver/Monad.hs#L2328
 --
 -- Eager unifier in GHC does these checks if the left-hand side
@@ -23,6 +24,7 @@ import Language.Arralac.Typechecker.Constraints
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3125
 --
 -- See Note [EqCt occurs check] in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Types/Constraint.hs#L263
 --
 -- See Note [Use checkTyEqRhs in mightEqualLater].
@@ -35,6 +37,7 @@ class Check a where
 -- than the lhs variable from the constraint.
 --
 -- Similar to @tyVarLevelCheck@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3905
 levelCheck :: (CtxLhsMetaTv, CtxCt) => TcTyVar -> IO ()
 levelCheck rhs = do
@@ -58,6 +61,7 @@ levelCheck rhs = do
 -- in whose 'Indirect' types this metavar appeared transitively.
 --
 -- Similar to @simpleOccursCheck@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3892
 occursCheck :: (CtxLhsMetaTv, CtxCt, CtxMetaTvScope) => TcTyVar -> IO ()
 occursCheck var =
@@ -65,6 +69,7 @@ occursCheck var =
     dieSolver SolverError'OccursCheck{tv = ?lhsMetaTv, ct = ?ct}
 
 -- Similar to @simpleUnifyCheck@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L2932
 instance Check TcTyVar where
   check var = do

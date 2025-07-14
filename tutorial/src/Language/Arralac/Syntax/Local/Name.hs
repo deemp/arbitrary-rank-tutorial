@@ -14,6 +14,7 @@ import Prettyprinter
 -- | A unique, unambiguous name for something, containing information about where that thing originated.
 --
 -- Similar to @Name@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name.hs#L126
 data Name = Name
   { nameOcc :: OccName
@@ -33,6 +34,7 @@ data Name = Name
 -- and not yet resolved".
 --
 -- Similar to @OccName@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L360
 data OccName = OccName
   { occNameSpace :: !NameSpace
@@ -43,6 +45,7 @@ data OccName = OccName
 -- | Variables namespace.
 --
 -- Similar to @NameSpace@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Occurrence.hs#L144
 data NameSpace
   = -- | Term variables.
@@ -72,6 +75,7 @@ data SrcSpan
 -- It's zero-based here. Not sure about GHC.
 --
 -- Similar to @RealSrcSpan@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L367
 data RealSrcSpan
   = RealSrcSpan'
@@ -86,6 +90,7 @@ data RealSrcSpan
 -- | Unknown span.
 --
 -- Similar to @UnhelpfulSpanReason@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/SrcLoc.hs#L399
 data UnhelpfulSpanReason
   = UnhelpfulNoLocationInfo
@@ -117,6 +122,7 @@ mkSystemNameAt uniq occ loc =
 -- | Create a new 'Name'.
 --
 -- Similar to @newSysName@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Monad.hs#L735
 newSysName :: (CtxUniqueSupply) => OccName -> IO Name
 newSysName occ =

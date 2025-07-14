@@ -14,6 +14,7 @@ type instance XSynTerm'Var CompRn = RnVar
 -- | A term or a type variable produced by the renamer.
 --
 -- Similar to @RdrName@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Name/Reader.hs#L166
 newtype RnVar = RnVar
   { varName :: Name

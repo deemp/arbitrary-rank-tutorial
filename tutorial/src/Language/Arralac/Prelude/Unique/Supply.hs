@@ -13,6 +13,7 @@ type CtxUniqueSupply = (?uniqueSupply :: IORef Int)
 -- | Generate a new unique id.
 --
 -- Similar to @genSym@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L257
 newUnique' :: (CtxUniqueSupply) => IO Int
 newUnique' = do
@@ -23,6 +24,7 @@ newUnique' = do
 -- | Generate a new 'Unique'.
 --
 -- Similar to @uniqFromTag@ in GHC.
+--
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Types/Unique/Supply.hs#L282
 newUnique :: (CtxUniqueSupply) => IO Unique
 newUnique = Unique <$> newUnique'
