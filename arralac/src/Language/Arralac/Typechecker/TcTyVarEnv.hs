@@ -28,7 +28,8 @@ insertTcTyVarEnv k v = TcTyVarEnv . Map.insert k v . (.env)
 
 extendTcTyVarEnv :: (HasCallStack, CtxTcTyVarEnv) => RnVar -> Sigma -> ((HasCallStack, CtxTcTyVarEnv) => IO a) -> IO a
 extendTcTyVarEnv var ty tcAction =
-  let ?tcTyVarEnv = insertTcTyVarEnv var ty ?tcTyVarEnv in tcAction
+  let ?tcTyVarEnv = insertTcTyVarEnv var ty ?tcTyVarEnv
+   in tcAction
 
 lookupTcTyVarType :: (HasCallStack, CtxTcErrorPropagated, CtxTcTyVarEnv) => RnVar -> IO Sigma -- May fail
 lookupTcTyVarType n =

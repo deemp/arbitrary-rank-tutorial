@@ -375,7 +375,8 @@ pushLevelAndCaptureConstraints skol_tvs act = do
   expr' <- do
     let ?constraints = constraints
         ?tcLevel = tcLevelNew
-     in act
+    do
+      act
 
   constraintsSkol' <- readIORef constraints
 

@@ -15,8 +15,9 @@ runSolver ::
   Int -> WantedConstraints -> IO WantedConstraints
 runSolver iterations constraints = do
   let ?metaTvScope = Set.empty
-  constraints' <- go iterations constraints
-  pure constraints'
+  do
+    constraints' <- go iterations constraints
+    pure constraints'
  where
   go :: (CtxMetaTvScope, CtxDebug, CtxPrettyVerbosity) => Int -> WantedConstraints -> IO WantedConstraints
   go _ constraintsCurrent

@@ -56,7 +56,8 @@ withTcError err tcAction = do
   case ?tcErrorPropagated of
     Nothing -> do
       let ?tcErrorPropagated = Just err
-      tcAction
+      do
+        tcAction
     Just _ -> do
       tcAction
 

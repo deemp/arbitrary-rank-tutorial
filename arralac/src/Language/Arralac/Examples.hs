@@ -18,16 +18,17 @@ main = do
   let ?debug = True
       ?prettyVerbosity = PrettyVerbosity'Normal
       ?solverIterations = 10
-  programZn <- do
-    let prettyError x = putDocW defaultPrettyWidth (pretty' x) >> error "Error!"
-    runReaderToZonker filePath
-      `catch` (\(x :: ReaderErrorWithCallStack) -> prettyError x)
-      `catch` (\(x :: ParserErrorWithCallStack) -> prettyError x)
-      `catch` (\(x :: RnErrorWithCallStack) -> prettyError x)
-      `catch` (\(x :: TcErrorWithCallStack) -> prettyError x)
-      `catch` (\(x :: SolverErrorWithCallStack) -> prettyError x)
-  debug'
-    "main"
-    [ ("programZn", prettyCompact programZn)
-    , ("whnf", prettyUser (runEvaluator EvaluatorMode'Whnf programZn))
-    ]
+  do
+    programZn <- do
+      let prettyError x = putDocW defaultPrettyWidth (pretty' x) >> error "Error!"
+      runReaderToZonker filePath
+        `catch` (\(x :: ReaderErrorWithCallStack) -> prettyError x)
+        `catch` (\(x :: ParserErrorWithCallStack) -> prettyError x)
+        `catch` (\(x :: RnErrorWithCallStack) -> prettyError x)
+        `catch` (\(x :: TcErrorWithCallStack) -> prettyError x)
+        `catch` (\(x :: SolverErrorWithCallStack) -> prettyError x)
+    debug'
+      "main"
+      [ ("programZn", prettyCompact programZn)
+      , ("whnf", prettyUser (runEvaluator EvaluatorMode'Whnf programZn))
+      ]

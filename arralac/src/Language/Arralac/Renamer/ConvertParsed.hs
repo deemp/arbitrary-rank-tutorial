@@ -129,7 +129,8 @@ instance ConvertParsed Abs.Exp where
                   { letSrcSpan = pos'
                   , letLhs = var'
                   }
-        convertParsed term1
+        do
+          convertParsed term1
       term2' <- withVarInScope NameSpace'TermVar var' (convertParsed term2)
       pure $ SynTerm'Let pos' var' term1' term2'
     Abs.ExpAnno pos term ty -> do

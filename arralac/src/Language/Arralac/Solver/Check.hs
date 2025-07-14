@@ -92,7 +92,8 @@ instance Check TcTyVar where
           Flexi -> pure ()
           Indirect ty -> do
             let ?metaTvScope = Set.insert var ?metaTvScope
-            check ty
+            do
+              check ty
       _ -> pure ()
 
 instance Check TcType where
@@ -114,8 +115,8 @@ instance Check Ct where
     let ?lhsMetaTv = lhs
         ?metaTvScope = mempty
         ?ct = ct
-
-    check rhs
+    do
+      check rhs
 
 instance Check Cts where
   check cts =

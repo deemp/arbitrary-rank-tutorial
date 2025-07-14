@@ -43,27 +43,27 @@ instance Solve Ct where
         let ?lhsMetaTv = lhs
             ?metaTvScope = Set.insert lhs ?metaTvScope
             ?ct = ct
+        do
+          check rhs
 
-        check rhs
+          metaDetails <- readIORef metaTvRef
+          case metaDetails of
+            Flexi -> do
+              debug'
+                "solve Ct - Flexi"
+                [ ("ct", prettyDetailed ct)
+                ]
+              writeIORef metaTvRef (Indirect rhs)
+              pure []
+            Indirect ty -> do
+              debug'
+                "solve Ct - Indirect"
+                [ ("ct", prettyDetailed ct)
+                ]
 
-        metaDetails <- readIORef metaTvRef
-        case metaDetails of
-          Flexi -> do
-            debug'
-              "solve Ct - Flexi"
-              [ ("ct", prettyDetailed ct)
-              ]
-            writeIORef metaTvRef (Indirect rhs)
-            pure []
-          Indirect ty -> do
-            debug'
-              "solve Ct - Indirect"
-              [ ("ct", prettyDetailed ct)
-              ]
+              constraintsNew <- Solver.unify ct ty rhs
 
-            constraintsNew <- Solver.unify ct ty rhs
-
-            pure constraintsNew
+              pure constraintsNew
 
 instance Solve Cts where
   type SolveTo Cts = [Ct]

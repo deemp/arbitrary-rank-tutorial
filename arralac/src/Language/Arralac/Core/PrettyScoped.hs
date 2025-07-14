@@ -22,6 +22,6 @@ class PrettyScoped a where
   prettyScoped :: (CtxPrettyScoped) => a -> Doc ann
 
 withExtendedPrettyScope :: (CtxPrettyScoped) => CoreNameBinder n l -> ((CtxPrettyScoped) => a) -> a
-withExtendedPrettyScope binder act =
+withExtendedPrettyScope binder thing =
   let ?prettyScope = Map.insert (getCoreNameBinderRawName binder) binder.name ?prettyScope
-   in act
+   in thing
