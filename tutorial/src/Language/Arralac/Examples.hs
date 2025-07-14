@@ -14,7 +14,7 @@ import UnliftIO (catch)
 
 main :: IO ()
 main = do
-  let filePath = "test/data/Program1.stlc"
+  let filePath = "test/data/Program1.arralac"
   let ?debug = True
       ?prettyVerbosity = PrettyVerbosity'Normal
       ?solverIterations = 10

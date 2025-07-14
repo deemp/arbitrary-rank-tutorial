@@ -57,24 +57,21 @@ jobs:
 
       - name: Build and run with Nix
         run: |
-          nix run .#scope-graphs-modular-stlc
-          nix run .#free-foil-stlc
+          nix run .#arbitrary-rank-tutorial -- interpret whnf tutorial/test/data/Program1.arralac
 
       - name: Build and run with Cabal
         if: always()
         run: |
           nix develop .#ci-build -c bash -c '
             cabal build all
-            cabal run scope-graphs-modular-stlc
-            cabal run free-foil-stlc
+            cabal run arbitrary-rank-tutorial -- interpret whnf tutorial/test/data/Program1.arralac
           '
 
       - name: Build and run with Stack
         if: always()
         run: |
           nix develop .#ci-build -c bash -c '
-            stack run scope-graphs-modular-stlc
-            stack run free-foil-stlc
+            stack run -- arralac interpret whnf tutorial/test/data/Program1.arralac
           '
 
       - name: Save paths from GC
