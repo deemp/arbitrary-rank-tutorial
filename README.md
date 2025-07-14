@@ -1,3 +1,5 @@
+[![CI](https://github.com/deemp/arbitrary-rank-tutorial/actions/workflows/ci.yaml/badge.svg)](https://github.com/deemp/arbitrary-rank-tutorial/actions/workflows/ci.yaml)
+
 # A Tutorial Implementation of a Lambda Calculus with Parametric Predicative Arbitrary-Rank Polymorphism
 
 `Arralac` - `Ar`bitrary-`ra`nk + `la`mbda `ca`lculus.
