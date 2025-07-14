@@ -5,6 +5,7 @@ import Control.Exception.Base (Exception (..))
 import Data.Foldable
 import Data.Maybe (catMaybes)
 import Data.Text qualified as T
+import Language.Arralac.Parser.Error
 import Language.Arralac.Renamer.Error
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Name
@@ -48,7 +49,7 @@ mkDiagnostic range err =
 
 mkRnErrorDiagnostics :: SomeException -> Maybe [Diagnostic]
 mkRnErrorDiagnostics e = do
-  RnErrorWithCallStack err <- fromException @RnErrorWithCallStack e
+  RnErrorWithCallStack err <- fromException e
   case err of
     RnError'ForallBindsNoTvs{} -> do
       range <- srcSpanToRange err.srcSpan
@@ -60,6 +61,42 @@ mkRnErrorDiagnostics e = do
       rangeLetLhs <- srcSpanToRange err.letOccursCheckInfo.letSrcSpan
       rangeLetLhsOcc <- srcSpanToRange err.letLhsOcc.varName.nameLoc
       pure [mkDiagnostic rangeLetLhs err, mkDiagnostic rangeLetLhsOcc err]
+
+mkParserErrorDiagnostics :: SomeException -> Maybe [Diagnostic]
+mkParserErrorDiagnostics e = do
+  ParserErrorWithCallStack err <- fromException e
+  case err of
+    ParserError'LexerError{} -> do
+      let range =
+            Range
+              { _start =
+                  Position
+                    { _line = fromIntegral err.lineNumber
+                    , _character = fromIntegral err.columnNumber
+                    }
+              , _end =
+                  Position
+                    { _line = fromIntegral err.lineNumber
+                    , _character = fromIntegral err.columnNumber
+                    }
+              }
+      pure [mkDiagnostic range err]
+    ParserError'ParserError{} -> do
+      let range =
+            Range
+              { _start =
+                  Position
+                    { _line = fromIntegral err.lineNumber
+                    , _character = fromIntegral err.columnNumber
+                    }
+              , _end =
+                  Position
+                    { _line = fromIntegral err.lineNumber + 1
+                    , _character = fromIntegral err.columnNumber + 1
+                    }
+              }
+      pure [mkDiagnostic range err]
+    ParserError'Unknown{} -> pure []
 
 mkTcErrorDiagnostics :: SomeException -> Maybe [Diagnostic]
 mkTcErrorDiagnostics e = do
@@ -114,4 +151,10 @@ mkTcErrorDiagnostics e = do
     _ -> Nothing
 
 mkErrorDiagnostics :: SomeException -> [Diagnostic]
-mkErrorDiagnostics e = fold $ catMaybes [mkRnErrorDiagnostics e]
+mkErrorDiagnostics e =
+  fold $
+    catMaybes
+      [ mkParserErrorDiagnostics e
+      , mkRnErrorDiagnostics e
+      , mkTcErrorDiagnostics e
+      ]
