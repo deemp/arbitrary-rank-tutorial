@@ -64,7 +64,11 @@ selectScope = \case
 
 withVarInScope :: NameSpace -> RnVar -> RnM a -> RnM a
 withVarInScope ns var act = do
-  let scope = Map.insert var.varName.nameOcc.occNameFS var.varName.nameUnique (selectScope ns)
+  let scope =
+        Map.insert
+          var.varName.nameOcc.occNameFS
+          var.varName.nameUnique
+          (selectScope ns)
   runWithScope ns scope act
 
 letOccursCheck :: RnVar -> RnM ()
@@ -133,20 +137,31 @@ instance ConvertParsed Abs.Exp where
       ty' <- convertParsed ty
       pure $ SynTerm'Ann (convertPositionToSrcSpan pos) term' ty'
 
-getVarId :: (CtxRnScopes) => NameSpace -> NameFs -> Maybe Unique
-getVarId ns k = Map.lookup k (selectScope ns)
+lookupVarUnique :: (CtxRnConstraints) => NameSpace -> NameFs -> Maybe Unique
+lookupVarUnique ns k = Map.lookup k (selectScope ns)
 
 getExistingOrNewUnique :: NameSpace -> NameFs -> RnM Unique
-getExistingOrNewUnique ns name = maybe newUnique pure (getVarId ns name)
+getExistingOrNewUnique ns name = maybe newUnique pure (lookupVarUnique ns name)
+
+getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Unique
+getExistingUnique ns pos name =
+  case lookupVarUnique ns name of
+    Nothing ->
+      dieRn
+        RnError'UnboundTypeVariable
+          { name
+          , srcSpan = convertPositionToSrcSpan pos
+          }
+    Just u -> pure u
 
 instance ConvertParsed Abs.Var where
   type ConvertParsedTo Abs.Var = Bool -> IO RnVar
   convertParsed (Abs.Var pos (Abs.NameLowerCase name)) needUnique = do
     let ns = NameSpace'TermVar
     nameUnique <-
-      if needUnique
-        then newUnique
-        else getExistingOrNewUnique ns name
+      if
+        | needUnique -> newUnique
+        | otherwise -> getExistingUnique NameSpace'TermVar pos name
     pure $
       RnVar
         Name
@@ -196,17 +211,6 @@ withNamesInScope ns names act = do
           )
           $ selectScope ns
   runWithScope ns scope act
-
-getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Unique
-getExistingUnique ns pos name =
-  case getVarId ns name of
-    Nothing ->
-      dieRn
-        RnError'UnboundTypeVariable
-          { name
-          , srcSpan = convertPositionToSrcSpan pos
-          }
-    Just u -> pure u
 
 instance ConvertParsed Abs.Type where
   type ConvertParsedTo Abs.Type = IO (SynType CompRn)
