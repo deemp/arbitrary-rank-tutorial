@@ -78,18 +78,18 @@ Install recommended extensions (listed [here](.vscode/extensions.json)).
 
 ### Build and run with Nix
 
-Build `arbitrary-rank-tutorial`.
+Build `arralac`.
 
 ```console
-nix build .#arbitrary-rank-tutorial
+nix build .#arralac
 ```
 
-Run `arbitrary-rank-tutorial`.
+Run `arralac`.
 
 ```console
-nix run .#arbitrary-rank-tutorial -- typecheck tutorial/test/data/Program1.arralac
+nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
 
-nix run .#arbitrary-rank-tutorial -- interpret whnf tutorial/test/data/Program1.arralac
+nix run .#arralac -- interpret whnf arralac/test/data/Program1.arralac
 ```
 
 ### Build and run with Cabal
@@ -106,18 +106,18 @@ Update the Hackage index.
 nix run .#cabalUpdate
 ```
 
-Build `arbitrary-rank-tutorial`.
+Build `arralac`.
 
 ```console
-cabal build arbitrary-rank-tutorial
+cabal build arralac
 ```
 
-Run `arbitrary-rank-tutorial`.
+Run `arralac`.
 
 ```console
-cabal run arbitrary-rank-tutorial -- typecheck tutorial/test/data/Program1.arralac
+cabal run arralac -- typecheck arralac/test/data/Program1.arralac
 
-cabal run arbitrary-rank-tutorial -- interpret whnf tutorial/test/data/Program1.arralac
+cabal run arralac -- interpret whnf arralac/test/data/Program1.arralac
 ```
 
 ### Build with Stack
@@ -128,14 +128,14 @@ Start a Nix devShell.
 nix develop
 ```
 
-Build `arbitrary-rank-tutorial`.
+Build `arralac`.
 
 ```console
-stack build arbitrary-rank-tutorial
+stack build arralac
 ```
 
-Run `arbitrary-rank-tutorial`.
+Run `arralac`.
 
 ```console
-stack run --package arbitrary-rank-tutorial -- arralac typecheck tutorial/test/data/Program1.arralac
+stack run -- arralac typecheck arralac/test/data/Program1.arralac
 ```

@@ -2,10 +2,10 @@
 # https://docs.haskellstack.org/en/stable/configure/yaml/project/#resolver
 resolver: ghc-9.10.1
 packages:
-  - tutorial
+  - arralac
 notify-if-nix-on-path: false
 # TODO move to Nix
 # E.g., create an alias for stack build where the flag is set
 flags:
-  arbitrary-rank-tutorial:
+  arralac:
     nix: true

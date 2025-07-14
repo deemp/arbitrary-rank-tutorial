@@ -6,7 +6,7 @@ import Language.Arralac.CLI.Handle (handleCLI)
 import Language.Arralac.CLI.Parse (cliParserInfo)
 import Options.Applicative (ParserPrefs, customExecParser)
 import Options.Applicative.Builder (prefs, showHelpOnEmpty, showHelpOnError)
-import Paths_arbitrary_rank_tutorial (version)
+import Paths_arralac (version)
 
 parserPrefs :: ParserPrefs
 parserPrefs = prefs (showHelpOnEmpty <> showHelpOnError)

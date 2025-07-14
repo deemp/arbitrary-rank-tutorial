@@ -147,11 +147,18 @@ getExistingUnique :: NameSpace -> Abs.BNFC'Position -> NameFs -> RnM Unique
 getExistingUnique ns pos name =
   case lookupVarUnique ns name of
     Nothing ->
-      dieRn
-        RnError'UnboundTypeVariable
-          { name
-          , srcSpan = convertPositionToSrcSpan pos
-          }
+      dieRn $
+        case ns of
+          NameSpace'TermVar ->
+            RnError'UnboundTermVariable
+              { name
+              , srcSpan = convertPositionToSrcSpan pos
+              }
+          _ ->
+            RnError'UnboundTypeVariable
+              { name
+              , srcSpan = convertPositionToSrcSpan pos
+              }
     Just u -> pure u
 
 instance ConvertParsed Abs.Var where

@@ -10,8 +10,8 @@ on:
     - cron: "0 0 * * 0"
 
 env:
-  arralac-program: tutorial/test/data/Program1.arralac
-    
+  arralac-program: arralac/test/data/Program1.arralac
+
 jobs:
   # TODO add a faster job that runs just nix build
   build:
@@ -60,17 +60,17 @@ jobs:
 
       - name: Build and run with Nix
         run: |
-          nix run .#arbitrary-rank-tutorial -- typecheck ${{ env.arralac-program }}
+          nix run .#arralac -- typecheck ${{ env.arralac-program }}
 
-          nix run .#arbitrary-rank-tutorial -- interpret whnf ${{ env.arralac-program }}
+          nix run .#arralac -- interpret whnf ${{ env.arralac-program }}
 
       - name: Build and run with Cabal
         if: always()
         run: |
           nix develop .#ci-build -c bash -c '
-            cabal run arbitrary-rank-tutorial -- typecheck ${{ env.arralac-program }}
+            cabal run arralac -- typecheck ${{ env.arralac-program }}
             
-            cabal run arbitrary-rank-tutorial -- interpret whnf ${{ env.arralac-program }}
+            cabal run arralac -- interpret whnf ${{ env.arralac-program }}
           '
 
       - name: Build and run with Stack
@@ -78,7 +78,7 @@ jobs:
         run: |
           nix develop .#ci-build -c bash -c '
             stack run -- arralac typecheck ${{ env.arralac-program }}
-          
+
             stack run -- arralac interpret whnf ${{ env.arralac-program }}
           '
 

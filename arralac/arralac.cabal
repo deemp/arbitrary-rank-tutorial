@@ -4,7 +4,7 @@ cabal-version: 1.24
 --
 -- see: https://github.com/sol/hpack
 
-name:           arbitrary-rank-tutorial
+name:           arralac
 version:        0.0.1
 synopsis:       A tutorial implementation of Arralac - a lambda calculus with arbitrary-rank polymorphism
 description:    Arralac: `Ar`bitrary-`ra`nk polymorphism + `la`mbda `c`alculus
@@ -129,7 +129,7 @@ library
       Language.Arralac.Zonker.Zn.Run
       Language.Arralac.Zonker.Zn.Zonk
   other-modules:
-      Paths_arbitrary_rank_tutorial
+      Paths_arralac
   hs-source-dirs:
       src
   default-extensions:
@@ -216,7 +216,7 @@ library
 executable arralac
   main-is: Main.hs
   other-modules:
-      Paths_arbitrary_rank_tutorial
+      Paths_arralac
   hs-source-dirs:
       app
   default-extensions:
@@ -270,7 +270,7 @@ executable arralac
       IntervalMap
     , PyF
     , aeson
-    , arbitrary-rank-tutorial
+    , arralac
     , array >=0.5.5.0
     , base >=4.7 && <5
     , bifunctors

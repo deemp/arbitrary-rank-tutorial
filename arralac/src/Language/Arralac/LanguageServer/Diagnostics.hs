@@ -57,6 +57,9 @@ mkRnErrorDiagnostics e = do
     RnError'UnboundTypeVariable{} -> do
       range <- srcSpanToRange err.srcSpan
       pure [mkDiagnostic range err]
+    RnError'UnboundTermVariable{} -> do
+      range <- srcSpanToRange err.srcSpan
+      pure [mkDiagnostic range err]
     RnError'LetOccursCheckFailed{} -> do
       rangeLetLhs <- srcSpanToRange err.letOccursCheckInfo.letSrcSpan
       rangeLetLhsOcc <- srcSpanToRange err.letLhsOcc.varName.nameLoc

@@ -13,6 +13,7 @@ import Language.Arralac.Syntax.Local.RnVar
 -- | A renamer error.
 data RnError
   = RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
+  | RnError'UnboundTermVariable {name :: NameFs, srcSpan :: SrcSpan}
   | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
   | RnError'LetOccursCheckFailed {letOccursCheckInfo :: LetOccursCheckInfo, letLhsOcc :: RnVar}
 
@@ -36,6 +37,13 @@ instance Pretty' RnError where
     RnError'UnboundTypeVariable{} ->
       vsep'
         [ "Unbound type variable:"
+        , prettyIndent err.name
+        , "at:"
+        , prettyIndent err.srcSpan
+        ]
+    RnError'UnboundTermVariable{} ->
+      vsep'
+        [ "Unbound term variable:"
         , prettyIndent err.name
         , "at:"
         , prettyIndent err.srcSpan

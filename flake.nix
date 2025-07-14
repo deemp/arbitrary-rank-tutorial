@@ -76,7 +76,7 @@
               lib.fileset.toSource {
                 root = ./.;
                 fileset = lib.fileset.unions [
-                  ./tutorial
+                  ./arralac
                   ./cabal.project
                   ./README.md
                 ];
@@ -137,7 +137,7 @@
               {
                 # local packages
 
-                arbitrary-rank-tutorial = default // {
+                arralac = default // {
                   extraBuildTools = with devTools; [
                     alex
                     happy
@@ -309,10 +309,10 @@
             # TODO update the arbitrary-rank-tutorial flake input sometimes
             #
             # TODO use incremental
-            # arbitrary-rank-tutorial = mkIncremental "arbitrary-rank-tutorial";
-            arbitrary-rank-tutorial = haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
-            arbitrary-rank-tutorial-increment-base =
-              haskellProjectsOutputs.finalPackages.arbitrary-rank-tutorial;
+            # arralac = mkIncremental "arralac";
+            arralac = haskellProjectsOutputs.finalPackages.arralac;
+            arralac-increment-base =
+              haskellProjectsOutputs.finalPackages.arralac;
 
             inherit
               (import "${inputs.cache-nix-action}/saveFromGC.nix" {
@@ -322,13 +322,13 @@
                   inputs.treefmt-nix
                 ];
                 derivations = [
-                  self'.packages.arbitrary-rank-tutorial
+                  self'.packages.arralac
                   self'.devShells.ci-build
                 ];
               })
               saveFromGC
               ;
-            cabalConfigureFreeFoilStlc = {
+            cabalConfigureArralac = {
               # https://github.com/haskell/cabal/issues/3020#issuecomment-170725625
               runtimeInputs = [
                 devTools.cabal
@@ -338,10 +338,10 @@
                 devTools.alex
               ];
               text = "
-                rm -f dist-newstyle/build/*/ghc-*/arbitrary-rank-tutorial-*/cache/config
-                cabal build --only-configure arbitrary-rank-tutorial
+                rm -f dist-newstyle/build/*/ghc-*/arralac-*/cache/config
+                cabal build --only-configure arralac
               ";
-              meta.description = "Force configure the arbitrary-rank-tutorial package.";
+              meta.description = "Force configure the arralac package.";
             };
             # TODO support cleaning stack and cabal cache
           };
@@ -363,7 +363,7 @@
                   {
                     prefix = "nix run .#";
                     packages = {
-                      inherit (self'.packages) arbitrary-rank-tutorial cabalConfigureFreeFoilStlc;
+                      inherit (self'.packages) arralac cabalConfigureArralac;
                     };
                   }
                   {
@@ -380,7 +380,7 @@
                   {
                     expose = true;
                     packages = {
-                      inherit (self'.packages) arbitrary-rank-tutorial;
+                      inherit (self'.packages) arralac;
                     };
                   }
                 ];

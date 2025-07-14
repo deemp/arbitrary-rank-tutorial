@@ -1,4 +1,4 @@
-name: arbitrary-rank-tutorial
+name: arralac
 synopsis: "A tutorial implementation of Arralac - a lambda calculus with arbitrary-rank polymorphism"
 version: 0.0.1
 github: "deemp/arbitrary-rank-tutorial"
@@ -163,5 +163,5 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - arbitrary-rank-tutorial
+      - arralac
       - with-utf8
