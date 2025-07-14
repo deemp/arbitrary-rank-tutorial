@@ -18,8 +18,24 @@ cli =
 cliParserInfo :: String -> ParserInfo CLI
 cliParserInfo version =
   info
-    (cli <**> helper <**> simpleVersioner version)
+    (cli <**> helper <**> simpleVersioner version <**> topLevelOptions)
     (fullDesc <> progDesc "Work with Arralac programs.")
+
+topLevelOptions :: Parser (CLI -> CLI)
+topLevelOptions = do
+  switch
+    ( long "stdio"
+        <> help "Use stdio. This flag is required by the `vscode-languageclient' library."
+    )
+    <&> \stdio ->
+      if
+        | stdio ->
+            const $
+              CLI'LanguageServer
+                Command'LanguageServer
+                  { settingsSectionName = Nothing
+                  }
+        | otherwise -> id
 
 commandParserInfo :: CommandParserInfo
 commandParserInfo =
