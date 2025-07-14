@@ -14,5 +14,5 @@ defaults =
   Defaults
     { settingsSectionName = "arralac"
     , solverIterations = 10
-    , prettyVerbosity = PrettyVerbosity'Detailed
+    , prettyVerbosity = PrettyVerbosity'Normal
     }
