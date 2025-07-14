@@ -78,13 +78,16 @@ dependencies:
   - lsp
   - lsp-types
   - mtl
+  - optparse-applicative
   - prettyprinter
+  - PyF
   - stm
   - text
   - unliftio
   - with-utf8
 
 default-extensions:
+  - ApplicativeDo
   - BlockArguments
   - ConstraintKinds
   - DataKinds
@@ -117,6 +120,7 @@ default-extensions:
   - PatternSynonyms
   - PolyKinds
   - QuantifiedConstraints
+  - QuasiQuotes
   - RankNTypes
   - ScopedTypeVariables
   - StandaloneDeriving

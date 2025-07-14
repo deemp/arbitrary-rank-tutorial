@@ -43,8 +43,20 @@ flag nix
 
 library
   exposed-modules:
-      Language.Arralac.Interpreter.FreeFoil
-      Language.Arralac.Interpreter.Main
+      Language.Arralac.CLI.Commands
+      Language.Arralac.CLI.Defaults
+      Language.Arralac.CLI.Handle
+      Language.Arralac.CLI.Parse
+      Language.Arralac.CLI.Run
+      Language.Arralac.Core.AST
+      Language.Arralac.Core.ConvertZonked
+      Language.Arralac.Core.CoreNameBinder
+      Language.Arralac.Core.PrettyScoped
+      Language.Arralac.Driver.ParserToZonker.Run
+      Language.Arralac.Driver.ReaderToZonker.Run
+      Language.Arralac.Examples
+      Language.Arralac.Interpreter.Run
+      Language.Arralac.Interpreter.Whnf
       Language.Arralac.LanguageServer.IntervalMap
       Language.Arralac.LanguageServer.Run
       Language.Arralac.LanguageServer.Server
@@ -53,7 +65,7 @@ library
       Language.Arralac.Parser.Generated.Abs
       Language.Arralac.Parser.Generated.Lex
       Language.Arralac.Parser.Generated.Par
-      Language.Arralac.Parser.Parse
+      Language.Arralac.Parser.Run
       Language.Arralac.Prelude.Bag
       Language.Arralac.Prelude.Debug
       Language.Arralac.Prelude.Locale
@@ -65,11 +77,18 @@ library
       Language.Arralac.Prelude.Unique
       Language.Arralac.Prelude.Unique.Supply
       Language.Arralac.Prelude.Unique.Types
-      Language.Arralac.Renamer.ConvertRename
+      Language.Arralac.Reader.Error
+      Language.Arralac.Reader.Run
+      Language.Arralac.Renamer.ConvertParsed
       Language.Arralac.Renamer.Error
       Language.Arralac.Renamer.Run
       Language.Arralac.Renamer.Types
+      Language.Arralac.Solver.Check
+      Language.Arralac.Solver.Error
+      Language.Arralac.Solver.Run
+      Language.Arralac.Solver.Solve
       Language.Arralac.Solver.Types
+      Language.Arralac.Solver.Unify
       Language.Arralac.Syntax.Local.Anno
       Language.Arralac.Syntax.Local.Extension.Rn
       Language.Arralac.Syntax.Local.Extension.Tc
@@ -99,20 +118,21 @@ library
       Language.Arralac.Syntax.TTG.TyVar
       Language.Arralac.Typechecker.Constraints
       Language.Arralac.Typechecker.Error
-      Language.Arralac.Typechecker.Main
       Language.Arralac.Typechecker.Run
-      Language.Arralac.Typechecker.Solver
       Language.Arralac.Typechecker.TcMonad
       Language.Arralac.Typechecker.TcTerm
+      Language.Arralac.Typechecker.TcTyVar
       Language.Arralac.Typechecker.TcTyVarEnv
       Language.Arralac.Typechecker.Types
       Language.Arralac.Zonker.Tc.Zonk
+      Language.Arralac.Zonker.Zn.Run
       Language.Arralac.Zonker.Zn.Zonk
   other-modules:
       Paths_arbitrary_rank_tutorial
   hs-source-dirs:
       src
   default-extensions:
+      ApplicativeDo
       BlockArguments
       ConstraintKinds
       DataKinds
@@ -145,6 +165,7 @@ library
       PatternSynonyms
       PolyKinds
       QuantifiedConstraints
+      QuasiQuotes
       RankNTypes
       ScopedTypeVariables
       StandaloneDeriving
@@ -159,6 +180,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
       IntervalMap
+    , PyF
     , aeson
     , array >=0.5.5.0
     , base >=4.7 && <5
@@ -175,6 +197,7 @@ library
     , lsp
     , lsp-types
     , mtl
+    , optparse-applicative
     , prettyprinter
     , stm
     , text
@@ -195,6 +218,7 @@ executable arralac
   hs-source-dirs:
       app
   default-extensions:
+      ApplicativeDo
       BlockArguments
       ConstraintKinds
       DataKinds
@@ -227,6 +251,7 @@ executable arralac
       PatternSynonyms
       PolyKinds
       QuantifiedConstraints
+      QuasiQuotes
       RankNTypes
       ScopedTypeVariables
       StandaloneDeriving
@@ -241,6 +266,7 @@ executable arralac
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       IntervalMap
+    , PyF
     , aeson
     , arbitrary-rank-tutorial
     , array >=0.5.5.0
@@ -258,6 +284,7 @@ executable arralac
     , lsp
     , lsp-types
     , mtl
+    , optparse-applicative
     , prettyprinter
     , stm
     , text
