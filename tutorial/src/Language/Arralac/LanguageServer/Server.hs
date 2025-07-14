@@ -14,6 +14,7 @@ import Data.Map qualified as M
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
+import Language.Arralac.Driver.ParserToZonker.Run
 import Language.Arralac.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
@@ -28,7 +29,6 @@ import Language.LSP.VFS (virtualFileText)
 import Prettyprinter (Doc, defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
 import UnliftIO (catch)
-import Language.Arralac.Driver.ReaderToZonker.Run
 
 -- | The server's state.
 --
@@ -151,10 +151,10 @@ updateStateForFile docUri filePath docText =
   do
     ast <- do
       config <- getConfig
-      let 
-          ?solverIterations = config.solverIterations
-          ?debug = False
-      liftIO $ runReaderToZonker filePath
+      let
+        ?solverIterations = config.solverIterations
+        ?debug = False
+      liftIO $ runParserToZonker filePath docText
 
     let mp = toIntervalMap ast
 
