@@ -2,7 +2,7 @@
 
 # A Tutorial Implementation of a Lambda Calculus with Parametric Predicative Arbitrary-Rank Polymorphism
 
-`Arralac` - `Ar`bitrary-`ra`nk + `la`mbda `ca`lculus.
+`Arralac` - `Ar`bitrary-`ra`nk + `la`mbda `c`alculus.
 
 ## Examples
 
