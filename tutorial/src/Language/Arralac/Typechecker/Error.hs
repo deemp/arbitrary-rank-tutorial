@@ -79,13 +79,17 @@ instance Pretty' TcError where
   pretty' err = case err of
     TcError'UndefinedVariable{} ->
       vsep'
-        [ "Not in scope:"
+        [ "Variable not in scope:"
         , prettyIndent err.rnVar.varName
+        , "at:"
+        , prettyIndent err.rnVar.varName.nameLoc
         ]
     TcError'UnboundVariable{} ->
       vsep'
         [ "Expected a bound variable, but got:"
         , prettyIndent err.var
+        , "at:"
+        , prettyIndent err.var.varName.nameLoc
         ]
     TcError'UnexpectedType{} ->
       vsep' $
@@ -112,6 +116,8 @@ instance Pretty' TcError where
       vsep'
         [ "Unknown concrete type:"
         , prettyIndent err.name
+        , "at:"
+        , prettyIndent err.name.nameLoc
         ]
     TcError'ExpectedAllMetavariables{} ->
       vsep'
