@@ -18,22 +18,20 @@ handleCLI defaults = \case
       runLanguageServer
         (fromMaybe defaults.settingsSectionName cmd.settingsSectionName)
     exitWith exitCode
-  CLI'Typecheck cmd ->
+  CLI'Typecheck cmd -> do
     let
       ?debug = cmd.debug
       ?prettyVerbosity = defaults.prettyVerbosity
       ?solverIterations = defaults.solverIterations
-     in
-      do
-        znTerm <- runReaderToZonker cmd.inputFilePath
-        putDocW defaultPrettyWidth $ pretty' znTerm <> line
-  CLI'Interpret cmd ->
+    do
+      znTerm <- runReaderToZonker cmd.inputFilePath
+      putDocW defaultPrettyWidth $ pretty' znTerm <> line
+  CLI'Interpret cmd -> do
     let
       ?debug = cmd.debug
       ?prettyVerbosity = defaults.prettyVerbosity
       ?solverIterations = defaults.solverIterations
-     in
-      do
-        znTerm <- runReaderToZonker cmd.inputFilePath
-        let interpretedTerm = runInterpreter InterpreterMode'Whnf znTerm
-        putDocW defaultPrettyWidth $ pretty' interpretedTerm <> line
+    do
+      znTerm <- runReaderToZonker cmd.inputFilePath
+      let interpretedTerm = runInterpreter InterpreterMode'Whnf znTerm
+      putDocW defaultPrettyWidth $ pretty' interpretedTerm <> line

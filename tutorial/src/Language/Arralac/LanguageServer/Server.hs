@@ -209,13 +209,12 @@ serverDefinition sectionName serverState =
     { onConfigChange = const $ pure ()
     , -- TODO something meaninful
       doInitialize = \env _req -> pure $ Right env
-    , staticHandlers =
+    , staticHandlers = do
         let
           ?serverState = serverState
           ?logger = dualLogger
           ?prettyVerbosity = PrettyVerbosity'Normal
-         in
-          serverHandlers
+        serverHandlers
     , options = lspOptions
     , -- TODO Need to fix?
       interpretHandler = \env -> Iso (runLspT env) liftIO

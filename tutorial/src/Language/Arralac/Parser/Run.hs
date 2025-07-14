@@ -13,7 +13,9 @@ import Language.Arralac.Parser.Generated.Par
 import Language.Arralac.Prelude.Types
 
 runParser ::
-  (HasCallStack, CtxInputFilePath) =>
+  ( HasCallStack
+  , CtxInputFilePath
+  ) =>
   Text -> IO Program
 runParser input = do
   let

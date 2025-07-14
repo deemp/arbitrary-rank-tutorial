@@ -35,17 +35,15 @@ runTypechecker term = do
       ?tcLevel = TcLevel 0
       ?tcTyVarEnv = emptyTcTyVarEnv
       ?tcErrorPropagated = Nothing
-   in do
-        -- TODO run inferSigma
-        (tcTerm, _) <- do
-          let
-          inferRho term
-        constraintsNew <- readIORef constraints
-        _ <- runSolver ?solverIterations constraintsNew
-        pure tcTerm
-        `finally` do
-          constraints' <- readIORef ?constraints
-          debug'
-            "typecheck"
-            [ ("constraints", pretty' constraints')
-            ]
+  do
+    -- TODO run inferSigma
+    (tcTerm, _) <- inferRho term
+    constraintsNew <- readIORef constraints
+    _ <- runSolver ?solverIterations constraintsNew
+    pure tcTerm
+    `finally` do
+      constraints' <- readIORef ?constraints
+      debug'
+        "typecheck"
+        [ ("constraints", pretty' constraints')
+        ]

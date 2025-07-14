@@ -25,8 +25,8 @@ runParserToZonker filePath fileContent = do
   uniqueSupply <- newIORef @Int 0
   let ?uniqueSupply = uniqueSupply
       ?inputFilePath = filePath
-   in do
-        parsed <- runParser fileContent
-        program <- runRenamer parsed
-        typechecked <- runTypechecker program
-        runZonker typechecked
+  do
+    parsed <- runParser fileContent
+    program <- runRenamer parsed
+    typechecked <- runTypechecker program
+    runZonker typechecked
