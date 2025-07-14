@@ -82,11 +82,11 @@ nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
 ### Interpret
 
 ```console
-nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
+nix run .#arralac -- interpret whnf arralac/test/data/Program1.arralac
 ```
 
 ```console
-nix run .#arralac -- interpret whnf arralac/test/data/Program1.arralac
+\y_2. (\x_8. "Hello") (y_2)
 ```
 
 ## Install `arralac`
