@@ -2,12 +2,97 @@
 
 `Arralac` - `Ar`bitrary-`ra`nk + `la`mbda `ca`lculus.
 
-## Arralac
+## Examples
+
+### Initial program
+
+[arralac/test/data/Program1.arralac](./arralac/test/data/Program1.arralac)
+
+```console
+let
+  applyMyShow =
+    (\x. \y. x y)
+      :: forall a. (forall b. b -> String) -> a -> String
+in
+let
+  myShow = \x. "Hello"
+in
+applyMyShow myShow
+```
+
+### VS Code extension
+
+![TypeHover+TermVarError](./README/TypeHover+TermVarError.png)
+
+### Typecheck
+
+```console
+nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
+```
+
+```console
+(
+  let
+    applyMyShow_0 =
+      (
+        (
+          (
+            (
+              \(x_1 :: forall b_4. b_4 -> String).
+                (
+                  (
+                    \(y_2 :: a_9).
+                      (
+                        (
+                          (
+                            (x_1 :: a_9 -> String)
+                          )
+                            (y_2 :: a_9)
+                        ) :: String
+                      )
+                  ) :: a_9 -> String
+                )
+            ) :: (forall b_4. b_4 -> String) -> a_9 -> String
+          ) :: {forall a_3. forall b_4. b_4 -> String -> a_3 -> String}
+        ) :: (forall b_4. b_4 -> String) -> a_Unsolved_11 -> String
+      ) :: (forall b_4. b_4 -> String) -> a_Unsolved_11 -> String
+  in
+    (
+      let
+        myShow_7 =
+          (
+            (
+              \(x_8 :: b_13).
+                (
+                  "Hello"
+                )
+            ) :: b_13 -> String
+          ) :: b_13 -> String
+      in
+        (
+          (
+            (applyMyShow_0 :: (forall b_4. b_4 -> String) -> a_Unsolved_11 -> String)
+          )
+            (myShow_7 :: b_13 -> String)
+        ) :: a_Unsolved_11 -> String
+    ) :: a_Unsolved_11 -> String
+) :: a_Unsolved_11 -> String
+```
+
+### Interpret
+
+```console
+nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
+```
+
+```console
+nix run .#arralac -- interpret whnf arralac/test/data/Program1.arralac
+```
 
 ## Install `arralac`
 
 ```console
-nix profile install github:deemp/arbitrary-rank-tutorial
+nix profile install github:deemp/arbitrary-rank-tutorial#arralac
 ```
 
 ### Use temporarily
