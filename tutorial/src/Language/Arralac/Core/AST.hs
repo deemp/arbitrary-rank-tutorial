@@ -1,17 +1,14 @@
 module Language.Arralac.Core.AST where
 
-import Control.Monad.Foil.Internal (DExt, Distinct, Name (..), Scope (..), identitySubst)
-import Control.Monad.Free.Foil (AST (..), ScopedAST (..), substitute)
+import Control.Monad.Foil
+import Control.Monad.Free.Foil (AST (..), ScopedAST (..))
 import Data.Bifunctor.TH (deriveBifunctor)
+import Data.Map qualified as Map
 import Language.Arralac.Core.CoreNameBinder
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Core.PrettyScoped
 import Language.Arralac.Prelude.Pretty
-import Language.Arralac.Prelude.Unique (Unique (unique))
-import Language.Arralac.Syntax.Local.Name qualified as BT
 import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTerm.Zn ()
-import Language.Arralac.Syntax.Local.SynTermVar.Zn
-import Language.Arralac.Syntax.TTG.SynTerm
 import Prettyprinter
 
 -- TODO Delayed substitution and Normalization by Evaluation
@@ -46,11 +43,28 @@ pattern LetE binder body rhs = Node (Core'Let body (ScopedAST binder rhs))
 
 type CoreE = AST CoreNameBinder Core
 
-instance Pretty' (CoreE n) where
-  pretty' = \case
+instance PrettyScoped (CoreE n) where
+  prettyScoped = \case
     Node x -> case x of
       Core'Lit lit -> pretty' lit
-      Core'App fun arg -> parens (pretty' fun) <+> parens (pretty' arg)
-      Core'Lam (ScopedAST binder body) -> "\\" <> pretty' binder <> "." <+> pretty' body
-      Core'Let body (ScopedAST binder rhs) -> "let" <+> pretty' binder <+> "=" <+> pretty' body <+> "in" <+> pretty' rhs
-    Var x -> pretty' (PrettyName x)
+      Core'App fun arg ->
+        parens (prettyScoped fun) <+> parens (prettyScoped arg)
+      Core'Lam (ScopedAST binder body) ->
+        "\\"
+          <> pretty' binder
+          <> "."
+            <+> withExtendedPrettyScope binder (prettyScoped body)
+      Core'Let body (ScopedAST binder rhs) ->
+        "let"
+          <+> pretty' binder
+          <+> "="
+          <+> prettyScoped body
+          <+> "in"
+          <+> withExtendedPrettyScope binder (prettyScoped rhs)
+    Var x ->
+      pretty' (Map.lookup (nameId x) ?prettyScope)
+        <> "_"
+        <> pretty' (nameId x)
+
+instance Pretty' (CoreE n) where
+  pretty' = let ?prettyScope = Map.empty in prettyScoped

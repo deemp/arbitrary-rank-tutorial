@@ -1,23 +1,29 @@
 module Language.Arralac.Core.CoreNameBinder where
 
 import Control.Monad.Foil (CoSinkable (..), DistinctEvidence (..), ExtEvidence (..))
-import Control.Monad.Foil.Internal (DExt, Name (..), NameBinder (..), Scope (..), SinkableK, Substitution (..), unsafeDistinct, unsafeExt)
+import Control.Monad.Foil.Internal (DExt, Name (..), NameBinder (..), RawName, Scope (..), SinkableK, Substitution (..), unsafeDistinct, unsafeExt)
 import Data.IntMap qualified as IntMap
 import Data.IntSet qualified as IntSet
 import Generics.Kind.TH
 import Language.Arralac.Prelude.Pretty (Pretty' (..))
 import Language.Arralac.Prelude.Unique (Unique (..))
-import Language.Arralac.Syntax.Local.Name qualified as BT
+import Language.Arralac.Syntax.Local.Name qualified as SynName
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | A wrapper around 'NameBinder' that stores additional information.
 data CoreNameBinder n l
   = CoreNameBinder
-  { name :: BT.Name
+  { name :: SynName.Name
   , nameBinder :: (NameBinder n l)
   }
 
 deriveGenericK 'CoreNameBinder
+
+getNameBinderRawName :: NameBinder n l -> RawName
+getNameBinderRawName (UnsafeNameBinder (UnsafeName n)) = n
+
+getCoreNameBinderRawName :: CoreNameBinder n l -> RawName
+getCoreNameBinderRawName binder = getNameBinderRawName binder.nameBinder
 
 -- ** Extending scopes
 
@@ -37,7 +43,7 @@ extendScope CoreNameBinder{nameBinder = UnsafeNameBinder (UnsafeName name)} (Uns
 -- | Allocate a fresh binder for a given scope.
 withFreshBinderUsingUnique ::
   Scope n ->
-  BT.Name ->
+  SynName.Name ->
   (forall l. CoreNameBinder n l -> r) ->
   r
 withFreshBinderUsingUnique (UnsafeScope _scope) name cont =
@@ -64,7 +70,7 @@ unsafeAssertFresh binder cont =
 -- | Safely produce a fresh name binder with respect to a given scope.
 withFreshUsingUnique ::
   Scope n ->
-  BT.Name ->
+  SynName.Name ->
   (forall l. (DExt n l) => CoreNameBinder n l -> r) ->
   r
 withFreshUsingUnique scope name cont = withFreshBinderUsingUnique scope name (`unsafeAssertFresh` cont)
@@ -89,22 +95,15 @@ instance CoSinkable CoreNameBinder where
 
   withPattern f _ _ scope coreNameBinder coercion =
     (f scope coreNameBinder.nameBinder)
-      (\x y -> coercion x CoreNameBinder{name = error "Impossible!", nameBinder = y})
+      (\x y -> coercion x CoreNameBinder{name = coreNameBinder.name, nameBinder = y})
 
 instance SinkableK CoreNameBinder
 
 instance Pretty' (CoreNameBinder n l) where
-  pretty' binder = pretty' (PrettyNameBinder binder.nameBinder)
-
-newtype PrettyNameBinder n l = PrettyNameBinder (NameBinder n l)
-
-newtype PrettyName n = PrettyName (Name n)
-
-instance Pretty' (PrettyName n) where
-  pretty' (PrettyName (UnsafeName n)) = "x_" <> pretty' n
-
-instance Pretty' (PrettyNameBinder n l) where
-  pretty' (PrettyNameBinder (UnsafeNameBinder name)) = pretty' (PrettyName name)
+  pretty' binder =
+    pretty' binder.name.nameOcc.occNameFS
+      <> "_"
+      <> pretty' (getNameBinderRawName binder.nameBinder)
 
 -- TODO allow bind
 
@@ -129,7 +128,7 @@ instance Pretty' (PrettyNameBinder n l) where
 -- withRefreshed ::
 --   -- | Ambient scope.
 --   Scope o ->
---   BT.Name ->
+--   SynName.Name ->
 --   -- | Name to refresh (if it clashes with the ambient scope).
 --   Name i ->
 --   -- | Continuation, accepting the refreshed name.
