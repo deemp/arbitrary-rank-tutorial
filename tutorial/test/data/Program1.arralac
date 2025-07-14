@@ -1,9 +1,9 @@
 let
-  applyShow =
+  applyMyShow =
     (\x. \y. x y)
       :: forall a. (forall b. b -> String) -> a -> String
 in
 let
-  show = \x. "Hello"
+  myShow = \x. "Hello"
 in
-applyShow show
+applyMyShow myShow
