@@ -4,6 +4,13 @@
 
 `Arralac` - `Ar`bitrary-`ra`nk + `la`mbda `c`alculus.
 
+## Interactive features
+
+- [Language Server](./arralac/src/Language/Arralac/LanguageServer/Run.hs)
+  - Supports showing types of variables on hover and error diagnostics when something goes wrong.
+- [Command-Line Interface](./arralac/src/Language/Arralac/CLI/Run.hs)
+  - Supports running a language server, typechecking programs, and evaluating them.
+
 ## Examples
 
 ### Initial program
