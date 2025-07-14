@@ -3,7 +3,6 @@ module Language.Arralac.LanguageServer.Server where
 import Colog.Core
 import Colog.Core qualified as L
 import Control.Concurrent.STM
-import Control.Exception (SomeException)
 import Control.Lens hiding (Iso)
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Aeson (fromJSON)
@@ -11,24 +10,28 @@ import Data.Aeson qualified as J
 import Data.IntervalMap.Generic.Strict qualified as IM
 import Data.Map (Map)
 import Data.Map qualified as M
+import Data.Map qualified as Map
+import Data.SortedList qualified as SL
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
 import Language.Arralac.Driver.ParserToZonker.Run
+import Language.Arralac.LanguageServer.Diagnostics (mkErrorDiagnostics)
 import Language.Arralac.LanguageServer.IntervalMap (IMPosition (..), IMRange (..), SpanInfo (..), lookupAtIMPosition, prettyIM, toIntervalMap, toRealSrcSpan)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
+import Language.LSP.Diagnostics (partitionBySource)
 import Language.LSP.Logging (defaultClientLogger)
 import Language.LSP.Protocol.Lens qualified as L
 import Language.LSP.Protocol.Message (SMethod (..), TRequestMessage (..))
 import Language.LSP.Protocol.Types
 import Language.LSP.Protocol.Types qualified as L
 import Language.LSP.Protocol.Types qualified as LSP
-import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getConfig, getVirtualFile, notificationHandler, requestHandler, runLspT, sendNotification, type (<~>) (Iso))
+import Language.LSP.Server (Handlers, LspT (..), Options (..), ServerDefinition (..), defaultOptions, getConfig, getVirtualFile, notificationHandler, publishDiagnostics, requestHandler, runLspT, sendNotification, type (<~>) (Iso))
 import Language.LSP.VFS (virtualFileText)
 import Prettyprinter (Doc, defaultLayoutOptions, layoutPretty)
 import Prettyprinter.Render.Text (renderStrict)
-import UnliftIO (catch)
+import UnliftIO (try)
 
 -- | The server's state.
 --
@@ -146,34 +149,50 @@ documentChangeHandler =
       (_, _) -> do
         ?logger <& ("Didn't find anything in the VFS for: " <> T.pack (show docUri)) `WithSeverity` Info
 
+sendDiagnostics :: NormalizedUri -> (Maybe Int32) -> [Diagnostic] -> LspM ()
+sendDiagnostics docUri version diags = do
+  -- https://github.com/haskell/lsp/blob/81f8b94f30230446f14c16f5d847e4125b7afa67/lsp/example/Reactor.hs#L162
+  publishDiagnostics 100 docUri version (partitionBySource diags)
+
+flushDiagnosticsBySource :: NormalizedUri -> (Maybe T.Text) -> LspM ()
+flushDiagnosticsBySource docUri source =
+  -- https://github.com/haskell/lsp/issues/139#issuecomment-468636958
+  -- https://github.com/smucclaw/baby-l4/commit/6b40d16d71572a92aa5eac8f8fd2129259c52b4f#diff-48e0f744927bddc9c0f9095ea079697db72a7af3878e4b9b4780db01a1cd5c90R173
+  publishDiagnostics 100 docUri Nothing (Map.singleton source (SL.toSortedList []))
+
 updateStateForFile :: NormalizedUri -> FastString -> T.Text -> LspM ()
 updateStateForFile docUri filePath docText =
   do
-    ast <- do
+    ast <- try do
       config <- getConfig
       let
         ?solverIterations = config.solverIterations
         ?debug = False
       liftIO $ runParserToZonker filePath docText
 
-    let mp = toIntervalMap ast
+    flushDiagnosticsBySource docUri Nothing
 
-    ?logger <& renderStrictDoc (prettyIM filePath mp) `WithSeverity` Info
+    case ast of
+      Right ast' -> do
+        let mp = toIntervalMap ast'
 
-    liftIO $ atomically $ modifyTVar' ?serverState (M.insert docUri mp)
+        ?logger <& renderStrictDoc (prettyIM filePath mp) `WithSeverity` Info
 
-    -- Send a log message to the client for debugging.
-    sendNotification SMethod_WindowLogMessage $
-      LogMessageParams MessageType_Info $
-        "Updated AST for: " <> T.pack (show docUri)
-    -- Typechecker may throw.
-    `catch` ( \(err :: SomeException) -> do
-                ?logger <& T.pack (show err) `WithSeverity` Error
+        liftIO $ atomically $ modifyTVar' ?serverState (M.insert docUri mp)
 
-                sendNotification SMethod_WindowLogMessage $
-                  LogMessageParams MessageType_Error $
-                    "Could not update AST for: " <> T.pack (show docUri)
-            )
+        -- Send a log message to the client for debugging.
+        sendNotification SMethod_WindowLogMessage $
+          LogMessageParams MessageType_Info $
+            "Updated AST for: " <> T.pack (show docUri)
+      Left err -> do
+        ?logger <& T.pack (show err) `WithSeverity` Info
+
+        let diags = mkErrorDiagnostics err
+        sendDiagnostics docUri Nothing diags
+
+        sendNotification SMethod_WindowLogMessage $
+          LogMessageParams MessageType_Info $
+            "Could not update AST for: " <> T.pack (show docUri)
 
 -- | A handler for when the client is initialized.
 initializeHandler :: Handlers'
@@ -191,9 +210,9 @@ serverHandlers _cs =
     , configurationChangeHandler
     ]
 
--- ==============================================
--- The Server Definition
--- ==============================================
+-- =======================
+-- [The server definition]
+-- =======================
 
 stderrLogger :: LogAction IO (WithSeverity T.Text)
 stderrLogger = L.cmap show L.logStringStderr
