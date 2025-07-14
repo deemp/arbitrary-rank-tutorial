@@ -219,13 +219,21 @@ On the other hand, there appears a significant overhead in terms of lines of cod
     - Create a separate node for unscoped ([AST](https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil.html#t:AST)) right-hand side and body.
     - Use the `PatternSynonyms` extension of GHC to construct and deconstruct `let`-bindings in the AST.
 
-## Install `arralac`
+## Get `arralac`
+
+### Install `arralac`
 
 ```console
 nix profile install github:deemp/arbitrary-rank-tutorial#arralac
 ```
 
-### Use temporarily
+### Remove `arralac`
+
+```console
+nix profile remove arralac
+```
+
+### Use `arralac` temporarily
 
 Run devshell.
 
@@ -237,6 +245,32 @@ Run `arralac` in that devshell.
 
 ```console
 arralac
+```
+
+```console
+Usage: arralac COMMAND [--stdio]
+
+  Work with Arralac programs.
+
+Available options:
+  -h,--help                Show this help text
+  --version                Show version information
+  --stdio                  Use stdio. This flag is required by the
+                           `vscode-languageclient' library.
+
+Available commands:
+  language-server          Run Arralac language server.
+  typecheck                Typecheck an Arralac program.
+  evaluate                 Typecheck and evaluate an Arralac program.
+```
+
+```console
+arralac <TAB>
+```
+
+```console
+evaluate         --help           --stdio          --version        
+-h               language-server  typecheck
 ```
 
 ## Use VS Code extension
