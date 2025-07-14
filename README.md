@@ -126,21 +126,21 @@ Here are these steps and associated system components.
 
 I used the bidirectional typechecking algorithm described in the paper *Practical type inference for arbitrary-rank types* [^JONES2007] and modified it to gather constraints without solving them.
 
-This approach was suggested in [^JONES2007] and mentioned by *The Glasgow Haskell Compiler* author Simon Peyton Jones at WITS'24 [^WITS2024] where he talked about solving constraint during type checking.
+This approach was suggested in [^JONES2007] and mentioned by *The Glasgow Haskell Compiler* author Simon Peyton Jones at WITS'24 [^WITS2024] where he talked about solving constraints after and during type inference.
 
 #### Gathering constraints on types
 
 - [Typechecker](./arralac/src/Language/Arralac/Parser/Run.hs)
-  - Collects "wanted" [^WITS2024] equality constraints (where a metavariable equals a monotype) to later be solved by the `Constraint Solver`.
+  - Collects "wanted" [^WITS2024] equality constraints (where a metavariable equals a monotype) to later be solved by the constraint solver.
   - Sets a level of each variable to enable skolem escape checking and generalization by levels.
   - Limitations:
-    - Does not support `let`-generalization unlike [^JONES2007].
+    - Does not support `let`-generalization unlike the implementation in the paper [^JONES2007].
 
-      This feature may be relatively easy to implement by running the solver during  typechecking at each implication and quantifying over unsolved variables with a greater than ambient level [^WITS2024].
+      The `let`-generalization feature is relatively easy to implement by running the solver during  typechecking at each implication and quantifying over unsolved variables with a greater than ambient level [^WITS2024].
 
     - Does not yet support "given" [^WITS2024] constraints (e.g., type class instances).
 
-      The implemented language doesn't have features like type equality constraints, type classes, and GADTs that could produce them[^WITS2024].
+      The implemented language doesn't have features like type equality constraints, type classes, and GADTs that could produce such constraint [^WITS2024].
 
 #### Solving constraints on types
 
