@@ -1,18 +1,33 @@
 \chapter{Conclusion}
 \label{chap:Conclusion}
 
-\section{Limitations and Future Work}
-\label{sec:Discussion:Limitations}
+This thesis was motivated by a significant pedagogical gap between the foundational theory of advanced type systems and the complex reality of their production-grade implementations. The central goal was to bridge this gap by designing and implementing \texttt{Arralac}, a modern, tutorial-focused compiler for a lambda calculus with arbitrary-rank polymorphism, drawing inspiration from both the seminal paper by Peyton Jones et al. \cite{jones-practical-2007} and the architectural insights of the Glasgow Haskell Compiler. This final chapter summarizes the contributions of this work, analyzes its findings, and outlines directions for future research.
 
-A critical analysis must also acknowledge the system's limitations, which in turn motivate future work.
+\section{Summary of Contributions}
+The development of \texttt{Arralac} has resulted in a complete and functional language toolchain that successfully fulfills the primary objectives of this thesis. The key contributions are:
+\begin{enumerate}
+    \item \textbf{A modern, tutorial implementation} of a bidirectional typechecker for arbitrary-rank polymorphism, demonstrating that the core algorithms from foundational literature can be realized in a clear and accessible manner;
+    \item \textbf{The integration of modern compiler patterns from GHC}, including a Trees That Grow AST for extensibility, a two-phase constraint-based inference engine for modularity, and a level-based system for robust skolem escape checking;
+    \item \textbf{An interactive and practical toolchain}, featuring a command-line interface and a functional Language Server Protocol (LSP) implementation, which transforms the abstract type system into a tangible, explorable tool for students and developers;
+    \item \textbf{A well-documented, open-source artifact} that is reproducibly installable, serving as a community resource for learning, experimentation, and future extension.
+\end{enumerate}
+In essence, this thesis has successfully translated the theoretical elegance of arbitrary-rank polymorphism into a concrete, interactive, and understandable software artifact, addressing the core research questions posed in the introduction.
 
+\section{Analysis of Findings and Significance}
+The implementation process yielded several significant findings regarding compiler architecture for educational purposes.
 \begin{itemize}
-    \item \textbf{Lack of `let`-generalization:} The current implementation does not perform generalization for `let`-bindings, a standard feature in ML-family languages. The typechecker correctly handles user-provided polymorphic signatures but does not infer them for un-annotated `let`-bindings. As noted in the GHC documentation regarding the `MonoLocalBinds` extension, implementing this correctly, especially for local bindings, is non-trivial. The current constraint-based architecture, however, is well-suited for adding this feature by solving for types within the `let`-binding's scope and quantifying over the appropriate unbound metavariables.
-
-    \item \textbf{Rudimentary Test Coverage:} While the system is functionally correct on key examples, its robustness would be greatly improved by a comprehensive test suite. Future work should prioritize creating at least 10-20 unit tests for both the `Solver` and the `Typechecker` modules, covering edge cases, expected failures (e.g., occurs check, skolem escape), and complex valid programs.
-
-    \item \textbf{Language Server Enhancements:} The current LSP implementation is a proof of concept. It could be extended to support more advanced features like "go to definition" (by using the information from the Renamer) and semantic syntax highlighting (by using the inferred types from the Typechecker).
+    \item The decision to adopt a \textbf{constraint-based} type inference model, separating constraint generation from solving, proved to be a major architectural victory. This separation greatly simplified the logic of the typechecker itself, isolating the complex unification and checking logic into a distinct, more testable \texttt{Solver} module. This confirms the suggestion in \cite{jones-practical-2007} and the practice of GHC: such an architecture not only improves modularity but also provides a superior foundation for developing precise, localized error messages.
+    \item The use of the \textbf{Language Server Protocol} was validated as a powerful pedagogical tool. The ability to provide on-the-fly type information and diagnostics directly within a standard editor makes the behavior of the type system immediately visible. This interactive feedback loop is far more effective for learning than a traditional batch-mode compiler.
+    \item The \textbf{Trees That Grow} pattern, while adding some initial boilerplate, provided a type-safe and highly flexible foundation for the AST. The ability to "grow" the tree with pass-specific annotations, such as inferred types, eliminated entire classes of potential bugs by ensuring that later compiler passes could not access information before it was computed.
 \end{itemize}
 
-\section{Conclusion}
-The analysis of the \texttt{Arralac} implementation demonstrates a successful achievement of the thesis goals. The system provides a modern, functional, and interactive tool for exploring arbitrary-rank polymorphism. The architectural choices, particularly the adoption of a constraint-based pipeline and a Trees That Grow AST, have proven to be robust and effective, yielding a system that is both modular and analysable. While limitations exist, they represent clear and achievable paths for future research. This work therefore stands as a valuable contribution, bridging the gap between the theory of advanced type systems and the practice of modern compiler engineering.
+\section{Limitations and Future Directions}
+A critical evaluation of this work must also acknowledge its limitations, which naturally suggest avenues for future research and development. The most notable limitations are:
+\begin{enumerate}
+    \item \textbf{Lack of \texttt{let}-generalization.} The current system relies on user-provided type signatures for all polymorphic \texttt{let}-bindings. Implementing ML-style generalization for local bindings is a non-trivial but essential feature for a more complete language. The existing constraint-based architecture is, however, an excellent starting point for this, as generalization can be framed as a final quantification step over unsolved metavariables within a specific scope.
+    \item \textbf{Simplified Core Language and Evaluator.} The evaluator operates on a simple, untyped Core language, forgoing the powerful consistency checks that a typed intermediate language like GHC's provides. Furthermore, the evaluator can only calculate a WHNF of a term and does not implement more advanced techniques like normalization by evaluation. Future work could focus on implementing a typed Core language and a more sophisticated evaluator.
+    \item \textbf{Limited Test Suite and LSP Features.} While functionally correct on key examples, the system would benefit from a comprehensive unit and integration test suite to ensure its robustness. The language server could also be extended to support richer features like "go to definition" and semantic highlighting, further enhancing its utility as a development tool.
+\end{enumerate}
+
+\section{Concluding Remarks}
+This thesis began with the goal of demystifying the "magic" of a production-grade type system. Through the design and implementation of \texttt{Arralac}, it has demonstrated that the core principles of arbitrary-rank polymorphism can be implemented in a structured, modern, and understandable way. By combining foundational theory with practical architectural patterns, this work provides a clear and interactive bridge for students, researchers, and aspiring language developers seeking to navigate the complex but rewarding world of advanced type systems. Ultimately, this project stands as a testament to the idea that even the most powerful compiler technologies can be made accessible, fostering a deeper understanding and appreciation for the art of programming language implementation.
