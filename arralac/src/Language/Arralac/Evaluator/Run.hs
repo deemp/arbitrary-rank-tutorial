@@ -15,3 +15,5 @@ runEvaluator mode znTerm =
   case mode of
     EvaluatorMode'Whnf ->
       whnf emptyScope (convertZonked emptyScope znTerm)
+
+-- TODO Delayed substitution and Normalization by Evaluation
