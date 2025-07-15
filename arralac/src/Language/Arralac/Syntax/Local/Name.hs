@@ -4,7 +4,7 @@ import GHC.Generics (Generic)
 import Language.Arralac.Prelude.Pretty (Pretty' (..), PrettyVerbosity (..))
 import Language.Arralac.Prelude.Types (FastString)
 import Language.Arralac.Prelude.Unique (Unique)
-import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply, newUnique)
+import Language.Arralac.Prelude.Unique (CtxUniqueSupply, newUnique)
 import Prettyprinter
 
 -- =======

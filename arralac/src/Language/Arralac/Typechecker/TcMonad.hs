@@ -12,7 +12,7 @@ import Language.Arralac.Prelude.Bag
 import Language.Arralac.Prelude.Debug
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
-import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
+import Language.Arralac.Prelude.Unique
 import Language.Arralac.Solver.Types
 import Language.Arralac.Type.Local.TyVar.Tc
 import Language.Arralac.Type.Local.Type

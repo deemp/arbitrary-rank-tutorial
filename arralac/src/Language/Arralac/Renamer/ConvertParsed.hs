@@ -8,7 +8,7 @@ import Language.Arralac.Parser.Abs qualified as Abs
 import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Prelude.Unique (Unique)
-import Language.Arralac.Prelude.Unique.Supply (newUnique)
+import Language.Arralac.Prelude.Unique (newUnique)
 import Language.Arralac.Renamer.Error
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Extension.Rn ()

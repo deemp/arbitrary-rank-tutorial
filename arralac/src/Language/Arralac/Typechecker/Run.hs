@@ -8,7 +8,7 @@ import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Debug (debug')
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
-import Language.Arralac.Prelude.Unique.Supply
+import Language.Arralac.Prelude.Unique
 import Language.Arralac.Solver.Run
 import Language.Arralac.Solver.Types
 import Language.Arralac.Syntax.TTG.SynTerm

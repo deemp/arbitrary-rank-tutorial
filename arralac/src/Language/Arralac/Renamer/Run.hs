@@ -5,7 +5,7 @@ import GHC.Stack (HasCallStack)
 import Language.Arralac.Parser.Abs qualified as Abs
 import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Types
-import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
+import Language.Arralac.Prelude.Unique (CtxUniqueSupply)
 import Language.Arralac.Renamer.ConvertParsed
 import Language.Arralac.Syntax.TTG.SynTerm
 

@@ -76,8 +76,6 @@ library
       Language.Arralac.Prelude.Pretty.GPretty
       Language.Arralac.Prelude.Types
       Language.Arralac.Prelude.Unique
-      Language.Arralac.Prelude.Unique.Supply
-      Language.Arralac.Prelude.Unique.Types
       Language.Arralac.Reader.Error
       Language.Arralac.Reader.Run
       Language.Arralac.Renamer.ConvertParsed
