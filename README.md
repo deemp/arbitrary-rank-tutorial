@@ -443,17 +443,17 @@ nix develop -c cloc arralac/src/ --exclude-dir Generated
 ```
 
 ```console
-      82 text files.
-      82 unique files.                              
+      86 text files.
+      86 unique files.                              
        1 file ignored.
 
-github.com/AlDanial/cloc v 2.04  T=0.02 s (3363.3 files/s, 231328.4 lines/s)
+github.com/AlDanial/cloc v 2.04  T=0.02 s (4017.4 files/s, 266126.3 lines/s)
 -------------------------------------------------------------------------------
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-Haskell                         82            694           1080           3866
+Haskell                         86            705           1085           3907
 -------------------------------------------------------------------------------
-SUM:                            82            694           1080           3866
+SUM:                            86            705           1085           3907
 -------------------------------------------------------------------------------
 ```
 
