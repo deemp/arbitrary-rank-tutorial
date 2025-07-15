@@ -104,15 +104,54 @@ The design of the \texttt{Arralac} typechecker required a concrete implementatio
 \subsection{Foundations from \textit{Practical Type Inference}}
 \label{sec:Design:Foundations}
 
-The algorithm in \cite{jones-practical-2007} provides a practical way to handle higher-rank types by leveraging programmer annotations. Its key mechanisms are as follows:
+The design of \texttt{Arralac}'s typechecker, while architecturally distinct, is a direct evolution of the bidirectional system presented in \textit{Practical type inference for arbitrary-rank types} \cite{jones-practical-2007}. To fully appreciate the design choices made in \texttt{Arralac}, it is essential to first understand the foundational mechanisms of this influential system, which elegantly balances expressive power with practical, decidable inference.
 
+\subsubsection{Type Hierarchy and Context.}
+At its core, the system stratifies types into a precise hierarchy to manage polymorphism. The type context, denoted by \textbf{$\Gamma$}, maps program variables to their types.
 \begin{itemize}
-    \item \textbf{Type Hierarchy:} Types are stratified into monotypes (\textbf{$\tau$}), rho-types (\textbf{$\rho$}), and polytypes (\textbf{$\sigma$}) to manage polymorphism within a type context (\textbf{$\Gamma$}).
-    \item \textbf{Metavariables and Unification:} Inference proceeds by creating placeholder \textbf{metavariables} for unknown types and solving equality constraints via \textbf{unification}. The system enforces a crucial \textbf{monotype invariant}: metavariables can only be unified with $\tau$-types to ensure decidability.
-    \item \textbf{Bidirectional Type Checking:} The algorithm operates in an \textbf{inference mode} ($\uparrow$) to synthesize types and a \textbf{checking mode} ($\downarrow$) to verify expressions against known types. This duality avoids undecidable full inference for higher-rank types.
-          % TODO when does it happen?
-    \item \textbf{Subsumption and Skolemization:} The "more polymorphic than" relation is handled by \textbf{subsumption}, which is implemented via \textbf{deep skolemization}. Quantified variables are replaced with rigid "skolem" constants to check for valid instantiation and prevent scope escape.
+    \item \textbf{Monotypes ($\tau$-types):} These are simple types with no polymorphism whatsoever, such as \texttt{Int} or \texttt{Bool -> Int}. They form the bedrock of the system.
+    \item \textbf{Polytypes ($\sigma$-types):} These are types that begin with a \texttt{forall} quantifier, such as \texttt{forall a. a -> a}. They introduce polymorphism.
+    \item \textbf{Rho-types ($\rho$-types):} These are an intermediate category, representing types that can appear on the right-hand side of a function arrow or under a \texttt{forall}. In the full higher-rank system, a $\rho$-type can be either a $\tau$-type or a function type $\sigma_1 \rightarrow \sigma_2$.
 \end{itemize}
+This stratification is crucial for controlling where and how polymorphism can appear and be inferred.
+
+\subsubsection{Metavariables and the Monotype Invariant.}
+During inference, the typechecker encounters expressions whose types are not yet known. It handles this by creating placeholder types called \textbf{metavariables} (e.g., \texttt{?a}, \texttt{?b}). These are temporary, flexible variables that are gradually refined as the algorithm gathers more information. The process of solving for these metavariables is called \textbf{unification}.
+
+A cornerstone of the system's practicality is the \textbf{monotype invariant}: a metavariable can only ever be unified with a monotype ($\tau$-type). This restriction is what guarantees that type inference is decidable and, crucially, \textbf{order-independent}. If a metavariable could be unified with a polytype, the result of inference could depend on the order in which expressions were traversed, leading to unpredictable and non-deterministic behavior. By enforcing this invariant, the algorithm ensures that the principal type it infers is unique and consistent.
+
+\subsubsection{The Bidirectional Algorithm.}
+The master strategy for handling higher-rank types is the \textbf{bidirectional type checking} algorithm. Instead of a single, monolithic inference function, the system operates in two distinct modes, preventing the need for full, undecidable inference:
+\begin{itemize}
+    \item \textbf{Inference Mode ($\uparrow$):} This mode synthesizes or "infers" the most general type for an expression from the bottom up. In the paper's implementation, this corresponds to functions like \texttt{inferRho}. It is used for expressions where the type is not already known.
+    \item \textbf{Checking Mode ($\downarrow$):} This mode verifies or "checks" an expression against a known, expected type that is pushed down from the surrounding context. This is implemented by functions like \texttt{checkRho}.
+\end{itemize}
+This duality is key. For most of the program, the system can infer types. However, when it encounters a programmer-supplied annotation for a higher-rank type (e.g., on a function argument), it switches to the more constrained checking mode, using the annotation to guide the process and avoid intractable search.
+
+\subsubsection{Subsumption: The "More Polymorphic Than" Check.}
+A central challenge is determining if a function can be used where a more-specific polymorphic type is expected. This is handled by a \textbf{subsumption} check, which formalizes the notion of one type being "more polymorphic than" another. In the paper's implementation, this is the role of the \texttt{subsCheck} function. The mechanics of subsumption rely on two dual concepts: instantiation and skolemization.
+
+% TODO clarify using, bound, checking against. What is the relation to programmer-given signatures?
+\begin{itemize}
+    \item \textbf{Instantiation:} When \textit{using} a polymorphic value (e.g., calling a function bound to a $\sigma$-type), its quantified type variables are replaced with fresh metavariables. This process, handled by \texttt{instantiate}, makes the type usable in a specific context.
+
+    \item \textbf{Deep Skolemization:} The more complex case is checking against a polymorphic type \texttt{forall a. T}. To do this, the algorithm replaces the quantified variable \texttt{a} with a new, rigid constant called a \textbf{skolem}. A skolem constant is unique and cannot be unified with any other type. If a skolem constant "escapes" its scope (\textbf{skolem escape}) during subsequent unification (e.g., by being unified with a metavariable from an outer scope), a type error is raised.
+
+          For arbitrary-rank types like \texttt{T1 -> (forall a. T2)}, the \texttt{forall} is nested. \textbf{Deep skolemization} is the paper's crucial innovation to handle this. It first transforms the type into a \textbf{weak prenex form} using an auxiliary function, $pr(\sigma)$, which pulls nested quantifiers from the return types of functions to the outermost level. For example,
+
+          \begin{equation}
+              \begin{split}
+                  pr(\forall c. (\forall a. a \rightarrow c) \rightarrow (\forall b. b \rightarrow c)) & = \\
+                  \quad \quad =\forall b c. \rightarrow (\forall a. a \rightarrow c) \rightarrow b \rightarrow c
+              \end{split}
+          \end{equation}
+
+          This makes all quantifiers accessible for skolemization, enabling a consistent and robust subsumption check.
+\end{itemize}
+
+Finally, when checking function types for subsumption, such as \\ \texttt{($\sigma_1~\rightarrow~\sigma_2)~\leq~(\sigma_3~\rightarrow~\sigma_4$)}, the algorithm respects \textbf{contravariance}. The argument types are checked in the opposite direction ($\sigma_3 \leq \sigma_1$), while the result types are checked in the same direction ($\sigma_2 \leq \sigma_4$).
+
+These mechanisms --- a strict type hierarchy, the monotype invariant, bidirectional checking, and subsumption via deep skolemization --- work in concert to create a system that is powerful enough to support higher-rank types yet constrained enough to remain practical and decidable. This is the foundational system that \texttt{Arralac} reinterprets through a modern, constraint-based lens.
 
 \subsection{Architectural Divergence: A Constraint-Based Model}
 \label{sec:Design:ArralacApproach}
@@ -126,12 +165,12 @@ While the theoretical underpinnings are rooted in \cite{jones-practical-2007}, t
     \label{tab:arch-comparison}
     \begin{tabular}{p{0.2\textwidth} p{0.35\textwidth} p{0.35\textwidth}}
         \toprule
-        \textbf{Feature}            & \textbf{\cite{jones-practical-2007} (Eager Unification)}                            & \textbf{\texttt{Arralac} (Constraint-Based)}                                                                                            \\
+        \textbf{Feature}            & \textbf{\cite{jones-practical-2007} (Eager Unification)}                             & \textbf{\texttt{Arralac} (Constraint-Based)}                                                                                                                              \\
         \midrule
-        \textbf{Unification}        & Solves constraints immediately as they are generated.                               & Gathers all constraints first; solves them in a separate, dedicated pass.                                                               \\
-        \textbf{Modularity}         & Inference logic is tightly coupled with unification logic.                          & The Typechecker (generation) and Solver (unification) are fully decoupled modules.                                                      \\
-        \textbf{Error Reporting}    & rrors are reported at the first point of unification failure, which can be obscure. & Already reports the location of a sub-term where a constraint originated. Has the potential for holistic error analysis by examining all conflicting constraints at once. \\
-        \textbf{Let-Generalization} & Described via a global context traversal at the point of the \texttt{let}-binding.  & Not implemented, but the architecture would require a more explicit, scoped solving of constraints.                                     \\
+        \textbf{Unification}        & Solves constraints immediately as they are generated.                                & Gathers all constraints first; solves them in a separate, dedicated pass.                                                                                                 \\
+        \textbf{Modularity}         & Inference logic is tightly coupled with unification logic.                           & The Typechecker (generation) and Solver (unification) are fully decoupled modules.                                                                                        \\
+        \textbf{Error Reporting}    & Errors are reported at the first point of unification failure, which can be obscure. & Already reports the location of a sub-term where a constraint originated. Has the potential for holistic error analysis by examining all conflicting constraints at once. \\
+        \textbf{Let-Generalization} & Requires a global type context traversal at the point of the \texttt{let}-binding.   & Not implemented, but the architecture would require a more explicit, scoped solving of constraints.                                                                       \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -140,12 +179,10 @@ While the theoretical underpinnings are rooted in \cite{jones-practical-2007}, t
 This separation is realized through two primary constraint types:
 \begin{enumerate}
     \item \textbf{Canonical Equality Constraints (\texttt{EqCt}):} Represent a required equality between a metavariable and a type.
-    \item \textbf{Implication Constraints (\texttt{Implication}):} Capture the scoping of polymorphism. An implication bundles a set of skolem variables with the \textbf{wanted} \cite{wits-type-inference-using-constraints} constraints generated from checking an expression within their scope.
+    \item \textbf{Implication Constraints (\texttt{Implication}):} Capture the scoping of polymorphism. An implication bundles a set of skolem variables created at the ambient level with \textbf{wanted} \cite{wits-type-inference-using-constraints} constraints generated from checking an expression after incrementing the ambient level.
 \end{enumerate}
 
-% TODO can we unify with a metavariable created at a higher level?
-% metavariable or a 
-Furthermore, \texttt{Arralac} manages polymorphism scoping using \textbf{levels}, a technique also used in modern compilers \cite{practical-type-inference-with-levels-2025}. Every variable is assigned an integer \texttt{TcLevel} at creation. The solver then enforces the skolem escape check by a simple rule: a metavariable at level $n$ cannot be unified with a type containing any skolem variable from a level $m > n$.
+Furthermore, \texttt{Arralac} manages polymorphism scoping using \textbf{levels}, a technique also used in modern compilers \cite{practical-type-inference-with-levels-2025}. Every variable is assigned an integer \texttt{TcLevel} at creation. The solver then enforces the skolem escape check by a simple rule: a metavariable at level $n$ cannot be unified with a type containing any free variable (skolem or a metavariable) from a level $m > n$ \footnote{See \href{https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs\#L2589}{Note [Unification preconditions]}}.
 
 \section{Validation Methodology}
 \label{sec:Implementation:Methodology}
@@ -156,6 +193,7 @@ To validate the correctness of the implementation and ensure it meets its pedago
 \begin{enumerate}
     \item \textbf{Correct Handling of Higher-Rank Polymorphism:} The primary validation case involved a program that requires passing a polymorphic function as an argument, similar to \texttt{Program1.arralac} (\cref{sec:Implementation:Results}). The successful typechecking and evaluation of this program served as the baseline validation that the core bidirectional algorithm, including subsumption and deep skolemization, was implemented correctly.
 
+          % TODO compose this test
     \item \textbf{Skolem Escape and Level Checking:} A specific negative test case was created to ensure that a skolem variable could not escape its scope during unification. The test involved attempting to unify a metavariable with a type containing a skolem from a deeper scope. The expected outcome was a type error from the solver, which validated that the level-based checking mechanism was correctly preventing unsound unifications.
 
     \item \textbf{Language Server Functionality:} The interactive tooling was validated manually within Visual Studio Code. This involved checking that (a) hovering over identifiers displayed the correct, fully-zonked types as inferred by the pipeline, and (b) introducing syntactic or semantic errors (e.g., unbound variables) triggered appropriate and timely error diagnostics from the language server.
