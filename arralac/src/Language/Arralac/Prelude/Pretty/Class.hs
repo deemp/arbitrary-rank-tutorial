@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Language.Arralac.Prelude.Pretty.Class where
 
 import Language.Arralac.Prelude.Types (FastString)

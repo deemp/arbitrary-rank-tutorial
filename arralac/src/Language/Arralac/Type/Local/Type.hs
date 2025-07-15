@@ -8,8 +8,6 @@ import Language.Arralac.Type.TTG.Type
 import Data.IORef (IORef)
 import Language.Arralac.Pass.Types (CompRn, CompTc, CompZn)
 import Language.Arralac.Prelude.Pretty
-import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Type.TTG.Concrete
 import Language.Arralac.Type.TTG.TyVar
 import Prettyprinter
 
