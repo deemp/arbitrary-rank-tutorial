@@ -142,7 +142,7 @@ GHC also uses the TTG representation for its syntax [^GhcTreesThatGrow] but not 
 
 - GHC has a Core representation of Haskell programs based on the System FC [^GhcSystemFcOutdated][^GhcSystemFcCurrent].
 
-- [Core.AST](./arralac/src/Language/Arralac/Core/AST.hs) provides a Core language representation based on untyped lambda calculus [^LambdaCalculusIntroduction]. It only has lambda abstraction, application, `let`-bindings and literals.
+- [Core.AST](./arralac/src/Language/Arralac/Core/AST.hs) provides a Core language representation based on untyped lambda calculus [^ATutorialIntroductionToTheLambdaCalculus]. It only has lambda abstraction, application, `let`-bindings and literals.
 
   - The Core `AST` with scoped bindings is constructed via the `free-foil` [^FreeFoilLibrary] library. This representation enables capture-avoiding substitution which can be used for evaluating terms.
 
@@ -492,3 +492,5 @@ SUM:                            82            694           1080           3866
 [^GhcSystemFcOutdated]: <https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/fc>
 
 [^GhcSystemFcCurrent]: <https://gitlab.haskell.org/ghc/ghc/blob/master/docs/core-spec/core-spec.pdfs>
+
+[^ATutorialIntroductionToTheLambdaCalculus]: <https://arxiv.org/abs/1503.09060>
