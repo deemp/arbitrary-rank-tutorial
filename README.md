@@ -154,8 +154,8 @@ GHC also uses the TTG representation for its syntax [^GhcTreesThatGrow] but not 
 
     There is a way to make the right-hand side and the body scoped under a binder:
 
-    - In the AST type, create a constructor for a `let`-binding that contains a term scoped under a binder. It will be used in a [Node](https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-free-foil.html#t:AST) with a [ScopedAST](https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-free-foil.html#t:ScopedAST).
-    - Create another constructor for unscoped ([AST](https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-free-foil.html#t:AST)) right-hand side and body. It will be wrapped in that `ScopedAST` that introduced the `let`-binder.
+    - In the AST type, create a constructor for a `let`-binding that contains a term scoped under a binder. It will be used in a [`Node`](https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil.html#t:AST) with a [`ScopedAST`](https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil.html#t:ScopedAST).
+    - Create another constructor for unscoped ([`AST`](https://hackage.haskell.org/package/free-foil-0.2.0/docs/Control-Monad-Free-Foil.html#t:AST)) right-hand side and body. It will be wrapped in that `ScopedAST` that introduced the `let`-binder.
     - Use the `PatternSynonyms` extension of GHC to construct and deconstruct `let`-bindings in the AST.
     - Limitations:
       - Since a `let`-binding is represented with two constructors now, it will be possible to construct non-well-formed terms.
@@ -193,7 +193,7 @@ This approach was suggested in [^PracticalTypeInferenceForArbitraryRankTypes] an
 
 #### Gathering constraints on types
 
-- [Typechecker](./arralac/src/Language/Arralac/Typechecker/Run.hs)
+- [`Typechecker`](./arralac/src/Language/Arralac/Typechecker/Run.hs)
   - Gathers "wanted" (constraints that should be solved) [^WITS2024] equality constraints (where a metavariable equals a monotype).
   - Sets the level for each variable to enable skolem escape checking [^WITS2024] [^PracticalTypeInferenceWithLevels].
   - Variables are created at an ambient level.
@@ -215,7 +215,7 @@ This approach was suggested in [^PracticalTypeInferenceForArbitraryRankTypes] an
 
 #### Solving constraints on types
 
-- [Solver](./arralac/src/Language/Arralac/Solver/Run.hs)
+- [`Solver`](./arralac/src/Language/Arralac/Solver/Run.hs)
   - Iteratively solves equality constraints.
   - Performs an occurs check for each constraint so that the metavariable on the left-hand side of the constraint doesn't appear in the type on the right-hand sind of the constraint.
   - Identifies skolem escape using variable levels. A metavariable that has the level $n$ may not be unified [^PracticalTypeInferenceForArbitraryRankTypes] with another variable or a type containing a variable that has the level $m$ if $m > n$ [^WITS2024] [^PracticalTypeInferenceWithLevels].
@@ -225,7 +225,7 @@ This approach was suggested in [^PracticalTypeInferenceForArbitraryRankTypes] an
 
 #### Getting rid of metavariables
 
-- [Zonker](./arralac/src/Language/Arralac/Zonker/Zn/Zonk.hs)
+- [`Zonker`](./arralac/src/Language/Arralac/Zonker/Zn/Zonk.hs)
   - Runs after the `Solver`.
   - Converts typed terms to a representation where no metavariables may occur.
     - Replaces all solved metavariables with their types.
@@ -233,7 +233,7 @@ This approach was suggested in [^PracticalTypeInferenceForArbitraryRankTypes] an
 
 #### Enabling safe term transformations
 
-- [Core.ConvertZonked](./arralac/src/Language/Arralac/Core/ConvertZonked.hs)
+- [`Core.ConvertZonked`](./arralac/src/Language/Arralac/Core/ConvertZonked.hs)
   - Provides functions for converting a fully zonked term into the Core representation.
 
     Some functions from the `free-foil` [^FreeFoilLibrary] library were copied and modified locally:
@@ -242,7 +242,7 @@ This approach was suggested in [^PracticalTypeInferenceForArbitraryRankTypes] an
   
 #### Evaluating terms
 
-- [Evaluator](arralac/src/Language/Arralac/Evaluator/Run.hs)
+- [`Evaluator`](arralac/src/Language/Arralac/Evaluator/Run.hs)
   - Uses `free-foil` [^FreeFoilLibrary] functions for calculating the weak head normal form [^WhnfHaskellWiki] of a Core term.
 
 ## Get `arralac`
