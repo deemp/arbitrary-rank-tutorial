@@ -3,7 +3,9 @@
 
 \section{Limitations and Future Work}
 \label{sec:Discussion:Limitations}
+
 A critical analysis must also acknowledge the system's limitations, which in turn motivate future work.
+
 \begin{itemize}
     \item \textbf{Lack of `let`-generalization:} The current implementation does not perform generalization for `let`-bindings, a standard feature in ML-family languages. The typechecker correctly handles user-provided polymorphic signatures but does not infer them for un-annotated `let`-bindings. As noted in the GHC documentation regarding the `MonoLocalBinds` extension, implementing this correctly, especially for local bindings, is non-trivial. The current constraint-based architecture, however, is well-suited for adding this feature by solving for types within the `let`-binding's scope and quantifying over the appropriate unbound metavariables.
 

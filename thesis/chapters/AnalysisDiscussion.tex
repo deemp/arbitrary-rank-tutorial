@@ -20,7 +20,7 @@ A key objective was to implement architectural patterns from GHC that were menti
 The decision to separate constraint generation from constraint solving is the most significant architectural contribution of this work. The paper \cite{jones-practical-2007} uses an eager unification approach, where type constraints are solved as they are discovered. In contrast, \texttt{Arralac}'s pipeline, which first gathers all "wanted" constraints and then passes them to an independent solver, proved to be highly effective. This approach yields two major benefits:
 \begin{enumerate}
     \item \textbf{Improved Modularity:} The typechecker's logic is simplified as it only needs to reason about constraint generation. The solver can be developed and tested in isolation, focusing purely on unification, occurs checks, and level checks.
-    \item \textbf{Foundation for Better Error Reporting:} While not fully exploited yet, this architecture is the foundation for more sophisticated error diagnostics. Since all constraints from an expression are available before solving begins, a future solver could analyze conflicting constraints (e.g., `a ~ Int` and `a ~ Bool`) and provide a much more precise error message than a simple unification failure.
+    \item \textbf{Foundation for Better Error Reporting:} While not fully exploited yet, this architecture is the foundation for more sophisticated error diagnostics. Since all constraints from an expression are available before solving begins, a future solver could analyze conflicting constraints (e.g., \texttt{a ~ Int} and \texttt{a ~ Bool}) and provide a much more precise error message than a simple unification failure.
 \end{enumerate}
 
 \paragraph{Trees That Grow (TTG) for the AST}
@@ -28,6 +28,7 @@ The implementation results validate the choice of the TTG pattern for the AST. A
 
 \section{Analysis of System Characteristics}
 \label{sec:Discussion:Characteristics}
+
 The codebase metrics presented in \cref{table:cloc} and the system's design warrant further analysis, as they reflect the non-functional quality of the work.
 
 \begin{itemize}
