@@ -8,8 +8,10 @@
 
 - [Language server](./arralac/src/Language/Arralac/LanguageServer/Run.hs)
   - Supports showing types of variables on hover and error diagnostics when something goes wrong.
+  - It is implemented via the `lsp` Haskell package [^LspHaskell].
 - [Command-line interface](./arralac/src/Language/Arralac/CLI/Run.hs)
   - Supports running a language server, typechecking programs, and evaluating them.
+  - It is implemented via the `optparse-applicative` Haskell package [^OptparseApplicative].
 
 ## Examples
 
