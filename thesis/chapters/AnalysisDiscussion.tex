@@ -1,0 +1,50 @@
+\chapter{Analysis and Discussion}
+\label{chap:AnalysisAndDiscussion}
+
+The previous chapter presented the implementation of the \texttt{Arralac} application and demonstrated its functional correctness through concrete examples and tooling.
+
+This analysis will proceed in four parts. First, I will evaluate the results against the primary objectives of this thesis, discussing how the design and implementation choices successfully met those goals. Second, I will analyze the key quality characteristics of the system, interpreting the significance of the metrics presented. Third, I will draw a direct comparison between this work and its foundational paper, \cite{jones-practical-2007}, to highlight the novel contributions. Finally, I will critically examine the limitations of the current implementation and propose concrete directions for future research.
+
+\section{Achievement of Thesis Objectives}
+\label{sec:Discussion:Objectives}
+
+The primary goal of this thesis was to create a modern, tutorial-focused implementation of a lambda calculus with arbitrary-rank polymorphism, building upon the theoretical foundations of \cite{jones-practical-2007} while incorporating practical insights from production compilers like GHC. The results confirm that this objective was successfully achieved.
+
+\subsection{A Modern, Tutorial Implementation}
+The original implementation in \cite{jones-practical-2007} is a pedagogical tool for understanding type inference algorithms. This thesis extends that goal into the modern software development landscape. The functional language server (\cref{fig:lsp-demo}) and the command-line interface are not mere additions; they are central to the "tutorial" objective. They transform an abstract algorithm into a tangible tool that users can interact with, experiment with, and learn from in a familiar environment (Visual Studio Code). This interactivity is critical for understanding complex type system behaviors, such as how a higher-rank type is instantiated or when a skolem escape error occurs.
+
+\subsection{Incorporation of GHC Insights}
+A key objective was to implement architectural patterns from GHC that were mentioned but not fully realized in \cite{jones-practical-2007}. The success of this integration is a core finding of this thesis.
+
+\paragraph{Constraint-Based Type Inference}
+The decision to separate constraint generation from constraint solving is the most significant architectural contribution of this work. The paper \cite{jones-practical-2007} uses an eager unification approach, where type constraints are solved as they are discovered. In contrast, \texttt{Arralac}'s pipeline, which first gathers all "wanted" constraints and then passes them to an independent solver, proved to be highly effective. This approach yields two major benefits:
+\begin{enumerate}
+    \item \textbf{Improved Modularity:} The typechecker's logic is simplified as it only needs to reason about constraint generation. The solver can be developed and tested in isolation, focusing purely on unification, occurs checks, and level checks.
+    \item \textbf{Foundation for Better Error Reporting:} While not fully exploited yet, this architecture is the foundation for more sophisticated error diagnostics. Since all constraints from an expression are available before solving begins, a future solver could analyze conflicting constraints (e.g., `a ~ Int` and `a ~ Bool`) and provide a much more precise error message than a simple unification failure.
+\end{enumerate}
+
+\paragraph{Trees That Grow (TTG) for the AST}
+The implementation results validate the choice of the TTG pattern for the AST. As shown in \cref{sec:Implementation:AST}, this pattern allows the AST to be cleanly and safely annotated with pass-specific information. The `TcAnno` type, containing the inferred type, is only present in the `CompTc` version of the tree. This is a type-safe guarantee that type information is not accessed before it has been computed, which is a significant improvement in robustness over using a single, monolithic AST with `Maybe` fields for annotations.
+
+\section{Analysis of System Characteristics}
+\label{sec:Discussion:Characteristics}
+The codebase metrics presented in \cref{table:cloc} and the system's design warrant further analysis, as they reflect the non-functional quality of the work.
+
+\begin{itemize}
+    \item \textbf{Modularity:} The division of the codebase into 86 modules is a direct result of the clean pipeline architecture. Each stage—parser, renamer, typechecker, solver, zonker, evaluator—is self-contained. This high degree of modularity makes the system highly \textbf{analysable}; a researcher interested only in constraint solving, for instance, can study the `Solver` modules with minimal cognitive overhead from the other parts of the application.
+
+    \item \textbf{Analysability (Error Handling):} The design choice to have each pipeline stage throw its own distinct, descriptive error type with a call stack is a pragmatic success. It addresses a common failing in academic compilers: opaque error messages. When a failure occurs, the developer can immediately identify both *where* in the pipeline it failed (e.g., the Renamer) and *why* (e.g., an unbound variable), which was crucial during development and debugging.
+
+    \item \textbf{Installability:} The use of Nix for dependency management and installation is critical to the project's goal of being a usable tutorial. It guarantees that any user on a supported platform can reproduce the development environment and install the executables with a single command. This removes the "it works on my machine" problem and makes the research artifact genuinely accessible and verifiable.
+\end{itemize}
+
+\section{Comparison with \textit{Practical Type Inference for Arbitrary-Rank Types}}
+\label{sec:Discussion:Comparison}
+This thesis is not just an implementation of \cite{jones-practical-2007}, but an extension and modernization of its ideas. The key advancements are:
+\begin{enumerate}
+    \item \textbf{Constraint-Based Architecture:} As discussed, \cite{jones-practical-2007} suggests a constraint-based approach as a possibility for better error messages. This thesis provides a complete, working implementation of that idea and demonstrates its architectural benefits beyond just error reporting, namely in modularity and clarity of the pipeline.
+
+    \item \textbf{Modern Tooling (LSP):} The original paper's implementation is a Haskell library. This thesis embeds the core logic within a language server, providing immediate, interactive feedback. This represents a significant step forward in making the concepts practical and accessible to a wider audience of programmers and students.
+
+    \item \textbf{Explicit AST Annotations:} The use of a TTG-based AST provides a formal, type-safe mechanism for annotating the tree with inferred types. This contrasts with simpler approaches and provides a more robust foundation for later passes that rely on this type information.
+\end{enumerate}

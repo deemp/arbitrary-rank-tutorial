@@ -1,4 +1,16 @@
 \chapter{Conclusion}
 \label{chap:Conclusion}
 
-\dots
+\section{Limitations and Future Work}
+\label{sec:Discussion:Limitations}
+A critical analysis must also acknowledge the system's limitations, which in turn motivate future work.
+\begin{itemize}
+    \item \textbf{Lack of `let`-generalization:} The current implementation does not perform generalization for `let`-bindings, a standard feature in ML-family languages. The typechecker correctly handles user-provided polymorphic signatures but does not infer them for un-annotated `let`-bindings. As noted in the GHC documentation regarding the `MonoLocalBinds` extension, implementing this correctly, especially for local bindings, is non-trivial. The current constraint-based architecture, however, is well-suited for adding this feature by solving for types within the `let`-binding's scope and quantifying over the appropriate unbound metavariables.
+
+    \item \textbf{Rudimentary Test Coverage:} While the system is functionally correct on key examples, its robustness would be greatly improved by a comprehensive test suite. Future work should prioritize creating at least 10-20 unit tests for both the `Solver` and the `Typechecker` modules, covering edge cases, expected failures (e.g., occurs check, skolem escape), and complex valid programs.
+
+    \item \textbf{Language Server Enhancements:} The current LSP implementation is a proof of concept. It could be extended to support more advanced features like "go to definition" (by using the information from the Renamer) and semantic syntax highlighting (by using the inferred types from the Typechecker).
+\end{itemize}
+
+\section{Conclusion}
+The analysis of the \texttt{Arralac} implementation demonstrates a successful achievement of the thesis goals. The system provides a modern, functional, and interactive tool for exploring arbitrary-rank polymorphism. The architectural choices, particularly the adoption of a constraint-based pipeline and a Trees That Grow AST, have proven to be robust and effective, yielding a system that is both modular and analysable. While limitations exist, they represent clear and achievable paths for future research. This work therefore stands as a valuable contribution, bridging the gap between the theory of advanced type systems and the practice of modern compiler engineering.
