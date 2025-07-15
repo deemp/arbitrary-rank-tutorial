@@ -121,16 +121,17 @@ While the theoretical underpinnings are rooted in \cite{jones-practical-2007}, t
 
 \begin{table}[h!]
     \centering
+    \small
     \caption{Comparison of Type Inference Architectures}
     \label{tab:arch-comparison}
     \begin{tabular}{p{0.2\textwidth} p{0.35\textwidth} p{0.35\textwidth}}
         \toprule
-        \textbf{Feature}            & \textbf{\cite{jones-practical-2007} (Eager Unification)}                             & \textbf{\texttt{Arralac} (Constraint-Based)}                                                        \\
+        \textbf{Feature}            & \textbf{\cite{jones-practical-2007} (Eager Unification)}                            & \textbf{\texttt{Arralac} (Constraint-Based)}                                                                                            \\
         \midrule
-        \textbf{Unification}        & Solves constraints immediately as they are generated.                                & Gathers all constraints first; solves them in a separate, dedicated pass.                           \\
-        \textbf{Modularity}         & Inference logic is tightly coupled with unification logic.                           & The Typechecker (generation) and Solver (unification) are fully decoupled modules.                  \\
-        \textbf{Error Reporting}    & Errors are reported at the first point of unification failure, which can be obscure. & Has the potential for holistic error analysis by examining all conflicting constraints at once.     \\
-        \textbf{Let-Generalization} & Described via a global context traversal at the point of the `let`-binding.          & Not implemented, but the architecture would require a more explicit, scoped solving of constraints. \\
+        \textbf{Unification}        & Solves constraints immediately as they are generated.                               & Gathers all constraints first; solves them in a separate, dedicated pass.                                                               \\
+        \textbf{Modularity}         & Inference logic is tightly coupled with unification logic.                          & The Typechecker (generation) and Solver (unification) are fully decoupled modules.                                                      \\
+        \textbf{Error Reporting}    & rrors are reported at the first point of unification failure, which can be obscure. & Already reports the location of a sub-term where a constraint originated. Has the potential for holistic error analysis by examining all conflicting constraints at once. \\
+        \textbf{Let-Generalization} & Described via a global context traversal at the point of the \texttt{let}-binding.  & Not implemented, but the architecture would require a more explicit, scoped solving of constraints.                                     \\
         \bottomrule
     \end{tabular}
 \end{table}
