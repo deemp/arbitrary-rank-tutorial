@@ -9,34 +9,34 @@ This chapter details the architectural design and core methodologies employed in
 The process of transforming a source file from plain text into an evaluated term is managed by a multi-stage pipeline. Each stage performs a distinct transformation on the program representation, passing its output to the next stage. This modular design isolates concerns, simplifies debugging, and facilitates future extensions. Its stages are described below.
 
 \begin{figure}[h!]
-  \centering
-  \begin{tikzpicture}[
-    node distance=1.5cm and 2.5cm,
-    auto,
-    block/.style={rectangle, draw, fill=blue!20, text width=7em, text centered, rounded corners, minimum height=3em},
-    arrow/.style={-Latex, thick}
-  ]
-    % Define the pipeline stages as nodes
-    \node[block] (reader) {Reading};
-    \node[block, right=of reader] (parser) {Parsing};
-    \node[block, right=of parser] (renamer) {Renaming};
-    \node[block, below=of renamer] (typechecker) {Typechecking};
-    \node[block, left=of typechecker] (solver) {Solving};
-    \node[block, left=of solver] (zonker) {Zonking};
-    \node[block, below=of zonker] (core) {Core Conversion};
-    \node[block, right=of core] (evaluation) {Evaluation (WHNF)};
+    \centering
+    \begin{tikzpicture}[
+            node distance=1.5cm and 2.5cm,
+            auto,
+            block/.style={rectangle, draw, fill=blue!20, text width=7em, text centered, rounded corners, minimum height=3em},
+            arrow/.style={-Latex, thick}
+        ]
+        % Define the pipeline stages as nodes
+        \node[block] (reader) {Reading};
+        \node[block, right=of reader] (parser) {Parsing};
+        \node[block, right=of parser] (renamer) {Renaming};
+        \node[block, below=of renamer] (typechecker) {Typechecking};
+        \node[block, left=of typechecker] (solver) {Solving};
+        \node[block, left=of solver] (zonker) {Zonking};
+        \node[block, below=of zonker] (core) {Core Conversion};
+        \node[block, right=of core] (evaluation) {Evaluation};
 
-    % Draw the arrows connecting the stages
-    \draw[arrow] (reader) -- (parser);
-    \draw[arrow] (parser) -- (renamer);
-    \draw[arrow] (renamer) -- (typechecker);
-    \draw[arrow] (typechecker) -- (solver);
-    \draw[arrow] (solver) -- (zonker);
-    \draw[arrow] (zonker) -- (core);
-    \draw[arrow] (core) -- (evaluation);
-  \end{tikzpicture}
-  \caption{The \texttt{Arralac} Pipeline}
-  \label{fig:pipeline}
+        % Draw the arrows connecting the stages
+        \draw[arrow] (reader) -- (parser);
+        \draw[arrow] (parser) -- (renamer);
+        \draw[arrow] (renamer) -- (typechecker);
+        \draw[arrow] (typechecker) -- (solver);
+        \draw[arrow] (solver) -- (zonker);
+        \draw[arrow] (zonker) -- (core);
+        \draw[arrow] (core) -- (evaluation);
+    \end{tikzpicture}
+    \caption{The \texttt{Arralac} Pipeline}
+    \label{fig:pipeline}
 \end{figure}
 
 
