@@ -2,8 +2,8 @@ module Language.Arralac.Typechecker.TcTyVarEnv where
 
 import Data.Map qualified as Map
 import GHC.Stack (HasCallStack)
-import Language.Arralac.Syntax.Local.RnVar
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Type.Local.RnVar
+import Language.Arralac.Type.Local.Type
 import Language.Arralac.Typechecker.Error (CtxTcErrorPropagated, TcError (..), dieTc)
 
 -- ===========================

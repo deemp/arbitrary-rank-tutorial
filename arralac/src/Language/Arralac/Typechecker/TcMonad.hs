@@ -14,9 +14,11 @@ import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Prelude.Unique.Supply (CtxUniqueSupply)
 import Language.Arralac.Solver.Types
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.Local.Concrete
+import Language.Arralac.Type.TTG.Concrete
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.Type
+import Language.Arralac.Type.TTG.Type
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.Error
 import Language.Arralac.Typechecker.TcTyVar (isBoundTvTypeVar, newMetaTyVar', newSkolemTyVar, tyVarToMetaTyVar)

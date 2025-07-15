@@ -8,7 +8,7 @@ import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.RnVar
+import Language.Arralac.Type.Local.RnVar
 
 -- | A renamer error.
 data RnError

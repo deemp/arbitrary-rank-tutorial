@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Language.Arralac.Syntax.Local.TyVar.Zn where
+module Language.Arralac.Type.Local.TyVar.Zn where
 
 import Language.Arralac.Pass.Types (CompZn)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name (Name)
-import Language.Arralac.Syntax.Local.Type ()
-import Language.Arralac.Syntax.TTG.TyVar
+import Language.Arralac.Type.Local.Type ()
+import Language.Arralac.Type.TTG.TyVar
 
 type instance XTyVar CompZn = ZnTyVar
 

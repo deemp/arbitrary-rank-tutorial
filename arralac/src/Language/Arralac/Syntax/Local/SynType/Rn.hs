@@ -5,7 +5,7 @@ module Language.Arralac.Syntax.Local.SynType.Rn where
 import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.SynTypeConcrete()
 import Language.Arralac.Syntax.TTG.SynType
 import Prettyprinter (hsep, parens, (<+>))
 
@@ -16,8 +16,6 @@ type instance XSynType'ForAll'Body CompRn = SynType CompRn
 
 type instance XSynType'Fun'Arg CompRn = SynType CompRn
 type instance XSynType'Fun'Res CompRn = SynType CompRn
-
-type instance XSynType'Concrete CompRn = Concrete
 
 instance Pretty' (SynType CompRn) where
   pretty' = \case

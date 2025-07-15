@@ -4,8 +4,8 @@ module Language.Arralac.Syntax.Local.Extension.Zn where
 
 import Language.Arralac.Pass.Types
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.Extension
+import Language.Arralac.Type.Local.Type
 
 type instance XSynType'Var' CompZn = ()
 type instance XSynType'ForAll' CompZn = SrcSpan

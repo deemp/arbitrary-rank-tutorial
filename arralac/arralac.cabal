@@ -67,10 +67,10 @@ library
       Language.Arralac.Parser.Generated.Lex
       Language.Arralac.Parser.Generated.Par
       Language.Arralac.Parser.Run
+      Language.Arralac.Pass.Types
       Language.Arralac.Prelude.Bag
       Language.Arralac.Prelude.Debug
       Language.Arralac.Prelude.Locale
-      Language.Arralac.Pass.Types
       Language.Arralac.Prelude.Pretty
       Language.Arralac.Prelude.Pretty.Class
       Language.Arralac.Prelude.Pretty.GPretty
@@ -95,7 +95,6 @@ library
       Language.Arralac.Syntax.Local.Extension.Tc
       Language.Arralac.Syntax.Local.Extension.Zn
       Language.Arralac.Syntax.Local.Name
-      Language.Arralac.Syntax.Local.RnVar
       Language.Arralac.Syntax.Local.SynLit
       Language.Arralac.Syntax.Local.SynTerm.Rn
       Language.Arralac.Syntax.Local.SynTerm.Tc
@@ -106,17 +105,22 @@ library
       Language.Arralac.Syntax.Local.SynType.Rn
       Language.Arralac.Syntax.Local.SynType.Tc
       Language.Arralac.Syntax.Local.SynType.Zn
-      Language.Arralac.Syntax.Local.Type
-      Language.Arralac.Syntax.Local.TyVar.Rn
-      Language.Arralac.Syntax.Local.TyVar.Tc
-      Language.Arralac.Syntax.Local.TyVar.Zn
+      Language.Arralac.Syntax.Local.SynTypeConcrete
       Language.Arralac.Syntax.TTG.Extension
       Language.Arralac.Syntax.TTG.Lit
       Language.Arralac.Syntax.TTG.SynTerm
       Language.Arralac.Syntax.TTG.SynTermVar
       Language.Arralac.Syntax.TTG.SynType
-      Language.Arralac.Syntax.TTG.Type
-      Language.Arralac.Syntax.TTG.TyVar
+      Language.Arralac.Syntax.TTG.SynTypeVar
+      Language.Arralac.Type.Local.Concrete
+      Language.Arralac.Type.Local.RnVar
+      Language.Arralac.Type.Local.Type
+      Language.Arralac.Type.Local.TyVar.Rn
+      Language.Arralac.Type.Local.TyVar.Tc
+      Language.Arralac.Type.Local.TyVar.Zn
+      Language.Arralac.Type.TTG.Concrete
+      Language.Arralac.Type.TTG.Type
+      Language.Arralac.Type.TTG.TyVar
       Language.Arralac.Typechecker.Constraints
       Language.Arralac.Typechecker.Error
       Language.Arralac.Typechecker.Run

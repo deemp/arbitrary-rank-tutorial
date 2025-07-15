@@ -8,9 +8,9 @@ import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Solver.Error
 import Language.Arralac.Solver.Types
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.Type
+import Language.Arralac.Type.TTG.Type
 import Language.Arralac.Typechecker.Constraints
 
 -- | Perform occurs and level check.

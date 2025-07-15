@@ -9,10 +9,11 @@ import Language.Arralac.Syntax.Local.Extension.Zn
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.SynTerm.Zn ()
 import Language.Arralac.Syntax.Local.SynTermVar.Zn
-import Language.Arralac.Syntax.Local.TyVar.Zn
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.SynTypeConcrete
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
+import Language.Arralac.Type.Local.TyVar.Zn
+import Language.Arralac.Type.Local.Type
 import Language.LSP.Protocol.Types (Position (..), Range (..))
 import Prettyprinter (Doc)
 

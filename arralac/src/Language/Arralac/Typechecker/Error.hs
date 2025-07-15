@@ -8,10 +8,10 @@ import GHC.Stack (HasCallStack, callStack)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Extension.Rn ()
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.TyVar.Rn
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm (SynTerm (..))
+import Language.Arralac.Type.Local.RnVar
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.Type
 import Language.Arralac.Typechecker.Constraints
 import Prettyprinter (Doc)
 

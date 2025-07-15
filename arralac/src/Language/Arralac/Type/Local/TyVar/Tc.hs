@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Language.Arralac.Syntax.Local.TyVar.Tc where
+module Language.Arralac.Type.Local.TyVar.Tc where
 
 import Data.IORef (IORef)
 import Data.Text
@@ -10,9 +10,9 @@ import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Unique
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.TTG.TyVar
-import Language.Arralac.Syntax.TTG.Type (Type)
+import Language.Arralac.Type.Local.Type
+import Language.Arralac.Type.TTG.TyVar
+import Language.Arralac.Type.TTG.Type (Type)
 import Language.Arralac.Typechecker.Types
 import Prettyprinter
 

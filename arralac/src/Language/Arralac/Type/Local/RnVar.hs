@@ -1,15 +1,13 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Language.Arralac.Syntax.Local.RnVar where
+module Language.Arralac.Type.Local.RnVar where
 
 import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.TTG.SynTermVar
-import Language.Arralac.Syntax.TTG.TyVar
+import Language.Arralac.Type.TTG.TyVar
 
 type instance XTyVar CompRn = RnVar
-type instance XSynTerm'Var CompRn = RnVar
 
 -- | A term or a type variable produced by the renamer.
 --

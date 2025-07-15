@@ -1,15 +1,16 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Language.Arralac.Syntax.Local.Type where
+module Language.Arralac.Type.Local.Type where
 
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.TTG.Type
 
 import Data.IORef (IORef)
 import Language.Arralac.Pass.Types (CompRn, CompTc, CompZn)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.TTG.TyVar
+import Language.Arralac.Type.TTG.Concrete
+import Language.Arralac.Type.TTG.TyVar
 import Prettyprinter
 
 -- | Expected type.
@@ -48,24 +49,12 @@ type Sigma = TcType
 type Rho = TcType -- No top-level ForAll
 type Tau = TcType -- No ForAlls anywhere
 
--- ================
--- [Concrete types]
--- ================
-
-data Concrete = Concrete
-  { concreteName :: Name
-  , concreteType :: TypeConcrete
-  }
-
--- =====================
--- [Instances for Types]
--- =====================
 
 instance (Pretty' a) => Pretty' (Expected a) where
   pretty' (Infer _) = "[Infer]"
   pretty' (Check a) = "[Check]: " <> pretty' a
 
-instance (Pretty' (XTyVar p)) => Pretty' (Type p) where
+instance (Pretty' (XTyVar p), Pretty' (XTyConcrete p)) => Pretty' (Type p) where
   pretty' = \case
     Type'Var var -> pretty' var
     Type'ForAll vars body -> "forall " <> hsep (pretty' <$> vars) <> "." <+> pretty' body
@@ -78,6 +67,3 @@ instance (Pretty' (XTyVar p)) => Pretty' (Type p) where
           Type'ForAll _ _ -> parens
           _ -> id
     Type'Concrete ty -> pretty' ty
-
-instance Pretty' Concrete where
-  pretty' c = pretty' c.concreteType

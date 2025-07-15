@@ -1,4 +1,4 @@
-module Language.Arralac.Syntax.TTG.TyVar where
+module Language.Arralac.Type.TTG.TyVar where
 
 -- We use different representations for term and type variables.
 --

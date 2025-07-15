@@ -9,8 +9,8 @@ import Language.Arralac.Parser.Error
 import Language.Arralac.Renamer.Error
 import Language.Arralac.Renamer.Types
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.RnVar
-import Language.Arralac.Syntax.Local.TyVar.Tc
+import Language.Arralac.Type.Local.RnVar
+import Language.Arralac.Type.Local.TyVar.Tc
 import Language.Arralac.Typechecker.Error
 import Language.LSP.Protocol.Types (Diagnostic (..), DiagnosticSeverity (DiagnosticSeverity_Error), Position (..), Range (..))
 

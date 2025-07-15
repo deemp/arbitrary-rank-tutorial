@@ -6,15 +6,17 @@ import Language.Arralac.Prelude.Bag
 import Language.Arralac.Prelude.Debug
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Extension.Tc
-import Language.Arralac.Syntax.Local.RnVar
 import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTerm.Tc ()
 import Language.Arralac.Syntax.Local.SynTermVar.Tc
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.SynTypeConcrete
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.Local.RnVar
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.Type
+import Language.Arralac.Type.TTG.Concrete
+import Language.Arralac.Type.TTG.Type
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.Error
 import Language.Arralac.Typechecker.TcMonad
@@ -64,10 +66,10 @@ tcRho :: SynTerm CompRn -> Expected Rho -> TcM (SynTerm CompTc)
 tcRho t@(SynTerm'Lit annoSrcLoc lit) exp_ty = do
   let ty =
         case lit of
-          SynLit'Num{} -> TypeConcrete'Int
-          SynLit'Bool{} -> TypeConcrete'Bool
-          SynLit'Str{} -> TypeConcrete'String
-          SynLit'Con conName -> TypeConcrete'Con conName
+          SynLit'Num{} -> TyConcrete'Int
+          SynLit'Bool{} -> TyConcrete'Bool
+          SynLit'Str{} -> TyConcrete'String
+          SynLit'Con conName -> TyConcrete'Con conName
   instSigma (mkTypedThingIfCheck t exp_ty) (Type'Concrete ty) exp_ty
   pure $
     SynTerm'Lit

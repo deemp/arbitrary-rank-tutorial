@@ -20,12 +20,12 @@ import Language.Arralac.Syntax.Local.SynTerm.Zn ()
 import Language.Arralac.Syntax.Local.SynTermVar.Tc
 import Language.Arralac.Syntax.Local.SynTermVar.Zn
 import Language.Arralac.Syntax.Local.SynType.Tc ()
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.TyVar.Zn
-import Language.Arralac.Syntax.Local.Type
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.TyVar.Zn
+import Language.Arralac.Type.Local.Type
+import Language.Arralac.Type.TTG.Type
 
 -- Substitute metavariables with their Indirect types after typechecking
 -- to produce a term without metavariables.

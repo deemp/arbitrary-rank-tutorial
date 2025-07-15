@@ -5,10 +5,10 @@ module Language.Arralac.Syntax.Local.SynType.Tc where
 import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.TyVar.Zn (ZnTyVar)
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.SynTypeConcrete
 import Language.Arralac.Syntax.TTG.SynType
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.TyVar.Zn
 import Prettyprinter (hsep, (<+>))
 
 type instance XSynType'Var CompRn = Name

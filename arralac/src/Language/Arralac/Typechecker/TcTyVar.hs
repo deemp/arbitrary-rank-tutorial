@@ -8,9 +8,9 @@ import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Prelude.Unique
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.Type
+import Language.Arralac.Type.TTG.Type
 import Language.Arralac.Typechecker.Error
 import Language.Arralac.Typechecker.Types
 

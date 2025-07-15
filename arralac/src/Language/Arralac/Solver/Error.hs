@@ -5,8 +5,8 @@ module Language.Arralac.Solver.Error where
 import Control.Exception (Exception, throw)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Language.Arralac.Prelude.Pretty
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.Type
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.Types
 

@@ -14,7 +14,7 @@ import Language.Arralac.Solver.Check
 import Language.Arralac.Solver.Error
 import Language.Arralac.Solver.Types
 import Language.Arralac.Solver.Unify qualified as Solver
-import Language.Arralac.Syntax.Local.TyVar.Tc
+import Language.Arralac.Type.Local.TyVar.Tc
 import Language.Arralac.Typechecker.Constraints
 
 type SolveM a = (CtxDebug, CtxPrettyVerbosity) => IO a

@@ -1,9 +1,9 @@
 module Language.Arralac.Solver.Unify where
 
 import Language.Arralac.Solver.Error
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.Type
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.Type
+import Language.Arralac.Type.TTG.Type
 import Language.Arralac.Typechecker.Constraints
 import Language.Arralac.Typechecker.TcTyVar
 

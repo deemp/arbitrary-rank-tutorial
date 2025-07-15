@@ -15,12 +15,12 @@ import Language.Arralac.Syntax.Local.Extension.Rn ()
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTerm.Rn ()
-import Language.Arralac.Syntax.Local.SynTermVar.Rn
 import Language.Arralac.Syntax.Local.SynType.Rn ()
-import Language.Arralac.Syntax.Local.Type
+import Language.Arralac.Syntax.Local.SynTypeConcrete
 import Language.Arralac.Syntax.TTG.SynTerm
 import Language.Arralac.Syntax.TTG.SynType
-import Language.Arralac.Syntax.TTG.Type
+import Language.Arralac.Type.Local.RnVar
+import Language.Arralac.Type.TTG.Concrete
 
 -- ===================================
 -- [Convert and rename the parser AST]
@@ -199,13 +199,13 @@ instance ConvertParsed Abs.TypeVariable where
         , nameLoc = (convertPositionToSrcSpan pos)
         }
 
-parseTypeConcrete :: NameFs -> TypeConcrete
-parseTypeConcrete name = do
+parseTyConcrete :: NameFs -> TyConcrete
+parseTyConcrete name = do
   if
-    | name == typeConcreteName TypeConcrete'Bool -> TypeConcrete'Bool
-    | name == typeConcreteName TypeConcrete'String -> TypeConcrete'String
-    | name == typeConcreteName TypeConcrete'Int -> TypeConcrete'Int
-    | otherwise -> TypeConcrete'Con name
+    | name == tyConcreteName TyConcrete'Bool -> TyConcrete'Bool
+    | name == tyConcreteName TyConcrete'String -> TyConcrete'String
+    | name == tyConcreteName TyConcrete'Int -> TyConcrete'Int
+    | otherwise -> TyConcrete'Con name
 
 withNamesInScope :: NameSpace -> [Name] -> RnM a -> RnM a
 withNamesInScope ns names act = do
@@ -228,7 +228,7 @@ instance ConvertParsed Abs.Type where
       -- TODO should all mentions of a type have the same uniques?
       let ns = NameSpace'TyConcrete
           srcSpan = convertPositionToSrcSpan pos
-          concreteType = parseTypeConcrete name
+          concreteType = parseTyConcrete name
       nameUnique <- getExistingOrNewUnique ns name
       pure $
         SynType'Concrete

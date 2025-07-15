@@ -3,8 +3,8 @@ module Language.Arralac.Syntax.Local.Anno where
 import Data.Data
 import Language.Arralac.Pass.Types
 import Language.Arralac.Syntax.Local.Name
-import Language.Arralac.Syntax.Local.TyVar.Tc
-import Language.Arralac.Syntax.Local.TyVar.Zn
+import Language.Arralac.Type.Local.TyVar.Tc
+import Language.Arralac.Type.Local.TyVar.Zn
 
 -- Note [Ping-pong in TTG]
 -- ~~~~~~~~~~~~~~~~~~~~~~
