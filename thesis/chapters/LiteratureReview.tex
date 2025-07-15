@@ -24,13 +24,58 @@ A crucial distinction within such powerful systems is the one between predicativ
 
 While System F provides the theoretical ideal for polymorphism, its power makes it impossible to create an algorithm that can always infer a program's types without explicit annotations from the programmer. To make type inference practical and automatic, languages like Haskell and ML adopted a decidable and well-behaved subset of System F known as the \textbf{Damas-Hindley-Milner (HM)} type system \cite{damas-milner}.
 
-The HM system's practicality stems from a key restriction on polymorphism: it only supports \textbf{Rank-1} types. This means that \texttt{forall} quantifiers are only permitted at the very outermost level of a type definition. For example, \texttt{forall a. [a] -> Int} is a valid Rank-1 type, but a type where the quantifier is nested, such as \texttt{(forall a. a -> a) -> Int}, is known as a **higher-rank type** (specifically, a Rank-2 type) and is forbidden in a standard HM system.
+The HM system's practicality stems from a key restriction on polymorphism: it only supports \textbf{Rank-1} types. This means that \texttt{forall} quantifiers are only permitted at the very outermost level of a type definition. For example, \texttt{forall a. [a] -> Int} is a valid Rank-1 type, but a type where the quantifier is nested, such as \texttt{(forall a. a -> a) -> Int}, is known as a \textbf{higher-rank type} (specifically, a Rank-2 type) and is forbidden in a standard HM system.
 
 This Rank-1 restriction ensures that type inference is decidable and can be implemented efficiently by algorithms like Algorithm W \cite{jones-practical-2007}. However, it introduces a significant limitation: it becomes impossible to pass a polymorphic function as an argument to another function, as doing so would require a higher-rank type. While acceptable for many programs, this constraint prevents the expression of powerful programming patterns common in functional programming, such as generic traversals or operations on monadic structures.
 
 This limitation creates a well-defined research gap: the need for a practical system that extends beyond Rank-1 polymorphism without sacrificing decidability. This thesis follows the path laid out by Peyton Jones et al. in \cite{jones-practical-2007}, which provides a practical foundation for extending the Hindley-Milner system to support arbitrary-rank types within a predicative framework.
 
+\section{Core Mechanisms of Practical Type Inference}
+\label{sec:LitReviewJones2007}
 
+The workhorse of this thesis is the bidirectional type inference algorithm detailed in \textit{Practical type inference for arbitrary-rank types} by Peyton Jones et al. \cite{jones-practical-2007}. This system is designed for practicality, extending the predictable Hindley-Milner system to handle higher-rank types by relying on programmer-supplied type annotations to guide the inference process. This section unpacks the key concepts and mechanisms of this algorithm, which form the direct basis for the implementation presented in this thesis.
+
+\subsection{Type Hierarchy and Context}
+The system defines a hierarchy of type forms to manage polymorphism precisely:
+\begin{itemize}
+    \item \textbf{\texttt{tau} ($\tau$) types}, or \textbf{monotypes}, are simple types with no \texttt{forall} quantifiers. Examples include \texttt{Int}, \texttt{Bool -> Int}, and type variables like \texttt{a}.
+    \item \textbf{\texttt{rho} ($\rho$) types} are types that may contain nested polytypes but do not have a \texttt{forall} at the outermost level. For example, \texttt{Int -> (forall a. a -> a)} is a \texttt{rho} type. All \texttt{tau} types are also \texttt{rho} types.
+    \item \textbf{\texttt{sigma} ($\sigma$) types}, or \textbf{polytypes}, are types that are explicitly quantified with a top-level \texttt{forall}. For example, \texttt{forall b. b -> b}.
+\end{itemize}
+This structured vocabulary is used within a \textbf{type context} (or environment), typically denoted by $\Gamma$, which maps term variables in scope to their respective $\sigma$-types.
+
+\subsection{The Machinery of Inference: Metavariables and Unification}
+At its core, type inference is a process of solving constraints. The algorithm uses \textbf{metavariables} (e.g., $\alpha, \beta$) as placeholders for unknown monotypes. When the typechecker encounters an expression, it generates fresh metavariables and equality constraints between types. For example, in the expression \texttt{let f = ($\backslash$ x. x)}, the type of \texttt{x} is initially unknown, so it is assigned a metavariable $\alpha$. The body is also \texttt{x}, so its type is also $\alpha$. The full lambda expression \texttt{(\textbackslash x. x)} is thus given the type $\alpha \to \alpha$. The process of solving these constraints is called \textbf{unification}.
+
+A critical design choice in \cite{jones-practical-2007} is the \textbf{monotype invariant}: metavariables can \textit{only} be unified with \texttt{tau}-types. This restriction is essential for ensuring that type inference is predictable and \textbf{order-independent}. If a metavariable could be unified with a polytype (e.g., \texttt{forall a. a -> a}), the result of typechecking could change based on the order in which constraints are solved, a highly undesirable property for a practical compiler. This keeps the system predicative and decidable.
+
+\subsection{Subsumption: The "More Polymorphic Than" Relation}
+A key challenge with higher-rank types is that simple unification is insufficient. A function expecting an argument of type \texttt{Int -> Int} should be allowed to receive a more general function of type \texttt{forall a. a -> a}, but these two types do not unify. The solution is \textbf{subsumption}, a check denoted by $\sigma_1 \le \sigma_2$, which asks, "Is type $\sigma_1$ at least as polymorphic as type $\sigma_2$?"
+
+Subsumption checking is where the core mechanics of instantiation and skolemization come into play:
+\begin{enumerate}
+    \item \textbf{Instantiation}: This is the process of making a polymorphic type concrete. It replaces the quantified variables in a $\sigma$-type with fresh metavariables, yielding a $\rho$-type. For example, \texttt{forall a. a -> a} is instantiated to $\alpha \to \alpha$.
+    \item \textbf{Deep Skolemization}: To check if an actual type $\sigma_{actual}$ can be used where $\sigma_{expected}$ is required, the algorithm skolemizes $\sigma_{expected}$. This involves replacing its universally quantified variables with \textbf{skolem constants}---rigid, un-unifiable type variables (e.g., $\hat{a}, \hat{b}$). Then, it instantiates $\sigma_{actual}$ and attempts to unify it with the skolemized type. The check succeeds only if this unification works \textit{without} causing a skolem constant to "escape" its scope. The "deep" part of this process is the crucial innovation.
+\end{enumerate}
+
+\subsection{Key Innovations: Deep Skolemization and Contravariance}
+The standard Hindley-Milner system only needs to handle quantifiers at the top level. For arbitrary-rank types, quantifiers can be nested, e.g., \texttt{(forall a. a -> a) -> Int}. To handle this, the algorithm employs two key techniques:
+\begin{itemize}
+    \item \textbf{Deep Skolemization and Weak Prenex Form}: Simple skolemization only works on top-level quantifiers. To handle nested ones, the algorithm first converts the expected type into a \textbf{weak prenex form}. This process effectively "lifts" quantifiers from the right side of function arrows to the top level, making them accessible. For example, it treats $T \to (\forall a. S)$ as equivalent to $\forall a. (T \to S)$ for the purpose of the check. This allows all relevant quantifiers to be skolemized at once, a process called deep skolemization.
+    \item \textbf{Contravariance}: When checking subsumption for function types, i.e., $(\sigma_1 \to \rho_1) \le (\sigma_2 \to \rho_2)$, the relationship for the arguments is reversed. The algorithm must check that $\sigma_2 \le \sigma_1$ (the argument position is \textbf{contravariant}) and $\rho_1 \le \rho_2$ (the result position is \textbf{covariant}). This is a standard property of function subtyping that is essential for soundness.
+\end{itemize}
+
+\subsection{The Bidirectional Algorithm in Practice}
+With these mechanisms in place, the system is structured as a \textbf{bidirectional type checking algorithm}. This means there are two distinct modes of operation:
+\begin{enumerate}
+    \item \textbf{Inference Mode ($\uparrow$)}: This mode asks, "What is the most general type of this expression?" and synthesizes a type \textit{up} from the expression's components. It is used, for example, when typechecking the right-hand side of a \texttt{let}-binding, where no prior type information is available.
+    \item \textbf{Checking Mode ($\downarrow$)}: This mode asks, "Does this expression have this specific type?" and pushes an expected type \textit{down} into the expression. This is the key to handling higher-rank polymorphism without full inference. For example, when checking the application \texttt{f arg}, if \texttt{f} has the known higher-rank type \texttt{(forall a. a -> a) -> Int}, the system enters checking mode for \texttt{arg} and pushes the expected type \texttt{forall a. a -> a} down. This allows \texttt{arg} to be treated as a polymorphic function.
+\end{enumerate}
+
+This bidirectional approach cleverly sidesteps the undecidability of full inference by using programmer annotations to switch from the more open-ended inference mode to the more constrained checking mode precisely where higher-rank types are involved. This makes the system both powerful and practical, and it is this algorithm implemented for this thesis.
+%
+
+\section{The Modern Landscape of Bidirectional Typing}
 \label{chap:LiteratureReview:sec:TypeInferenceAlgorithm}
 
 The practical, \textbf{bidirectional} system for arbitrary-rank types described in \cite{jones-practical-2007} provides the foundation for this thesis. However, the field of type inference is dynamic, and research has continued to evolve. This section surveys key developments since that foundational work, with a primary focus on bidirectional algorithms, which have been praised for their potential to improve error locality and produce more intuitive error messages \cite{dunfield-bidirectional-2020}. The continued interest in this area is evidenced by numerous publicly available implementations, which serve as valuable resources for researchers and students alike \cite{github-goldenberg-artem-goldenbergbidirectionalsystem-2025, github-choi-kwanghoonbidi-2025, github-chen-cu1ch3ntype-inference-zoo-2025}.
