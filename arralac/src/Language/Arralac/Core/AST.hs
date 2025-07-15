@@ -13,8 +13,13 @@ import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTerm.Zn ()
 import Prettyprinter
 
--- TODO Delayed substitution and Normalization by Evaluation
-
+-- | Core AST.
+--
+-- Similar to @Expr@ in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core.hs#L253
+-- 
+-- However, this version is untyped for simplicity.
 data Core scope term
   = Core'Lam scope
   | Core'App term term
