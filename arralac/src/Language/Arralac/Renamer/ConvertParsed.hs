@@ -5,7 +5,7 @@ import Data.Map qualified as Map
 import Data.Text qualified as T
 import GHC.Base (when)
 import Language.Arralac.Parser.Abs qualified as Abs
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Prelude.Unique (Unique)
 import Language.Arralac.Prelude.Unique.Supply (newUnique)

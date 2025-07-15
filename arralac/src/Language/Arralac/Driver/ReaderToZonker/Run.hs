@@ -2,7 +2,7 @@ module Language.Arralac.Driver.ReaderToZonker.Run where
 
 import GHC.Stack (HasCallStack)
 import Language.Arralac.Driver.ParserToZonker.Run
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty (CtxPrettyVerbosity)
 import Language.Arralac.Prelude.Types (CtxDebug, FastFilePath)
 import Language.Arralac.Reader.Run

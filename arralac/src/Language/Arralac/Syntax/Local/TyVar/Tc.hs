@@ -6,7 +6,7 @@ module Language.Arralac.Syntax.Local.TyVar.Tc where
 import Data.IORef (IORef)
 import Data.Text
 import GHC.Generics
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Unique
 import Language.Arralac.Syntax.Local.Name

@@ -2,7 +2,7 @@
 
 module Language.Arralac.Syntax.Local.SynTerm.Rn where
 
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTermVar.Rn ()
@@ -50,12 +50,12 @@ instance Pretty' (SynTerm CompRn) where
       "\\"
         <> pretty' var
         <> "."
-        <+> pretty' term
+          <+> pretty' term
     SynTerm'ALam _ var ty term ->
       "\\"
         <> parens (pretty' var <+> "::" <+> pretty' ty)
         <> "."
-        <+> pretty' term
+          <+> pretty' term
     SynTerm'Let _ name term1 term2 ->
       "let" <+> pretty' name <+> "=" <+> pretty' term1 <+> "in" <+> pretty' term2
     SynTerm'Ann _ term ty ->

@@ -2,8 +2,8 @@ module Language.Arralac.Typechecker.Constraints where
 
 import Data.IORef (IORef)
 import GHC.Generics (Generic)
+import Language.Arralac.Pass.Types (CompRn)
 import Language.Arralac.Prelude.Bag (Bag (..), emptyBag)
-import Language.Arralac.Prelude.Pass (CompRn)
 import Language.Arralac.Prelude.Pretty (Pretty' (..), genericPretty)
 import Language.Arralac.Syntax.Local.Name (RealSrcSpan)
 import Language.Arralac.Syntax.Local.SynTerm.Rn ()

@@ -5,7 +5,7 @@ import Control.Monad.Foil.Internal
 import Control.Monad.Free.Foil
 import Language.Arralac.Core.AST
 import Language.Arralac.Core.CoreNameBinder as CNB
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Unique
 import Language.Arralac.Syntax.Local.Name qualified as Name
 import Language.Arralac.Syntax.Local.SynLit

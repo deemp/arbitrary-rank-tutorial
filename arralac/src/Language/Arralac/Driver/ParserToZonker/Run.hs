@@ -3,7 +3,7 @@ module Language.Arralac.Driver.ParserToZonker.Run where
 import Data.IORef (newIORef)
 import GHC.Stack (HasCallStack)
 import Language.Arralac.Parser.Run
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Renamer.Run

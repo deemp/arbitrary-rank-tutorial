@@ -1,9 +1,9 @@
 module Language.Arralac.Typechecker.TcTerm where
 
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Bag
 import Language.Arralac.Prelude.Debug
-import Language.Arralac.Prelude.Pass
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Extension.Tc
 import Language.Arralac.Syntax.Local.RnVar

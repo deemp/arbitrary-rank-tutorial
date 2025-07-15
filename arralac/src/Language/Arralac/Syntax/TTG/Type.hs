@@ -6,6 +6,8 @@ import Language.Arralac.Syntax.TTG.TyVar
 
 -- | Type of expressions parameterised over the compiler pass.
 --
+-- Similar to @Type@ in GHC.
+-- 
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core/TyCo/Rep.hs#L124
 --
 -- For type safety, we need different representations of 'Type'

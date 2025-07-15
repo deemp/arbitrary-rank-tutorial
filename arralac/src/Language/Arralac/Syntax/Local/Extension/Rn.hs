@@ -2,7 +2,7 @@
 
 module Language.Arralac.Syntax.Local.Extension.Rn where
 
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.TTG.Extension
 

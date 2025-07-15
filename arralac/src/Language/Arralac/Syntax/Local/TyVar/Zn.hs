@@ -2,7 +2,7 @@
 
 module Language.Arralac.Syntax.Local.TyVar.Zn where
 
-import Language.Arralac.Prelude.Pass (CompZn)
+import Language.Arralac.Pass.Types (CompZn)
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Name (Name)
 import Language.Arralac.Syntax.Local.Type ()

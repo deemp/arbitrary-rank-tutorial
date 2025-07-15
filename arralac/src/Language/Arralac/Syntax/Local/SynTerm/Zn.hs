@@ -2,7 +2,7 @@
 
 module Language.Arralac.Syntax.Local.SynTerm.Zn where
 
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Syntax.Local.Extension.Zn
 import Language.Arralac.Syntax.Local.SynLit
@@ -78,7 +78,7 @@ instance Pretty' (SynTerm CompZn) where
                       ]
                   )
                 <> "."
-                <+> pretty' term
+                  <+> pretty' term
                 <> line
             )
         , "::"

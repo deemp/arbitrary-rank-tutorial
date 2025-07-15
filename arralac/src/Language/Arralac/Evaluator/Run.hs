@@ -4,7 +4,7 @@ import Control.Monad.Foil (S (..), emptyScope)
 import Language.Arralac.Core.AST
 import Language.Arralac.Core.ConvertZonked
 import Language.Arralac.Evaluator.Whnf
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Syntax.TTG.SynTerm
 
 data EvaluatorMode

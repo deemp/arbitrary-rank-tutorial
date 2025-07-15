@@ -70,7 +70,7 @@ library
       Language.Arralac.Prelude.Bag
       Language.Arralac.Prelude.Debug
       Language.Arralac.Prelude.Locale
-      Language.Arralac.Prelude.Pass
+      Language.Arralac.Pass.Types
       Language.Arralac.Prelude.Pretty
       Language.Arralac.Prelude.Pretty.Class
       Language.Arralac.Prelude.Pretty.GPretty

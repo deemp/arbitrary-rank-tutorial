@@ -1,7 +1,7 @@
 module Language.Arralac.Syntax.Local.Anno where
 
 import Data.Data
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Syntax.Local.Name
 import Language.Arralac.Syntax.Local.TyVar.Tc
 import Language.Arralac.Syntax.Local.TyVar.Zn

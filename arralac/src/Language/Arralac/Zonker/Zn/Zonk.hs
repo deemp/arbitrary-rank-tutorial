@@ -8,8 +8,8 @@ import Data.Generics.Labels ()
 import Data.Generics.Product ()
 import Data.IORef (readIORef)
 import GHC.Stack (HasCallStack)
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Debug (debug')
-import Language.Arralac.Prelude.Pass
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Syntax.Local.Anno ()

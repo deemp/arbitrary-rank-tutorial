@@ -2,7 +2,7 @@ module Language.Arralac.LanguageServer.IntervalMap where
 
 import Control.Lens (traversed, (%~), (&), _1)
 import Data.IntervalMap.Generic.Strict qualified as IM
-import Language.Arralac.Prelude.Pass
+import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Syntax.Local.Extension.Zn
