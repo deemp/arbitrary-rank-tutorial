@@ -78,6 +78,10 @@ withFreshUsingUnique scope name cont = withFreshBinderUsingUnique scope name (`u
 -- * Safe substitions
 
 -- | Extend substitution with a particular mapping.
+-- 
+-- Similar to @substBndr@ in GHC.
+--
+-- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Stg/Subst.hs#L41
 addSubst ::
   Substitution e i o ->
   CoreNameBinder i i' ->

@@ -18,7 +18,7 @@ import Prettyprinter
 -- Similar to @Expr@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Core.hs#L253
--- 
+--
 -- However, this version is untyped for simplicity.
 data Core scope term
   = Core'Lam scope
@@ -34,23 +34,23 @@ data Core scope term
 
 deriveBifunctor ''Core
 
-pattern LitE :: SynLit -> AST binder Core n
-pattern LitE x = Node (Core'Lit x)
+pattern SCore'Lit :: SynLit -> AST binder Core n
+pattern SCore'Lit x = Node (Core'Lit x)
 
-pattern AppE :: AST binder Core n -> AST binder Core n -> AST binder Core n
-pattern AppE x y = Node (Core'App x y)
+pattern SCore'App :: AST binder Core n -> AST binder Core n -> AST binder Core n
+pattern SCore'App x y = Node (Core'App x y)
 
-pattern LamE :: binder n l -> AST binder Core l -> AST binder Core n
-pattern LamE binder body = Node (Core'Lam (ScopedAST binder body))
+pattern SCore'Lam :: binder n l -> AST binder Core l -> AST binder Core n
+pattern SCore'Lam binder body = Node (Core'Lam (ScopedAST binder body))
 
-pattern LetE :: binder n l -> AST binder Core n -> AST binder Core l -> AST binder Core n
-pattern LetE binder body rhs = Node (Core'Let body (ScopedAST binder rhs))
+pattern SCore'Let :: binder n l -> AST binder Core n -> AST binder Core l -> AST binder Core n
+pattern SCore'Let binder body rhs = Node (Core'Let body (ScopedAST binder rhs))
 
-{-# COMPLETE LitE, AppE, LamE, LetE #-}
+{-# COMPLETE SCore'Lit, SCore'App, SCore'Lam, SCore'Let #-}
 
-type CoreE = AST CoreNameBinder Core
+type SCore = AST CoreNameBinder Core
 
-instance PrettyScoped (CoreE n) where
+instance PrettyScoped (SCore n) where
   prettyScoped = \case
     Node x -> case x of
       Core'Lit lit -> pretty' lit
@@ -73,5 +73,5 @@ instance PrettyScoped (CoreE n) where
         <> "_"
         <> pretty' (nameId x)
 
-instance Pretty' (CoreE n) where
+instance Pretty' (SCore n) where
   pretty' = let ?prettyScope = Map.empty in prettyScoped

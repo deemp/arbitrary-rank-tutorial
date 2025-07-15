@@ -12,34 +12,34 @@ import Language.Arralac.Syntax.Local.SynLit
 import Language.Arralac.Syntax.Local.SynTermVar.Zn
 import Language.Arralac.Syntax.TTG.SynTerm
 
-convertZonked :: Scope n -> SynTerm CompZn -> CoreE n
+convertZonked :: Scope n -> SynTerm CompZn -> SCore n
 convertZonked scope = \case
   SynTerm'Lit _ lit ->
     Node (Core'Lit lit)
   SynTerm'App _ fun arg ->
-    appE (convertZonked scope fun) (convertZonked scope arg)
+    sCoreApp (convertZonked scope fun) (convertZonked scope arg)
   SynTerm'Lam _ var body ->
-    lamE scope var.varName (\scope' -> convertZonked scope' body)
+    sCoreLam scope var.varName (\scope' -> convertZonked scope' body)
   SynTerm'ALam _ var _ body ->
-    lamE scope var.varName (\scope' -> convertZonked scope' body)
+    sCoreLam scope var.varName (\scope' -> convertZonked scope' body)
   SynTerm'Let _ var body rhs ->
-    letE scope var.varName (convertZonked scope body) (\scope' -> convertZonked scope' rhs)
+    sCoreLet scope var.varName (convertZonked scope body) (\scope' -> convertZonked scope' rhs)
   SynTerm'Ann _ term _ ->
     convertZonked scope term
   SynTerm'Var _ var -> Var (UnsafeName var.varName.nameUnique.unique)
 
-litE :: SynLit -> AST binder Core n
-litE = LitE
+sCoreLit :: SynLit -> AST binder Core n
+sCoreLit = SCore'Lit
 
-appE :: CoreE n -> CoreE n -> CoreE n
-appE = AppE
+sCoreApp :: SCore n -> SCore n -> SCore n
+sCoreApp = SCore'App
 
-lamE :: Scope n -> Name.Name -> (forall l. (DExt n l) => Scope l -> CoreE l) -> CoreE n
-lamE scope name' mkBody = withFreshUsingUnique scope name' $ \x ->
+sCoreLam :: Scope n -> Name.Name -> (forall l. (DExt n l) => Scope l -> SCore l) -> SCore n
+sCoreLam scope name' mkBody = withFreshUsingUnique scope name' $ \x ->
   let scope' = CNB.extendScope x scope
-   in LamE x (mkBody scope')
+   in SCore'Lam x (mkBody scope')
 
-letE :: Scope n -> Name.Name -> CoreE n -> (forall l. (DExt n l) => Scope l -> CoreE l) -> CoreE n
-letE scope name' body mkRhs = withFreshUsingUnique scope name' $ \x ->
+sCoreLet :: Scope n -> Name.Name -> SCore n -> (forall l. (DExt n l) => Scope l -> SCore l) -> SCore n
+sCoreLet scope name' body mkRhs = withFreshUsingUnique scope name' $ \x ->
   let scope' = CNB.extendScope x scope
-   in LetE x body (mkRhs scope')
+   in SCore'Let x body (mkRhs scope')
