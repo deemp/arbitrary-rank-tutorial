@@ -1,218 +1,56 @@
 \chapter{Literature Review}
 \label{chap:LiteratureReview}
 
-\section{Type Systems and the Challenge of Polymorphism}
+\section{The Foundations of Typed Functional Languages}
+\label{sec:LitReviewFoundations}
 
-At the heart of many modern, statically-typed functional programming languages like Haskell and OCaml lies a sophisticated type system that is based on numerous scientific publications \cite{haskell-type-systems-research}, \cite{ocaml-papers}. A type system is a set of formal rules that assigns a property, known as a \textit{type}, to various constructs of a computer program \cite{pierce-types-2002}. The primary purpose of a type system is to ensure program correctness by ruling out certain classes of errors at compile time, a property often referred to as \textit{type safety}. If a program is \textit{well-typed}, it is guaranteed to not suffer from runtime errors caused by misapplication of operations, such as adding an integer to a string.
+At the heart of modern, statically-typed functional languages like Haskell and OCaml lies a sophisticated type system \cite{haskell-type-systems-research, ocaml-papers}, a collection of formal rules assigning a property, or \textbf{type}, to every construct in a program \cite{pierce-types-2002}. A well-typed program is guaranteed to be free from a large class of runtime errors, such as applying an arithmetic operation to a string, a crucial property known as \textbf{type safety}. The theoretical basis for these languages is the \textbf{Lambda Calculus}, a formal system for expressing computation through function abstraction and application.
 
-\subsection{Simply-Typed Lambda Calculus}
+The most foundational typed variant is the \textbf{Simply-Typed Lambda Calculus (STLC)}. It ensures type safety by requiring every function parameter to be explicitly annotated with a type, and it verifies that functions are only ever applied to arguments of the matching type \cite{Pierce-SF2}. For example, the boolean `not` function, \texttt{\textbackslash(x : Bool). if x then false else true}, is correctly assigned the type \texttt{Bool -> Bool}.
 
-The theoretical foundation for most functional programming languages is the \textbf{Lambda Calculus}, a formal system for expressing computation based on function abstraction and application. The most basic typed version, the \textbf{Simply-Typed Lambda Calculus} (\textbf{STLC}), introduces a set of rules for assigning types to terms, preventing runtime errors by ensuring functions are only applied to arguments of the correct type. Using the notation based on the one specifid in \cite{Pierce-SF2}, the syntax of terms (\texttt{t}) and types (\texttt{T}) in a minimal STLC (using only booleans as a base type) can be defined as follows:
+However, STLC's safety comes at the cost of expressivity. The system is fundamentally \textbf{monomorphic}: each function can only have one, specific type. An identity function, for instance, can be written for booleans (\texttt{\textbackslash(x : Bool). x}) or for integers (\texttt{\textbackslash(x : Int). x}), but a single, universal identity function that works for \textit{all} types is impossible to express. This limitation makes pure STLC impractical for building reusable, large-scale software.
 
-\begin{figure}[h]
-    \begin{center}
-        \begin{grammar}
-            <T> ::= `Bool' \\
-            \quad | <T> `->' <T>
-
-            <t> ::= <x> \\
-            \quad | `\\' `(' <x> `:' <T> `)' `.' <t> \\
-            \quad | <t> <t> \\
-            \quad | `true' \\
-            \quad | `false' \\
-            \quad | `if' <t> `then' <t> `else' <t>
-        \end{grammar}
-    \end{center}
-    \caption{Backus-Naur form for STLC}
-    \label{stlc-bnf}
-\end{figure}
-
-Here, \texttt{\textbackslash(x : T). t} represents a function abstraction, where \texttt{x} is the parameter, \texttt{T} is the type of that parameter, and \texttt{t} is the function's body. Correspondingly, \texttt{t t} represents function application.
-
-The primary contribution of the type system is to assign a type to every valid term. For example:
-
-\begin{enumerate}
-    \item The term \texttt{\textbackslash(x : Bool). if x then false else true} (the boolean \texttt{not} function) is assigned the type \texttt{Bool -> Bool}.
-
-    \item A higher-order function, such as \texttt{\textbackslash(f : Bool -> Bool). f (f true)}, which takes a function and applies it twice, is assigned the type \texttt{(Bool -> Bool) -> Bool}
-\end{enumerate}
-
-While STLC guarantees type safety through these rules, it is fundamentally \textbf{monomorphic}. A function can only have one specific type. For instance, an identity function must be written for a single, concrete type, such as \texttt{\textbackslash(x : Bool). x}, which has the type \texttt{Bool -> Bool}. It is impossible to write a single, universal identity function that works for all types. This lack of generality makes STLC, in its pure form, impractical for writing large-scale, reusable software.
-
-\subsection{Polymorphism and System F}
+\section{System F: The Advent of "forall"}
 \label{chap:LiteratureReview:sec:PolymorphismAndSystemF}
 
-To address the limitations of monomorphic systems like STLC, the concept of \textbf{polymorphism} was introduced. Polymorphism allows a single piece of code to operate on values of multiple types. The foundational system that formally introduced this capability is Jean-Yves Girard's \textbf{System~F}~\cite{girard-system-f}. System~F extends the lambda calculus with type abstraction and type application, allowing the creation of truly generic functions.
+To overcome the rigidity of monomorphism, modern languages rely on \textbf{polymorphism}, which allows a single piece of code to operate on values of multiple types. The foundational system that formally introduced this capability is Jean-Yves Girard's \textbf{System F} \cite{girard-system-f}. System F extends the lambda calculus with type abstraction and type application, enabling the creation of truly generic functions through what is known as \textbf{parametric polymorphism}.
 
-In System~F, the identity function can be given the polymorphic type \texttt{forall a. a -> a}. The \texttt{forall} quantifier introduces a \textbf{type variable} \texttt{a}, which can later be instantiated with a concrete type as needed. This form of universal quantification is known as \textbf{parametric polymorphism}.
+In System F, a universal identity function can be written with the polymorphic type \texttt{forall a. a -> a}. The \texttt{forall} quantifier introduces a \textbf{type variable} \texttt{a}, which stands for "any type" and can be instantiated with a concrete type like \texttt{Int} or \texttt{Bool} at the function's call site.
 
-A crucial distinction in polymorphic systems is between \textbf{predicative} and \textbf{impredicative} polymorphism. In a \textbf{predicative system}, a quantified type variable (like \texttt{a} in \texttt{forall a. ...}) can only be instantiated with a \textbf{monotype} --- a type that does not itself contain any quantifiers. For example, in a predicative system, one can instantiate \texttt{a} with \texttt{Int} or \texttt{Bool}, but not with another polymorphic type like \texttt{forall b. b -> b}.
+A crucial distinction within such powerful systems is the one between predicative and impredicative polymorphism. In a \textbf{predicative} system, a quantified type variable (like \texttt{a}) can only be instantiated with a \textbf{monotype}---a simple type that does not itself contain any \texttt{forall} quantifiers. In contrast, a more powerful \textbf{impredicative} system allows a type variable to be instantiated with another \textbf{polytype}. While this "first-class" polymorphism is highly expressive, full type inference for impredicative systems is undecidable \cite{wells-typability-1999, serrano-quick-2020}. This thesis, following the practical approach pioneered for GHC, operates within the simpler and more predictable predicative fragment \cite{jones-practical-2007}.
 
-In contrast, an \textbf{impredicative system} allows a type variable to be instantiated with a \textbf{polytype}. This makes polymorphism `first-class,' allowing polymorphic types to appear anywhere any other type can, such as inside a list type \texttt{[forall a. a -> a]}. While highly expressive, full type inference for impredicative systems is undecidable, and designing practical, predictable inference algorithms for them has been a long-standing research challenge~\cite{serrano-quick-2020}, .
+\section{Practical Polymorphism: Hindley-Milner and the Rank-N Gap}
+\label{sec:LitReviewHM}
 
-The work in this thesis, along with the foundational system for higher-rank types in GHC~\cite{jones-practical-2007}, operates within the simpler and more predictable predicative fragment of polymorphism.
+While System F provides the theoretical ideal for polymorphism, its power makes it impossible to create an algorithm that can always infer a program's types without explicit annotations from the programmer. To make type inference practical and automatic, languages like Haskell and ML adopted a decidable and well-behaved subset of System F known as the \textbf{Damas-Hindley-Milner (HM)} type system \cite{damas-milner}.
 
-\subsection{The Practicality Problem: Hindley-Milner and Rank-1 Polymorphism}
+The HM system's practicality stems from a key restriction on polymorphism: it only supports \textbf{Rank-1} types. This means that \texttt{forall} quantifiers are only permitted at the very outermost level of a type definition. For example, \texttt{forall a. [a] -> Int} is a valid Rank-1 type, but a type where the quantifier is nested, such as \texttt{(forall a. a -> a) -> Int}, is known as a **higher-rank type** (specifically, a Rank-2 type) and is forbidden in a standard HM system.
 
-While System~F is powerfully expressive, its impredicative nature makes full type inference undecidable~\cite{wells-typability-1999}. This means it is impossible to create an algorithm that can always determine the types of a program without explicit annotations from the programmer. To make type inference both practical and automatic, languages like Haskell and ML adopted \cite{jones-practical-2007} a variant of a decidable system known as \textbf{Damas-Hindley-Milner} (HM)~\cite{damas-milner}.
+This Rank-1 restriction ensures that type inference is decidable and can be implemented efficiently by algorithms like Algorithm W \cite{jones-practical-2007}. However, it introduces a significant limitation: it becomes impossible to pass a polymorphic function as an argument to another function, as doing so would require a higher-rank type. While acceptable for many programs, this constraint prevents the expression of powerful programming patterns common in functional programming, such as generic traversals or operations on monadic structures.
 
-The HM system imposes two key restrictions on the polymorphism of System~F:
-\begin{enumerate}
-    \item It is predicative. As discussed in the previous section, type variables can only be instantiated with monotypes.
-    \item It only supports \textbf{Rank-1} polymorphism. This means that \texttt{forall} quantifiers may only appear at the very outermost level of a type. A type such as \texttt{forall a. [a] -> Int} is a valid Rank-1 type, as the quantifier is on the outside.
-\end{enumerate}
+This limitation creates a well-defined research gap: the need for a practical system that extends beyond Rank-1 polymorphism without sacrificing decidability. This thesis follows the path laid out by Peyton Jones et al. in \cite{jones-practical-2007}, which provides a practical foundation for extending the Hindley-Milner system to support arbitrary-rank types within a predicative framework.
 
-A type where a quantifier is nested, particularly to the left of a function arrow, is known as a \textbf{higher-rank type}. For example, the type \texttt{(forall a. a -> a) -> Int} is a Rank-2 type and is forbidden in a standard HM system. This restriction ensures that type inference can be performed efficiently by algorithms like Algorithm~W \cite{jones-practical-2007}.
 
-However, the Rank-1 restriction re-introduces a practical limitation. It becomes impossible to pass a polymorphic function as an argument to another function without it losing its polymorphic character. For a wide range of programs this is acceptable, but for expressing certain powerful programming patterns --- such as operating on monadic structures or implementing generic traversals --- it proves to be a significant constraint.
-
-The primary goal of this thesis is to explore a practical extension beyond the standard HM system to support these more expressive, \textbf{arbitrary-rank types} within a predicative framework. This work follows the path laid out by Peyton Jones et al. in \cite{jones-practical-2007}, a work that bridged the gap between the limitations of Rank-1 systems and the full, undecidable power of System~F.
-
-\section{GHC's Type Inference}
-
-The GHC type inference engine, comprising approximately 50000 lines of code \cite{jones-typechecker-2023}, has evolved incrementally over many years to support numerous extensions to the Haskell type system. Many of these extensions were accompanied by scientific publications \cite{haskell-type-systems-research}.
-
-\subsection{Arbitrary-Rank Polymorphism}
-
-One foundational extension is \href{https://gitlab.haskell.org/haskell/prime/-/wikis/RankNTypes}{\texttt{RankNTypes}}. This extension enables parametric predicative arbitrary-rank polymorphism using a version of the bidirectional typing algorithm described in \cite{jones-practical-2007}.
-
-\subsection{Bidirectional Typing}
-
-Bidirectional typing systems typically operate in two modes: an inference mode, that determines the type of a program construct and helps reduce the need for explicit type annotations, and a checking mode, which verifies top-down whether a program construct conforms to an expected type \cite{dunfield-bidirectional-2020}. This second mode allows typing constructs (like lambda abstractions without annotated arguments in certain contexts) for which types cannot be uniquely inferred.
-
-\subsection{The French approach}
-
-Type checking in GHC is implemented using the \textbf{French approach}, as Peyton Jones calls it in his talk \textit{Type Inference Using Constraints} \cite{wits-type-inference-using-constraints}. This approach was described by French researchers \citeauthor{essence-of-ml-type-inference} in \cite{essence-of-ml-type-inference}.
-
-When applied to Haskell, this approach implies the following main stages:
-
-\begin{enumerate}
-    \item Parse the Haskell source program into an \textbf{Abstract Syntax Tree} (\textbf{AST}).
-    \item Traverse the AST and generate constraints using a bidirectional algorithm.
-    \item Identify "holes" - parts of typeable expressions with incomplete type information.
-    \item Solve constraints to obtain substitutions.
-    \item Substitute solutions (also known as \textbf{zonking}).
-    \item Elaborate the AST to include all available type information.
-    \item Report errors about residual constraints (constraints that could not be solved).
-\end{enumerate}
-
-The main benefits of using this approach are as follows \cite{wits-type-inference-using-constraints}:
-
-\begin{enumerate}
-    \item Constraint generation is relatively easy, despite large Haskell syntax.
-    \item Although constraint solving is tricky, constraint language is extremely small and therefore easy to reason about.
-    \item The AST traversal order usually does not affect the results of solving constraints.
-    \item Elaborating the initial program is easy because constraint solver fills almost all holes.
-    \item Type error messages are generated after solving all solvable constraints and have helpful messages because most types are known.
-\end{enumerate}
-
-\subsection{Constraints}
-
-GHC's solver works with the following types of constraints \cite{wits-type-inference-using-constraints}:
-
-\begin{figure}[h]
-    \begin{align*}
-        W \quad & ::= \quad \epsilon                                 &  & \text{(Empty constraint)}       \\
-                & \mid \quad W_1, W_2                                &  & \text{(Conjunction)}            \\
-                & \mid \quad d : C~\tau_1 .. \tau_n                  &  & \text{(Class constraint)}       \\
-                & \mid \quad g : \tau_1 \sim \tau_2                  &  & \text{(Equality constraint)}    \\
-                & \mid \quad \forall a_1 .. a_n. W_1 \Rightarrow W_2 &  & \text{(Implication constraint)}
-    \end{align*}
-    \caption{Simplified GHC constraints language}
-    \label{ghc-constraints}
-\end{figure}
-
-Here, $d$ is an \textbf{evidence} of a class constraint (e.g., derived from an existing instance of a class) and $g$ is an evidence of an equality constraint (e.g., derived from a \texttt{(b $\sim$ c)} constraint in a function signature).
-
-\subsection{Implication Constraints}
-
-An implication constraint (\cref{ghc-constraints}) of the form $\quad \forall a_1 .. a_n. W_1 \Rightarrow W_2$ states that the \textbf{wanted} constraint $W_2$ holds in the environment containing type variables $a_1 .. a_n$ when the \textbf{given} constraints $W_1$ hold in that environment.
-
-Implication constraints were described in \cite{essence-of-ml-type-inference}, where authors called these constraints \textit{assumptions}. Later, \citeauthor{vytiniotis-outsideinx-2011} \cite{vytiniotis-outsideinx-2011}
-proposed OutsideIn(X) - a constraint-based approach for modular local type inference that could work with implication constraints. Such approach enables typechecker to accept only programs where each function has a principal (the most general) type. A function type is inferred using the information about the function at its definition rather than call sites, thus making type inference faster. The authors implemented in GHC 7 a constraint solver for a combination of the following features: type classes, Generalized Algebraic Data Types (GADTs), and type families.
-
-\subsection{\texttt{let}-generalization}
-
-Consider the following Haskell program.
-
-\begin{minted}{haskell}
-data B = B'
-data C = C'
-f x = let g y = (x, y) in (g B', g C')
-\end{minted}
-
-Here:
-
-\begin{itemize}
-    \item \texttt{B'} is a constructor of type \texttt{B}.
-    \item \texttt{C'} is a constructor of type \texttt{C}.
-    \item \texttt{f} is a top-level function with an argument \texttt{x}.
-    \item \texttt{g} is a function introduced in a local \texttt{let}-binding inside the body of \texttt{f}.
-    \item \texttt{(x, y)} is a pair of elements.
-    \item \texttt{g 3} and \texttt{g False} are applications of \texttt{g} to values of type \texttt{B} and type \texttt{C}.
-\end{itemize}
-
-The type environment of \texttt{g} contains all variables with their types; these variables are introduced in enclosing \texttt{let}-bindings and top-level definitions. In this case, \texttt{f} and \texttt{x} are in the type environment of \texttt{g}.
-
-If I disable the \href{https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html}{\texttt{MonoLocalBinds}} extension, GHC will \textbf{generalize} \texttt{g}, i.e., infer the polytype \texttt{forall \{b\}. b -> (p, b)} for \texttt{g}. It decided to \texttt{quantify} over \texttt{b} because that type variable was not in the type environment. However, \texttt{\{b\}} (in braces) means that I can't instantiate \texttt{b} with a particular type using the \href{https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_applications.html}{\texttt{TypeApplications}} extension.
-
-On the other hand, if I disable the \texttt{MonoLocalBinds} extension, GHC will not generalize any \texttt{let}-binding that cannot be made a top-level function. Since the body of \texttt{g} contains \texttt{x} introduced in the definition of \texttt{f}, \texttt{g} cannot be a top-level function like \texttt{f}. Therefore, GHC will not generalize \texttt{g}. Instead, it will do roughly the following:
-
-\begin{enumerate}
-    \item Introduce two fresh \textbf{unification variables}, \texttt{a} and \texttt{b}.
-    \item Record in the type environment that \texttt{y} has type \texttt{a} and \texttt{g} has type \texttt{a -> b}.
-    \item Discover that \texttt{g} is applied to a value of type \texttt{B}.
-    \item Generate a constraint that \texttt{a $\sim$ B}.
-    \item Discover that \texttt{g} is applied to a value of type \texttt{C}.
-    \item Generate a constraint that \texttt{a $\sim$ C}.
-    \item Try to solve the constraints.
-    \item Substitute \texttt{B} for \texttt{a}.
-    \item Find out that the constraint \texttt{B $\sim$ C} cannot be solved.
-    \item Report a type error that the argument of \texttt{g} has an unexpected type.
-\end{enumerate}
-
-% https://tex.stackexchange.com/a/635404
-\begin{minted}[escapeinside=\#\#]{text}
-    #•# Couldn't match expected type ‘B’ with actual type ‘C’
-    #•# In the first argument of ‘g’, namely ‘C’
-        In the expression: g C
-        In the expression: (g B, g C)
-\end{minted}
-
-\subsection{Levels}
-
-% TODO explain where to read about skolem variables
-The \textbf{levels} technique originally introduced by \citeauthor{remy-levels} \cite{remy-levels} is a crucial, practical implementation detail used to manage the scope of type variables during type inference \cite{practical-type-inference-with-levels-2025}, \cite{wits-type-inference-using-constraints}, \cite{levels-wits25-2025}. A level is essentially an integer assigned to each unification variable and skolem variable that tracks its depth at "birth". This mechanism is used to solve two major problems efficiently:
-
-\begin{enumerate}
-    \item \textbf{\texttt{let}-generalization}. In a \texttt{let} binding (\texttt{let x = ... in ...}), the type of \texttt{x} can be generalized (made polymorphic). However, it can only be generalized over type variables that do not appear in the surrounding environment. The traditional way to check this is to traverse the entire type environment, which is inefficient. GHC uses levels to optimize this: a new, deeper (one more than the current one) level is entered for the body of the \texttt{let}, and only type variables at this new, deeper level are candidates for generalization. This avoids a full type environment scan. To get the variables to quantify over, GHC gathers and solve local constraints with the ambient level one more than the level of \texttt{let}-binding (\href{https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Solver.hs#L790}{\texttt{Note [Inferring the type of a let-bound variable]}}).
-
-    \item \textbf{Skolem escape checking}. When checking higher-rank types (e.g., checking if type ${\tau_1}$ is a \textbf{subtype} of \texttt{forall a. $\tau_2$}), the \texttt{forall}-bound variable \texttt{a} is turned into a "skolem" constant. This skolem must not "escape" its scope by being unified with a variable from an outer scope. GHC assigns the skolem a deeper level than the outer unification variables. The type checker then enforces a simple rule: a variable at level \texttt{n} cannot be unified with a variable at a deeper level \texttt{m} (where \texttt{m} > \texttt{n}) or a type containing such a variable. This elegantly and efficiently prevents skolem escape.
-\end{enumerate}
-
-\section{A Survey of Type Inference Algorithms Beyond GHC}
 \label{chap:LiteratureReview:sec:TypeInferenceAlgorithm}
 
-While studying GHC and \cite{jones-practical-2007}, I reviewed several more recent approaches to supporting arbitrary-rank polymorphism. I primarily focused on the bidirectional algorithms as they were said to improve error locality and produce better error messages \cite{dunfield-bidirectional-2020}.
+The practical, \textbf{bidirectional} system for arbitrary-rank types described in \cite{jones-practical-2007} provides the foundation for this thesis. However, the field of type inference is dynamic, and research has continued to evolve. This section surveys key developments since that foundational work, with a primary focus on bidirectional algorithms, which have been praised for their potential to improve error locality and produce more intuitive error messages \cite{dunfield-bidirectional-2020}. The continued interest in this area is evidenced by numerous publicly available implementations, which serve as valuable resources for researchers and students alike \cite{github-goldenberg-artem-goldenbergbidirectionalsystem-2025, github-choi-kwanghoonbidi-2025, github-chen-cu1ch3ntype-inference-zoo-2025}.
 
-Several of these and other algorithms have publicly available Haskell implementations \cite{github-goldenberg-artem-goldenbergbidirectionalsystem-2025, github-choi-kwanghoonbidi-2025, github-chen-cu1ch3ntype-inference-zoo-2025}.
+\subsection{The Rise of Formal Bidirectional Systems}
 
-The following subsections highlight some key developments.
+A significant thread of modern research has focused on placing bidirectional typing on a more rigorous formal foundation than the operational, constraint-based approach of GHC. \citeauthor{dunfield-complete-2013} \cite{dunfield-complete-2013} presented a declarative, bidirectional algorithm for higher-rank predicative polymorphism that achieves results similar to those in \cite{jones-practical-2007}, including soundness and completeness with respect to System F \cite{selinger-lecture-2013}. The authors argue that their formulation—using ordered contexts and existential variables—provides a cleaner type-theoretic basis than the "bag of constraints" and skolemization techniques common in practical compilers.
 
-\subsection{Bidirectional Typing}
+This foundational work was subsequently extended by \citeauthor{dunfield-sound-2019} \cite{dunfield-sound-2019} to a much richer language with products, sums, and pattern matching, demonstrating the scalability of the formal approach. The body of work is summarized in a comprehensive survey by \citeauthor{dunfield-bidirectional-2020} \cite{dunfield-bidirectional-2020}, which offers practical guidance for designing new, programmer-friendly bidirectional systems.
 
-\citeauthor{dunfield-complete-2013} \cite{dunfield-complete-2013} presented a relatively simple bidirectional type inference algorithm for systems with higher-rank predicative polymorphism. Their algorithm exhibits properties similar \cite[Fig. 15]{dunfield-complete-2013} to those described in \cite[Sec.~6]{jones-practical-2007}, including adherence to the $\eta$-law \cite[Ch.~4]{selinger-lecture-2013} and soundness and completeness with respect to System F \cite[Ch.~8]{selinger-lecture-2013}. The authors argue that their formulation, using ordered contexts, existential variables, and precise scoping rules, offers a better type-theoretic foundation compared to the "bag of constraints," unification variables, and skolemization techniques employed in earlier work like \cite{jones-practical-2007}.
+\subsection{Refining and Generalizing Bidirectional Typing}
 
-Building on this, \citeauthor{dunfield-sound-2019} \cite{dunfield-sound-2019} extended the approach to a significantly richer language featuring existential quantification, sums, products, and pattern matching. Their formal development utilizes a desugared core language \cite[Fig. 11]{dunfield-sound-2019} derived from a more user-friendly surface language \cite[Fig. 1]{dunfield-sound-2019}.
+Beyond establishing the core system, subsequent research has focused on refining the bidirectional model to make it more powerful and flexible. \citeauthor{xie-higher-rank} \cite{xie-higher-rank} review and propose refinements to the algorithm from \cite{dunfield-complete-2013}, including a novel algorithm for kind inference.
 
-Furthermore, \citeauthor{dunfield-bidirectional-2020} \cite{dunfield-bidirectional-2020} provide an extensive survey of bidirectional typing techniques and offer practical guidance for designing new, programmer-friendly bidirectional type systems.
+More recently, \citeauthor{xue-contextual-2024} \cite{xue-contextual-2024} generalized bidirectional typing to \textbf{contextual typing}. Instead of a binary inference/checking mode, this approach propagates arbitrary contextual information, allowing for a more fine-grained specification of precisely where programmer annotations are required.
 
-\subsection{Modifications and Generalizations of Bidirectional Typing}
+\subsection{Exploring Alternatives: Impredicativity and Subtyping}
 
-\citeauthor{xie-higher-rank} \cite{xie-higher-rank} review the algorithm from \cite{dunfield-complete-2013} (Sec. 2.3) and propose refinements, including adding an application mode alongside inference and checking (Sec. 3). They also present a novel algorithm for kind inference (Sec. 7) and compare their system to GHC's implementation (Sec. 8.6), identifying potential areas for GHC improvement (Appendix Sec. C).
+In parallel to the work on predicative systems, another line of research has explored supporting full, first-class impredicativity. As mentioned in \cref{chap:LiteratureReview:sec:PolymorphismAndSystemF}, this allows type variables to be instantiated with polytypes, a feature that unification-based systems struggle with.
 
-\citeauthor{xue-contextual-2024} \cite{xue-contextual-2024} address limitations of traditional bidirectional typing (Sec. 2.5) by generalizing it to contextual typing. Instead of propagating only type information, this approach propagates arbitrary contextual information relevant to type checking. It replaces the binary inference/checking modes with counters that track the flow of contextual information. This allows for more fine-grained specification of precisely where programmer annotations are required.
+\citeauthor{parreaux-when-2024} \cite{parreaux-when-2024} propose \textbf{SuperF}, a novel type inference algorithm that supports impredicative polymorphism by replacing unification with \textbf{subtype inference}. SuperF infers a type for each subterm and then checks its compatibility with user annotations. The authors demonstrate that this approach can type a wide variety of terms, often without explicit annotations. While extremely powerful, this approach represents a significant departure from the GHC-style, unification-based system that is the focus of this thesis. The algorithm has been implemented in Scala and is publicly available\footnote{The SuperF implementation can be found at \url{https://github.com/hkust-taco/superf}.}.
 
-\subsection{Impredicativity}
-
-\citeauthor{parreaux-when-2024} \cite{parreaux-when-2024} propose SuperF, a novel, non-bidirectional type inference algorithm designed to support first-class (impredicative) higher-rank polymorphism via subtype inference. As mentioned in \cref{chap:LiteratureReview:sec:PolymorphismAndSystemF}, impredicative polymorphism permits the instantiation of type variables with polytypes, whereas predicative polymorphism restricts instantiation to monotypes \cite[Sec. 3.4]{jones-practical-2007}. SuperF infers a type for each subterm and then checks these against user-provided annotations written in System F syntax. The authors argue that the subtype inference employed by SuperF is better suited for implementing first-class polymorphism than approaches relying on first-order unification. As evidence of its expressive power, the authors demonstrate that SuperF can successfully type a wide variety of terms, often even without explicit type annotations (Sec. 5.4, Sec. 5.5). The algorithm implementation in Scala is available in the \href{https://github.com/hkust-taco/superf}{repository}.
+This survey confirms that while many innovative approaches exist, the practical, predicative, and bidirectional system pioneered in \cite{jones-practical-2007} remains a robust and pedagogically valuable foundation for building an educational compiler.
