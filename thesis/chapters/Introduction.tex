@@ -3,62 +3,57 @@
 
 \epigraph{Any sufficiently advanced technology is indistinguishable from magic.}{\textit{Arthur C. Clarke}}
 
-% Section 3.4.2: This section establishes the Background.
+% Section 1: Background and Motivation - Refined to set the stage more precisely.
 \section{Background and Motivation}
 
 Advanced type systems are a cornerstone of modern functional programming, enabling developers to write safer, more expressive, and more maintainable code. One such powerful feature is \textbf{arbitrary-rank polymorphism}, which allows functions to accept other polymorphic functions as arguments. This capability, while seemingly abstract, is fundamental to implementing advanced language features like GADTs, type-level programming, and sophisticated forms of generic programming.
 
-The theoretical foundations for implementing this feature in a practical compiler were laid out in the seminal paper "Practical Type Inference for Arbitrary-Rank Polymorphism" by Peyton Jones et al. \cite{jones-practical-2007}. The Glasgow Haskell Compiler (GHC) \cite{ghc-site-2025}, the de facto standard compiler for the Haskell programming language, serves as the most prominent real-world implementation of these ideas. For many developers and language enthusiasts, including the author, the inner workings of GHC represent a pinnacle of compiler technology, a "sufficiently advanced technology" that can feel like magic.
+The theoretical foundations for implementing this feature in a practical compiler were laid out in the seminal paper "Practical Type Inference for Arbitrary-Rank Polymorphism" by Peyton Jones et al. \cite{jones-practical-2007}. The Glasgow Haskell Compiler (GHC) \cite{ghc-site-2025}, the de facto standard compiler for the Haskell programming language, serves as the most prominent real-world implementation of these ideas. For many developers and language enthusiasts, including the author, the inner workings of GHC represent a pinnacle of compiler technology --- a "sufficiently advanced technology" that can feel like magic.
 
-% Section 3.4.2: This section defines the Novelty/Research Gap/Problem.
-\section{The Problem: A Pedagogical Gap}
+% Section 2: The Problem - Made more specific, referencing the key technical challenges.
+\section{The Problem: A Pedagogical Gap in Understanding Compiler Internals}
 
-Despite the existence of both foundational theory and a production-grade implementation, a significant pedagogical gap remains. Aspiring language developers and students face a steep learning curve when trying to understand how the elegant theory of arbitrary-rank polymorphism translates into practical code. This gap manifests in several ways:
+Despite the existence of both foundational theory and a production-grade implementation, a significant pedagogical gap remains. Aspiring language developers and students face a steep learning curve when trying to understand how the elegant theory of arbitrary-rank polymorphism translates into practical code. This gap is not merely one of complexity, but of translation between different models of computation:
 \begin{itemize}
-    \item The academic literature, including \cite{jones-practical-2007}, is theoretically dense and often omits the intricate implementation details necessary for building a working system.
-    \item The GHC source code is a large, highly-optimized, and feature-rich production system. While it is an invaluable resource, its complexity can obscure the core algorithms for those new to compiler development.
-    \item Existing educational compilers are often outdated or do not incorporate modern architectural patterns used in GHC, such as constraint-based type inference or the Trees That Grow approach to AST design.
+    \item The academic literature, including \cite{jones-practical-2007}, presents a theoretically dense system built on the intricate dance of \textbf{subsumption}, \textbf{deep skolemization}, and \textbf{bidirectional checking}. While formally sound, the paper's description of an \textbf{eager unification} algorithm omits many of the practical engineering details required to build a robust system.
+    \item The GHC source code, while an invaluable resource, is a large, highly-optimized production system. Its modern, \textbf{constraint-based} type inference architecture is a significant evolution from the eager model described in the foundational papers, making it difficult for a newcomer to trace the connection between theory and implementation.
+    \item Existing educational compilers are often outdated or do not incorporate these modern architectural patterns, leaving students without a clear bridge from first principles to the state of the art.
 \end{itemize}
-There is a need for a resource that bridges this gap---a "middle ground" that is more concrete than a paper but more focused and accessible than a full production compiler.
+There is a clear need for a resource that bridges this gap --- a "middle ground" that is more concrete than a paper but more focused and accessible than a full production compiler, one that explicitly demonstrates the architectural evolution from eager to constraint-based inference.
 
-% Section 3.4.2: This section outlines the Purpose of the study and Contribution.
+% Section 3: Contribution - Reframed to be a direct answer to the refined problem.
 \section{Contribution: The \texttt{Arralac} Project}
 
-To address this pedagogical gap, this thesis presents the design and implementation of a small, typed functional language named \texttt{Arralac} (\textbf{Ar}bitrary-\textbf{ra}nk polymorphism + \textbf{la}mbda \textbf{c}alculus). \texttt{Arralac} serves as a well-documented, tutorial implementation of a typechecker for arbitrary-rank polymorphism, directly inspired by GHC's architecture.
+To address this pedagogical gap, this thesis presents the design and implementation of a small, typed functional language named \texttt{Arralac} (\textbf{Ar}bitrary-\textbf{ra}nk polymorphism + \textbf{la}mbda \textbf{c}alculus). \texttt{Arralac} serves as a well-documented, tutorial implementation that explicitly models the architectural principles of a modern typechecker for arbitrary-rank polymorphism.
 
-The central thesis of this work is that a focused, modern, and interactive implementation can serve as a more effective learning tool for advanced type systems than studying foundational papers or production compilers in isolation.
+The central thesis of this work is that a focused, modern, and interactive implementation that consciously diverges from older algorithmic models can serve as a more effective learning tool than studying foundational papers or production compilers in isolation.
 
 The primary contributions of this thesis are:
 \begin{enumerate}
-    \item \textbf{A Tutorial Implementation:} A clear, step-by-step implementation of the core type inference algorithms from \cite{jones-practical-2007}, designed for educational purposes;
-    \item \textbf{Modern Compiler Architecture:} The application and simplification of modern compiler engineering patterns from GHC, including:
-          \begin{itemize}
-              \item The Trees That Grow (TTG) pattern for a flexible and extensible AST;
-              \item A constraint-based type inference pipeline;
-              \item Level-based scoping for skolem escape checking during unification.
-          \end{itemize}
-    \item \textbf{An Interactive Toolchain:} A complete language toolchain, featuring a parser, a typechecker, an evaluator, and a Language Server Protocol (LSP) implementation to provide an interactive learning and development experience;
-    \item \textbf{An Open-Source Resource:} A publicly available and permissively licensed codebase \cite{deemp-arbitrary-rank-tutorial} to serve as a community resource for learning and experimentation.
+    \item \textbf{A Didactic Implementation of the Bidirectional Algorithm:} A clear, step-by-step implementation of the core type inference algorithms from \cite{jones-practical-2007}, designed specifically to make the mechanism of the constraint-based checking using levels understandable.
+    \item \textbf{A Modern, Constraint-Based Architecture:} A deliberate architectural choice to implement a GHC-style, two-phase inference engine. This separates \textbf{constraint generation} from \textbf{constraint solving}, providing a modular and pedagogically superior alternative to the eager unification model.
+    \item \textbf{An Interactive Toolchain:} A complete language toolchain, featuring a parser, a typechecker, an evaluator, and a Language Server Protocol (LSP) implementation. The LSP makes the results of the type inference pipeline directly visible and interactive, transforming abstract rules into concrete feedback.
+    \item \textbf{A Public Repository:} A publicly available and permissively licensed codebase \cite{deemp-arbitrary-rank-tutorial} to serve as a community resource for learning and experimentation.
 \end{enumerate}
 
-% Section 3.4.2: This section lists the Research Questions.
+% Section 4: Research Questions - Sharpened to reflect the specific architectural choices.
 \section{Research Questions}
 
 The development of this thesis is guided by the following research questions:
 \begin{enumerate}
-    \item How can the core algorithms for type inference with arbitrary-rank polymorphism be implemented in a clear and step-by-step manner for educational purposes?
-    \item How can modern compiler implementation patterns from GHC, such as Trees That Grow and level-based unification, be adapted and simplified for an educational setting while retaining their key benefits?
-    \item How can the Language Server Protocol be leveraged to create an interactive development environment that aids in the understanding and exploration of a language's type system?
+    \item How can the core algorithms of a bidirectional type system for arbitrary-rank polymorphism, including subsumption and deep skolemization, be implemented in a clear and modular manner for educational purposes?
+    \item How can a constraint-based inference model serve as a clearer pedagogical tool for explaining type inference than the eager unification model presented in the foundational literature?
+    \item How can the Language Server Protocol be leveraged to create an interactive development environment that makes the behavior and results of a language's type inference pipeline transparent and explorable?
 \end{enumerate}
 
-% Section 3.4.2: This section provides the Thesis Structure Outline.
+% Section 5: Thesis Outline - Minor tweaks for better flow.
 \section{Thesis Outline}
 
 This thesis is structured as follows:
 
 \begin{itemize}
-    \item \textbf{\Cref{chap:LiteratureReview}} provides the theoretical foundations for this work by reviewing the evolution of polymorphic type systems. It focuses on the practical, bidirectional approach for arbitrary-rank types pioneered by GHC, which serves as the primary model for this thesis. The chapter concludes by surveying alternative algorithms to contextualize and justify the chosen implementation strategy.
-    \item \textbf{\Cref{chap:DesignAndMethodology}} details the design and implementation of the \texttt{Arralac} language, covering its pipeline from parsing to typechecking and evaluation, with a focus on the architectural decisions made.
-    \item \textbf{\Cref{chap:AnalysisAndDiscussion}} evaluates the resulting system against its pedagogical goals and discusses the insights gained during the development process.
-    \item \textbf{\Cref{chap:Conclusion}} summarizes the contributions of this work and outlines potential directions for future research and development.
+    \item \textbf{\Cref{chap:LiteratureReview}} provides the theoretical foundations for this work by reviewing the evolution of polymorphic type systems. It traces the path from the Hindley-Milner compromise to the practical, bidirectional approach for arbitrary-rank types that forms the theoretical core of this thesis.
+    \item \textbf{\Cref{chap:DesignAndMethodology}} details the design and implementation of the \texttt{Arralac} language. It covers the full compilation pipeline, with a special focus on the constraint-based architecture of the typechecker and the Trees That Grow AST representation.
+    \item \textbf{\Cref{chap:AnalysisAndDiscussion}} evaluates the resulting system against its pedagogical goals, analyzing the trade-offs of its architectural decisions and discussing the insights gained during development.
+    \item \textbf{\Cref{chap:Conclusion}} summarizes the contributions of this work, revisits the central thesis in light of the results, and outlines potential directions for future research and development.
 \end{itemize}
