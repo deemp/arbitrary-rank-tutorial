@@ -3,8 +3,8 @@ module Language.Arralac.Core.ConvertZonked where
 import Control.Monad.Foil
 import Control.Monad.Foil.Internal
 import Control.Monad.Free.Foil
-import Language.Arralac.Core.AST
 import Language.Arralac.Core.CoreNameBinder as CNB
+import Language.Arralac.Core.Scoped
 import Language.Arralac.Pass.Types
 import Language.Arralac.Prelude.Unique
 import Language.Arralac.Syntax.Local.Name qualified as Name

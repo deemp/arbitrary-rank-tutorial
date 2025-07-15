@@ -1,4 +1,4 @@
-module Language.Arralac.Core.AST where
+module Language.Arralac.Core.Scoped where
 
 import Control.Monad.Foil
 import Control.Monad.Free.Foil (AST (..), ScopedAST (..))

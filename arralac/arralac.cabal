@@ -48,10 +48,10 @@ library
       Language.Arralac.CLI.Handle
       Language.Arralac.CLI.Parse
       Language.Arralac.CLI.Run
-      Language.Arralac.Core.AST
       Language.Arralac.Core.ConvertZonked
       Language.Arralac.Core.CoreNameBinder
       Language.Arralac.Core.PrettyScoped
+      Language.Arralac.Core.Scoped
       Language.Arralac.Driver.ParserToZonker.Run
       Language.Arralac.Driver.ReaderToZonker.Run
       Language.Arralac.Evaluator.Run

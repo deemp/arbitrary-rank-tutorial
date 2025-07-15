@@ -1,8 +1,8 @@
 module Language.Arralac.Evaluator.Run where
 
 import Control.Monad.Foil (S (..), emptyScope)
-import Language.Arralac.Core.AST
 import Language.Arralac.Core.ConvertZonked
+import Language.Arralac.Core.Scoped
 import Language.Arralac.Evaluator.Whnf
 import Language.Arralac.Pass.Types
 import Language.Arralac.Syntax.TTG.SynTerm
