@@ -9,10 +9,9 @@ import Language.Arralac.Prelude.Debug (debug')
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
 import Language.Arralac.Prelude.Unique
-import Language.Arralac.Solver.Run
 import Language.Arralac.Solver.Types
 import Language.Arralac.Syntax.TTG.SynTerm
-import Language.Arralac.Typechecker.Constraints (emptyWantedConstraints)
+import Language.Arralac.Typechecker.Constraints (WantedConstraints, emptyWantedConstraints)
 import Language.Arralac.Typechecker.TcTerm (inferRho)
 import Language.Arralac.Typechecker.TcTyVarEnv (emptyTcTyVarEnv)
 import Language.Arralac.Typechecker.Types
@@ -28,7 +27,7 @@ runTypechecker ::
   , CtxPrettyVerbosity
   , CtxUniqueSupply
   ) =>
-  SynTerm CompRn -> IO (SynTerm CompTc)
+  SynTerm CompRn -> IO (SynTerm CompTc, WantedConstraints)
 runTypechecker term = do
   constraints <- newIORef emptyWantedConstraints
   let ?constraints = constraints
@@ -39,8 +38,7 @@ runTypechecker term = do
     -- TODO run inferSigma
     (tcTerm, _) <- inferRho term
     constraintsNew <- readIORef constraints
-    _ <- runSolver ?solverIterations constraintsNew
-    pure tcTerm
+    pure (tcTerm, constraintsNew)
     `finally` do
       constraints' <- readIORef ?constraints
       debug'
