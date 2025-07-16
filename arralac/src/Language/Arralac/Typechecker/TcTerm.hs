@@ -328,15 +328,15 @@ subsCheckRho thing sigma1@(Type'ForAll _ _) rho2 = do
   rho1 <- instantiate sigma1
   subsCheckRho thing rho1 rho2
 -- Rule FUN
-subsCheckRho thing rho1 (Type'Fun a2 r2) = do
-  (a1, r1) <- unifyFun thing rho1
+subsCheckRho thing rho1 (Type'Fun arg2 res2) = do
+  (arg1, res1) <- unifyFun thing rho1
   -- `unifyFun` already called unify with `thing`
-  subsCheckFun Nothing a1 r1 a2 r2
+  subsCheckFun Nothing arg1 res1 arg2 res2
 -- Rule FUN
-subsCheckRho thing (Type'Fun a1 r1) rho2 = do
-  (a2, r2) <- unifyFun thing rho2
+subsCheckRho thing (Type'Fun arg1 res1) rho2 = do
+  (arg2, res2) <- unifyFun thing rho2
   -- `unifyFun` already called unify with `thing`
-  subsCheckFun Nothing a1 r1 a2 r2
+  subsCheckFun Nothing arg1 res1 arg2 res2
 -- Rule MONO
 subsCheckRho thing tau1 tau2 = do
   -- Revert to ordinary unification
@@ -349,11 +349,11 @@ subsCheckRho thing tau1 tau2 = do
   unify thing tau1 tau2
 
 subsCheckFun :: Maybe TypedThing -> Sigma -> Rho -> Sigma -> Rho -> TcM ()
-subsCheckFun _thing a1 r1 a2 r2 = do
-  -- TODO argument order
+subsCheckFun _thing arg1 res1 arg2 res2 = do
+  -- Note contravariance!
   -- unify with _thing must be called somewhere before
-  subsCheck Nothing a2 a1
-  subsCheckRho Nothing r1 r2
+  subsCheck Nothing arg2 arg1
+  subsCheckRho Nothing res1 res2
 
 -- =====================
 -- [Capture constraints]
