@@ -15,16 +15,18 @@ The theoretical foundations for implementing this feature in a practical compile
 
 Despite the existence of both foundational theory and a production-grade implementation, a significant pedagogical gap remains. Aspiring language developers and students face a steep learning curve when trying to understand how the elegant theory of arbitrary-rank polymorphism translates into practical code. This gap is not merely one of complexity, but of translation between different models of computation:
 \begin{itemize}
-    \item The academic literature, including \cite{jones-practical-2007}, presents a theoretically dense system built on the intricate dance of \textbf{subsumption}, \textbf{deep skolemization}, and \textbf{bidirectional checking}. While formally sound, the paper's description of an \textbf{eager unification} algorithm omits many of the practical engineering details required to build a robust system.
-    \item The GHC source code, while an invaluable resource, is a large, highly-optimized production system. Its modern, \textbf{constraint-based} type inference architecture is a significant evolution from the eager model described in the foundational papers, making it difficult for a newcomer to trace the connection between theory and implementation.
-    \item Existing educational compilers are often outdated or do not incorporate these modern architectural patterns, leaving students without a clear bridge from first principles to the state of the art.
+    \item The academic literature, including \cite{jones-practical-2007}, presents a theoretically dense system built on the intricate dance of \textbf{subsumption}, \textbf{deep skolemization}, and \textbf{bidirectional checking}. While formally sound \cite{practical-type-inference-proofs}, the paper's description of an \textbf{eager unification} algorithm omits many of the practical engineering details required to build a robust system.
+    \item The GHC source code, while an invaluable resource, is a large, highly-optimized production system. Its modern counterpart MicroHs \cite{augustsson-microhs-2024} \cite{augustss-microhs-2025} is large too. Their current \textbf{constraint-based} type inference architecture is a significant evolution from the eager model described in the foundational papers, making it difficult for a newcomer to trace the connection between theory and implementation.
+    \item Existing educational compilers for Haskell like Hugs \cite{hugs-haskell} are outdated or do not incorporate these modern architectural patterns, leaving students without a clear bridge from first principles to the state of the art.
 \end{itemize}
 There is a clear need for a resource that bridges this gap --- a "middle ground" that is more concrete than a paper but more focused and accessible than a full production compiler, one that explicitly demonstrates the architectural evolution from eager to constraint-based inference.
 
 % Section 3: Contribution - Reframed to be a direct answer to the refined problem.
-\section{Contribution: The \texttt{Arralac} Project}
+\section{Contribution: The \texttt{Arralac} Compiler}
 
-To address this pedagogical gap, this thesis presents the design and implementation of a small, typed functional language named \texttt{Arralac} (\textbf{Ar}bitrary-\textbf{ra}nk polymorphism + \textbf{la}mbda \textbf{c}alculus). \texttt{Arralac} serves as a well-documented, tutorial implementation that explicitly models the architectural principles of a modern typechecker for arbitrary-rank polymorphism.
+% 10.5555/1177220
+
+To address this pedagogical gap, this thesis presents the design and implementation of a small, typed functional language named \texttt{Arralac} (\textbf{Ar}bitrary-\textbf{ra}nk polymorphism + \textbf{la}mbda \textbf{c}alculus). The \texttt{Arralac} compiler (in the sense that it translates a source code into a target program \cite{10.5555/1177220}) serves as a well-documented, tutorial implementation that explicitly models the architectural principles of a modern typechecker for arbitrary-rank polymorphism.
 
 The central thesis of this work is that a focused, modern, and interactive implementation that consciously diverges from older algorithmic models can serve as a more effective learning tool than studying foundational papers or production compilers in isolation.
 
@@ -46,7 +48,6 @@ The development of this thesis is guided by the following research questions:
     \item How can the Language Server Protocol be leveraged to create an interactive development environment that makes the behavior and results of a language's type inference pipeline transparent and explorable?
 \end{enumerate}
 
-% Section 5: Thesis Outline - Minor tweaks for better flow.
 \section{Thesis Outline}
 
 This thesis is structured as follows:

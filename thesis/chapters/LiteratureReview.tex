@@ -20,7 +20,7 @@ Within such powerful systems, a crucial distinction exists between predicative a
 \section{Practical Polymorphism: The Hindley-Milner Compromise and the Rank-N Gap}
 \label{sec:LitReviewHM}
 
-While System F provides the theoretical ideal for polymorphism, its power makes it impossible to create an algorithm that can always infer a program's types without explicit annotations from the programmer. To make type inference both practical and automatic, languages like Haskell and ML adopted a decidable and well-behaved subset of System F known as the \textbf{Damas-Hindley-Milner (HM)} type system \cite{damas-milner}.
+While System F provides the theoretical ideal for polymorphism, its power makes it impossible to create an algorithm that can always infer a program's types without explicit annotations from the programmer. To make type inference both practical and automatic, languages like ML adopted a decidable and well-behaved subset of System F known as the \textbf{Damas-Hindley-Milner (HM)} type system \cite{damas-milner}.
 
 The practicality of the HM system stems from a foundational compromise: it only supports \textbf{Rank-1} types. This restriction means that \texttt{forall} quantifiers are only permitted at the very outermost level of a type definition. For example, \texttt{forall a. a -> Int} is a valid Rank-1 type, but a type where the quantifier is nested, such as \texttt{(forall a. a -> a) -> Int}, is known as a \textbf{higher-rank type} (specifically, a Rank-2 type) and is forbidden in a standard HM system.
 
@@ -42,7 +42,7 @@ The bidirectional system from \cite{jones-practical-2007} provides the foundatio
 
 \subsection{The Rise of Formal Bidirectional Systems}
 
-A significant thread of modern research has focused on placing bidirectional typing on a more rigorous formal foundation. \citeauthor{dunfield-complete-2013} \cite{dunfield-complete-2013} presented a declarative, bidirectional algorithm for higher-rank predicative polymorphism, proving its soundness and completeness with respect to System F \cite{selinger-lecture-2013}. This foundational work, extended by \citeauthor{dunfield-sound-2019} \cite{dunfield-sound-2019} and surveyed in \cite{dunfield-bidirectional-2020}, provides a clean type-theoretic basis using ordered contexts, in contrast to the more operational, constraint-based techniques of GHC.
+A significant thread of modern research has focused on placing bidirectional typing on a more rigorous formal foundation. \citeauthor{dunfield-complete-2013} \cite{dunfield-complete-2013} presented a declarative, bidirectional algorithm for higher-rank predicative polymorphism, proving its soundness and completeness with respect to System F \cite{selinger-lecture-2013}. This foundational work, extended by \citeauthor{dunfield-sound-2019} in \cite{dunfield-sound-2019} and surveyed in \cite{dunfield-bidirectional-2020}, provides a clean type-theoretic basis using ordered contexts, in contrast to the more operational, constraint-based techniques of GHC.
 
 \subsection{Refining and Generalizing Bidirectional Typing}
 

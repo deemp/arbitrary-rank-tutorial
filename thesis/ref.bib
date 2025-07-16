@@ -96,26 +96,17 @@
   langid     = {english}
 }
 
-@misc{trees-that-grow-2016,
-  title      = {Trees That Grow},
-  url        = {http://arxiv.org/abs/1610.04799},
-  doi        = {10.48550/arXiv.1610.04799},
-  abstract   = {We study the notion of extensibility in functional data types, as a new approach to the problem of decorating abstract syntax trees with additional sets of information. We observed the need for such extensibility while redesigning the data types representing Haskell abstract syntax inside {GHC}. Specifically, we describe our approach to the tree-decoration problem using a novel syntactic machinery in Haskell for expressing extensible data types. We show that the syntactic machinery is complete in that it can express all the syntactically possible forms of extensions to algebraic data type declarations. Then, we describe an encoding of the syntactic machinery based on the existing features in Glasgow Haskell Compiler({GHC}).},
-  number     = {{arXiv}:1610.04799},
-  publisher  = {{arXiv}},
-  author     = {Najd, Shayan and Jones, Simon Peyton},
-  urldate    = {2025-04-26},
-  date       = {2016-10-15},
-  eprinttype = {arxiv},
-  eprint     = {1610.04799 [cs]},
-  keywords   = {Computer Science - Programming Languages}
-}
-
-
-@online{bnfc-parser-generator,
+@online{bnfc-site-2025,
   title   = {Welcome to {BNFC}’s documentation! — {BNFC} 2.9.6 documentation},
   url     = {https://bnfc.digitalgrammars.com/},
   urldate = {2025-04-26}
+}
+
+
+@misc{haskell-site-2025,
+  title   = {Haskell Language},
+  url     = {https://www.haskell.org/},
+  urldate = {2025-05-20}
 }
 
 
@@ -126,8 +117,8 @@
 }
 
 
-@online{ghc-gitlab-2025,
-  title      = {Glasgow Haskell Compiler / {GHC} · {GitLab}},
+@misc{ghc-gitlab-2025,
+  title      = {Glasgow Haskell Compiler},
   url        = {https://gitlab.haskell.org/ghc/ghc},
   abstract   = {The Glorious Glasgow Haskell Compiler.},
   titleaddon = {{GitLab}},
@@ -188,10 +179,10 @@
 }
 
 
-@software{deemp-higher-rank-free-foil,
-  title    = {deemp/higher-rank-free-foil},
-  url      = {https://github.com/deemp/higher-rank-free-foil},
-  abstract = {A repository for the MS thesis Type Inference for arbitrary-rank types using Free Foil},
+@software{deemp-arbitrary-rank-tutorial,
+  title    = {deemp/arbitrary-rank-tutorial},
+  url      = {https://github.com/deemp/arbitrary-rank-tutorial},
+  abstract = {A repository for the MS'25 thesis "A Tutorial Implementation of a Lambda Calculus with Parametric Predicative Arbitrary-Rank Polymorphism"},
   author   = {Danko, Danila},
   urldate  = {2025-04-27},
   date     = {2025-04-27},
@@ -320,7 +311,7 @@
   url        = {https://dl.acm.org/doi/10.1145/3406088.3409015},
   doi        = {10.1145/3406088.3409015},
   shorttitle = {Stitch},
-  abstract   = {A classic example of the power of generalized algebraic datatypes ({GADTs}) to verify a delicate implementation is the type-indexed expression {AST}. This functional pearl refreshes this example, casting it in modern Haskell using many of {GHC}’s bells and whistles. The Stitch interpreter is a full executable interpreter, with a parser, type checker, commonsubexpression elimination, and a {REPL}. Making heavy use of {GADTs} and type indices, the Stitch implementation is clean Haskell code and serves as an existence proof that Haskell’s type system is advanced enough for the use of fancy types in a practical setting. The paper focuses on guiding the reader through these advanced topics, enabling them to adopt the techniques demonstrated here.},
+  abstract   = {A classic example of the power of generalized algebraic datatypes ({GADTs}) to verify a delicate implementation is the type-indexed expression {AST}. This functional pearl refreshes this example, casting it in modern Haskell using many of {GHC}’s bells and whistles. The Stitch evaluator is a full executable evaluator, with a parser, type checker, commonsubexpression elimination, and a {REPL}. Making heavy use of {GADTs} and type indices, the Stitch implementation is clean Haskell code and serves as an existence proof that Haskell’s type system is advanced enough for the use of fancy types in a practical setting. The paper focuses on guiding the reader through these advanced topics, enabling them to adopt the techniques demonstrated here.},
   eventtitle = {{ICFP} '20: {ACM} {SIGPLAN} International Conference on Functional Programming},
   pages      = {39--53},
   booktitle  = {Proceedings of the 13th {ACM} {SIGPLAN} International Symposium on Haskell},
@@ -333,83 +324,367 @@
 
 
 @article{trees-that-grow-2016,
-	title = {Trees that Grow},
-	volume = {23},
-	rights = {2017 Shayan Najd, Simon Jones},
-	issn = {0948-6968},
-	url = {https://lib.jucs.org/article/22912/},
-	doi = {10.3217/jucs-023-01-0042},
-	abstract = {We study the notion of extensibility in functional data types, as a new approach to the problem of decorating abstract syntax trees with additional information. We observed the need for such extensibility while redesigning the data types representing Haskell abstract syntax inside Glasgow Haskell Compiler ({GHC}). Specifically, we describe a programming idiom that exploits type-level functions to allow a particular form of extensibility. The approach scales to support existentials and generalised algebraic data types, and we can use pattern synonyms to make it convenient in practice.},
-	pages = {42--62},
-	number = {1},
-	journaltitle = {{JUCS} - Journal of Universal Computer Science},
-	author = {Najd, Shayan and Jones, Simon},
-	urldate = {2025-04-28},
-	date = {2017-01-28},
-	langid = {english},
-	note = {Number: 1 Publisher: Journal of Universal Computer Science},
+  title        = {Trees that Grow},
+  volume       = {23},
+  rights       = {2017 Shayan Najd, Simon Jones},
+  issn         = {0948-6968},
+  url          = {https://lib.jucs.org/article/22912/},
+  doi          = {10.3217/jucs-023-01-0042},
+  abstract     = {We study the notion of extensibility in functional data types, as a new approach to the problem of decorating abstract syntax trees with additional information. We observed the need for such extensibility while redesigning the data types representing Haskell abstract syntax inside Glasgow Haskell Compiler ({GHC}). Specifically, we describe a programming idiom that exploits type-level functions to allow a particular form of extensibility. The approach scales to support existentials and generalised algebraic data types, and we can use pattern synonyms to make it convenient in practice.},
+  pages        = {42--62},
+  number       = {1},
+  journaltitle = {{JUCS} - Journal of Universal Computer Science},
+  author       = {Najd, Shayan and Jones, Simon},
+  urldate      = {2025-04-28},
+  date         = {2017-01-28},
+  langid       = {english},
+  note         = {Number: 1 Publisher: Journal of Universal Computer Science}
 }
 
 
 @book{pierce-types-2002,
-	edition = {1st},
-	title = {Types and Programming Languages},
-	isbn = {978-0-262-16209-8},
-	abstract = {A type system is a syntactic method for automatically checking the absence of certain erroneous behaviors by classifying program phrases according to the kinds of values they compute. The study of type systems -- and of programming languages from a type-theoretic perspective -- has important applications in software engineering, language design, high-performance compilers, and security.This text provides a comprehensive introduction both to type systems in computer science and to the basic theory of programming languages. The approach is pragmatic and operational; each new concept is motivated by programming examples and the more theoretical sections are driven by the needs of implementations. Each chapter is accompanied by numerous exercises and solutions, as well as a running implementation, available via the Web. Dependencies between chapters are explicitly identified, allowing readers to choose a variety of paths through the material.The core topics include the untyped lambda-calculus, simple type systems, type reconstruction, universal and existential polymorphism, subtyping, bounded quantification, recursive types, kinds, and type operators. Extended case studies develop a variety of approaches to modeling the features of object-oriented languages.},
-	pagetotal = {645},
-	publisher = {The {MIT} Press},
-	author = {Pierce, Benjamin C.},
-	date = {2002-01},
+  edition   = {1st},
+  title     = {Types and Programming Languages},
+  isbn      = {978-0-262-16209-8},
+  abstract  = {A type system is a syntactic method for automatically checking the absence of certain erroneous behaviors by classifying program phrases according to the kinds of values they compute. The study of type systems -- and of programming languages from a type-theoretic perspective -- has important applications in software engineering, language design, high-performance compilers, and security.This text provides a comprehensive introduction both to type systems in computer science and to the basic theory of programming languages. The approach is pragmatic and operational; each new concept is motivated by programming examples and the more theoretical sections are driven by the needs of implementations. Each chapter is accompanied by numerous exercises and solutions, as well as a running implementation, available via the Web. Dependencies between chapters are explicitly identified, allowing readers to choose a variety of paths through the material.The core topics include the untyped lambda-calculus, simple type systems, type reconstruction, universal and existential polymorphism, subtyping, bounded quantification, recursive types, kinds, and type operators. Extended case studies develop a variety of approaches to modeling the features of object-oriented languages.},
+  pagetotal = {645},
+  publisher = {The {MIT} Press},
+  author    = {Pierce, Benjamin C.},
+  date      = {2002-01}
 }
 
 
 @online{jones-typechecker-2023,
-	title = {Secrets of the {GHC} Typechecker in 100 Type Declarations},
-	url = {https://simon.peytonjones.org/secrets-of-typechecker/},
-	abstract = {Simon Peyton Jones Video of talk at the {GHC} Contributors Workshop, June 2023  Video Slides},
-	titleaddon = {Simon Peyton Jones},
-	author = {Jones, Simon Peyton},
-	urldate = {2025-05-06},
-	date = {2023-06-01},
-	langid = {english},
+  title      = {Secrets of the {GHC} Typechecker in 100 Type Declarations},
+  url        = {https://simon.peytonjones.org/secrets-of-typechecker/},
+  abstract   = {Simon Peyton Jones Video of talk at the {GHC} Contributors Workshop, June 2023  Video Slides},
+  titleaddon = {Simon Peyton Jones},
+  author     = {Jones, Simon Peyton},
+  urldate    = {2025-05-06},
+  date       = {2023-06-01},
+  langid     = {english}
 }
 
 
 @article{jones-rapier-2002,
-	title = {Secrets of the Glasgow Haskell Compiler inliner},
-	volume = {12},
-	rights = {https://www.cambridge.org/core/terms},
-	issn = {0956-7968, 1469-7653},
-	url = {https://www.cambridge.org/core/product/identifier/S0956796802004331/type/journal_article},
-	doi = {10.1017/s0956796802004331},
-	abstract = {Higher-order languages, such as Haskell, encourage the programmer to build abstractions by composing functions. A good compiler must inline many of these calls to recover an e ciently executable program.},
-	pages = {393--434},
-	number = {4},
-	journaltitle = {J. Funct. Prog.},
-	author = {Peyton Jones, Simon and Marlow, Simon},
-	urldate = {2025-05-01},
-	date = {2002-07},
-	langid = {english},
-	note = {Publisher: Cambridge University Press ({CUP})},
+  title        = {Secrets of the Glasgow Haskell Compiler inliner},
+  volume       = {12},
+  rights       = {https://www.cambridge.org/core/terms},
+  issn         = {0956-7968, 1469-7653},
+  url          = {https://www.cambridge.org/core/product/identifier/S0956796802004331/type/journal_article},
+  doi          = {10.1017/s0956796802004331},
+  abstract     = {Higher-order languages, such as Haskell, encourage the programmer to build abstractions by composing functions. A good compiler must inline many of these calls to recover an e ciently executable program.},
+  pages        = {393--434},
+  number       = {4},
+  journaltitle = {J. Funct. Prog.},
+  author       = {Peyton Jones, Simon and Marlow, Simon},
+  urldate      = {2025-05-01},
+  date         = {2002-07},
+  langid       = {english},
+  note         = {Publisher: Cambridge University Press ({CUP})}
 }
 
 
 @software{github-hkust-taco-superf-2025,
-	title = {hkust-taco/superf},
-	rights = {{MIT}},
-	url = {https://github.com/hkust-taco/superf},
-	abstract = {Artifact for paper "When Subtyping Constraints Liberate: A Novel Type Inference Approach for First-Class Polymorphism" (https://popl24.sigplan.org/details/{POPL}-2024-popl-research-papers/50)},
-	publisher = {{HKUST} {TACO} Lab},
-	urldate = {2025-05-06},
-	date = {2025-04-24},
-	note = {original-date: 2023-05-09T03:58:10Z},
+  title     = {hkust-taco/superf},
+  rights    = {{MIT}},
+  url       = {https://github.com/hkust-taco/superf},
+  abstract  = {Artifact for paper "When Subtyping Constraints Liberate: A Novel Type Inference Approach for First-Class Polymorphism" (https://popl24.sigplan.org/details/{POPL}-2024-popl-research-papers/50)},
+  publisher = {{HKUST} {TACO} Lab},
+  urldate   = {2025-05-06},
+  date      = {2025-04-24},
+  note      = {original-date: 2023-05-09T03:58:10Z}
 }
 
 
 @online{github-hkust-taco-mlscript-2025,
-	title = {hkust-taco/mlscript: The {MLscript} programming language. Functional and object-oriented; structurally typed and sound; with powerful type inference. Soon to have full interop with {TypeScript}!},
-	url = {https://github.com/hkust-taco/mlscript},
-	urldate = {2025-05-06},
-	file = {hkust-taco/mlscript\: The MLscript programming language. Functional and object-oriented\; structurally typed and sound\; with powerful type inference. Soon to have full interop with TypeScript!:/home/eyjafjallajokull/Zotero/storage/3NKAWCGH/mlscript.html:text/html},
+  title   = {hkust-taco/mlscript: The {MLscript} programming language. Functional and object-oriented; structurally typed and sound; with powerful type inference. Soon to have full interop with {TypeScript}!},
+  url     = {https://github.com/hkust-taco/mlscript},
+  urldate = {2025-05-06}
 }
 
+
+@inproceedings{maclaurin-foil-2022,
+  location   = {Copenhagen Denmark},
+  title      = {The Foil: Capture-Avoiding Substitution With No Sharp Edges},
+  isbn       = {978-1-4503-9831-2},
+  url        = {https://dl.acm.org/doi/10.1145/3587216.3587224},
+  doi        = {10.1145/3587216.3587224},
+  shorttitle = {The Foil},
+  abstract   = {Correctly manipulating program terms in a compiler is surprisingly difficult because of the need to avoid name capture. The rapier from Peyton Jones and Marlow [9] is a cutting-edge technique for fast, stateless capture-avoiding substitution for expressions represented with explicit names. It is, however, a sharp tool—its invariants are tricky and need to be maintained throughout the whole compiler that uses it. We describe the foil, an elaboration of the rapier that uses Haskell’s type system to enforce the rapier’s invariants statically, preventing a class of hard-to-find bugs, but without adding any run-time overheads.},
+  eventtitle = {{IFL} 2022: Symposium on Implementation and Application of Functional Languages},
+  pages      = {1--10},
+  booktitle  = {Proceedings of the 34th Symposium on Implementation and Application of Functional Languages},
+  publisher  = {{ACM}},
+  author     = {Maclaurin, Dougal and Radul, Alexey and Paszke, Adam},
+  urldate    = {2024-11-11},
+  date       = {2022-08-31},
+  langid     = {english}
+}
+
+
+@online{ghc-aosabook-2025,
+  title   = {The Architecture of Open Source Applications (Volume 2)The Glasgow Haskell Compiler},
+  url     = {https://aosabook.org/en/v2/ghc.html},
+  urldate = {2025-05-08}
+}
+
+
+@online{koenp-minisolver-2025,
+  title   = {{KoenP}/minisolver: A simplified model of the {GHC} constraint solver I made for a research project.},
+  url     = {https://github.com/KoenP/minisolver},
+  urldate = {2025-04-30}
+}
+
+
+@online{augustss-microhs-2025,
+  title   = {augustss/{MicroHs}: Haskell implemented with combinators},
+  url     = {https://github.com/augustss/MicroHs},
+  urldate = {2025-05-20}
+}
+
+
+@inproceedings{augustsson-microhs-2024,
+	location = {New York, {NY}, {USA}},
+	title = {{MicroHs}: A Small Compiler for Haskell},
+	isbn = {979-8-4007-1102-2},
+	url = {https://dl.acm.org/doi/10.1145/3677999.3678280},
+	doi = {10.1145/3677999.3678280},
+	series = {Haskell 2024},
+	shorttitle = {{MicroHs}},
+	abstract = {{MicroHs} is a compiler for Haskell2010. It translates Haskell to {SKI} style combinators via λ-calculus. The runtime system is quite small with few dependencies.},
+	pages = {120--124},
+	booktitle = {Proceedings of the 17th {ACM} {SIGPLAN} International Haskell Symposium},
+	publisher = {Association for Computing Machinery},
+	author = {Augustsson, Lennart},
+	urldate = {2025-07-15},
+	date = {2024-08-28},
+}
+
+
+@online{levels-wits25-2025,
+  title      = {[{WITS}'25] Invited Talk: Type inference in {OCaml} and {GHC} using Levels},
+  url        = {https://www.youtube.com/watch?v=iFUrhTQi0-U},
+  shorttitle = {[{WITS}'25] Invited Talk},
+  author     = {{ACM SIGPLAN}},
+  urldate    = {2025-05-20},
+  date       = {2025-05-03}
+}
+
+
+@online{lsp-official-2025,
+  title   = {Official page for Language Server Protocol},
+  url     = {https://microsoft.github.io/language-server-protocol/},
+  urldate = {2025-05-20}
+}
+
+
+@online{vscode-2025,
+  title    = {Visual Studio Code - Code Editing. Redefined},
+  url      = {https://code.visualstudio.com/},
+  abstract = {Visual Studio Code redefines {AI}-powered coding with {GitHub} Copilot for building and debugging modern web and cloud applications. Visual Studio Code is free and available on your favorite platform - Linux, {macOS}, and Windows.},
+  urldate  = {2025-05-20},
+  langid   = {english}
+}
+
+@online{haskell-type-systems-research,
+  title    = {Research papers - Type systems},
+  url      = {https://wiki.haskell.org/index.php?title=Research_papers/Type_systems},
+  abstract = {},
+  urldate  = {2025-07-08},
+  langid   = {english}
+}
+
+@online{ocaml-papers,
+  title    = {OCaml Papers},
+  url      = {https://ocaml.org/papers},
+  abstract = {With its strong academic roots, OCaml is known to be a spearhead in the development of Programming Language Theory. This page contains a selection of papers that have influenced OCaml and other functional programming languages.},
+  urldate  = {2025-07-08},
+  langid   = {english}
+}
+
+@online{software-foundations-stlc,
+  title    = {Stlc - The Simply Typed Lambda-Calculus},
+  url      = {https://softwarefoundations.cis.upenn.edu/plf-current/Stlc.html},
+  abstract = {The simply typed lambda-calculus (STLC) is a tiny core calculus embodying the key concept of functional abstraction. This concept shows up in pretty much every real-world programming language in some form (functions, procedures, methods, etc.).},
+  urldate  = {2025-07-08},
+  langid   = {english}
+}
+
+@online{Pierce-SF2,
+  author    = {Benjamin C. Pierce and Arthur {Azevedo de Amorim}
+               and Chris Casinghino and Marco Gaboardi and
+               Michael Greenberg and  Cătălin Hriţcu
+               and Vilhelm  Vilhelm Sjöberg and Andrew Tolmach
+               and Brent Yorgey},
+  title     = {Programming Language Foundations},
+  series    = {Software Foundations series, volume 2},
+  url       = {https://softwarefoundations.cis.upenn.edu/plf-current/index.html},
+  month     = may,
+  year      = {2023},
+  publisher = {Electronic textbook},
+  plclub    = {Yes},
+  bcp       = {Yes},
+  keys      = {verification,books}
+}
+
+
+@article{girard-system-f,
+  title        = {The system F of variable types, fifteen years later},
+  volume       = {45},
+  issn         = {0304-3975},
+  url          = {https://www.sciencedirect.com/science/article/pii/0304397586900447},
+  doi          = {https://doi.org/10.1016/0304-3975(86)90044-7},
+  abstract     = {The semantic study of system F stumbles on the problem of variable types for which there was no convincing interpretation; we develop here a semantics based on the category-theoretic idea of direct limit, so that the behaviour of a variable type on any domain is determined by its behaviour on finite ones, thus getting rid of the circularity of variable types. To do so, one has first to simplify somehow the extant semantic ideas, replacing Scott domains by the simpler and more finitary qualitative domains. The interpretation obtained is extremely compact, as shown on simple examples. The paper also contains the definitions of a very small ‘universal model’ of lambda-calculus, and investigates the concept totality.},
+  pages        = {159--192},
+  journaltitle = {Theoretical Computer Science},
+  author       = {Girard, Jean-Yves},
+  date         = {1986}
+}
+
+
+@article{serrano-quick-2020,
+  title        = {A quick look at impredicativity},
+  volume       = {4},
+  url          = {https://dl.acm.org/doi/10.1145/3408971},
+  doi          = {10.1145/3408971},
+  abstract     = {Type inference for parametric polymorphism is wildly successful, but has always suffered from an embarrassing flaw: polymorphic types are themselves not first class. We present Quick Look, a practical, implemented, and deployable design for impredicative type inference. To demonstrate our claims, we have modified {GHC}, a production-quality Haskell compiler, to support impredicativity. The changes required are modest, localised, and are fully compatible with {GHC}'s myriad other type system extensions.},
+  pages        = {89:1--89:29},
+  issue        = {{ICFP}},
+  journaltitle = {Proc. {ACM} Program. Lang.},
+  author       = {Serrano, Alejandro and Hage, Jurriaan and Peyton Jones, Simon and Vytiniotis, Dimitrios},
+  urldate      = {2025-04-09},
+  date         = {2020-08-03}
+}
+
+
+@article{wells-typability-1999,
+  title        = {Typability and type checking in System F are equivalent and undecidable},
+  volume       = {98},
+  issn         = {0168-0072},
+  url          = {https://www.sciencedirect.com/science/article/pii/S0168007298000475},
+  doi          = {10.1016/S0168-0072(98)00047-5},
+  abstract     = {Girard and Reynolds independently invented System F (a.k.a. the second-order polymorphically typed lambda calculus) to handle problems in logic and computer programming language design, respectively. Viewing F in the Curry style, which associates types with untyped lambda terms, raises the questions of typability and type checking. Typability asks for a term whether there exists some type it can be given. Type checking asks, for a particular term and type, whether the term can be given that type. The decidability of these problems has been settled for restrictions and extensions of F and related systems and complexity lower-bounds have been determined for typability in F, but this report is the first to resolve whether these problems are decidable for System F. This report proves that type checking in F is undecidable, by a reduction from semi-unification, and that typability in F is undecidable, by a reduction from type checking. Because there is an easy reduction from typability to type checking, the two problems are equivalent. The reduction from type checking to typability uses a novel method of constructing lambda terms that simulate arbitrarily chosen type environments. All of the results also hold for the λI-calculus.},
+  pages        = {111--156},
+  number       = {1},
+  journaltitle = {Annals of Pure and Applied Logic},
+  author       = {Wells, J. B.},
+  urldate      = {2025-07-08},
+  date         = {1999-06-30},
+  keywords     = {Lambda calculus, Semi-unification, System F, Typability, Type checking, Type inference}
+}
+
+
+@inproceedings{damas-milner,
+  author    = {Damas, Luis and Milner, Robin},
+  title     = {Principal type-schemes for functional programs},
+  year      = {1982},
+  isbn      = {0897910656},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/582153.582176},
+  doi       = {10.1145/582153.582176},
+  booktitle = {Proceedings of the 9th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
+  pages     = {207–212},
+  numpages  = {6},
+  location  = {Albuquerque, New Mexico},
+  series    = {POPL '82}
+}
+
+
+@online{algorithm-w-step-by-step,
+  title   = {Algorithm-W-Step-By-Step/{AlgorithmW}.pdf at master · wh5a/Algorithm-W-Step-By-Step},
+  url     = {https://github.com/wh5a/Algorithm-W-Step-By-Step/blob/master/AlgorithmW.pdf},
+  urldate = {2025-03-26}
+}
+
+
+@online{wits-type-inference-using-constraints,
+  title    = {[{WITS}'24] Solving constraints during type inference},
+  url      = {https://www.youtube.com/watch?v=OISat1b2-4k},
+  abstract = {[{WITS}'24] Solving constraints during type inference Simon Peyton Jones},
+  author   = {{ACM SIGPLAN}},
+  urldate  = {2025-07-08},
+  date     = {2024-03-22}
+}
+
+
+@article{essence-of-ml-type-inference,
+  title  = {10 The Essence of {ML} Type Inference},
+  author = {Pottier, François and Rémy, Didier},
+  langid = {english}
+}
+
+
+@article{vytiniotis-outsideinx-2011,
+	title = {{OutsideIn}(X) Modular type inference with local assumptions},
+	volume = {21},
+	issn = {1469-7653, 0956-7968},
+	url = {https://www.cambridge.org/core/journals/journal-of-functional-programming/article/outsideinx-modular-type-inference-with-local-assumptions/65110D74CF75563F91F9C68010604329},
+	doi = {10.1017/S0956796811000098},
+	abstract = {Advanced type system features, such as {GADTs}, type classes and type families, have proven to be invaluable language extensions for ensuring data invariants and program correctness. Unfortunately, they pose a tough problem for type inference when they are used as local type assumptions. Local type assumptions often result in the lack of principal types and cast the generalisation of local let-bindings prohibitively difficult to implement and specify. User-declared axioms only make this situation worse. In this paper, we explain the problems and – perhaps controversially – argue for abandoning local let-binding generalisation. We give empirical results that local let generalisation is only sporadically used by Haskell programmers. Moving on, we present a novel constraint-based type inference approach for local type assumptions. Our system, called {OutsideIn}(X), is parameterised over the particular underlying constraint domain X, in the same way as {HM}(X). This stratification allows us to use a common metatheory and inference algorithm. {OutsideIn}(X) extends the constraints of X by introducing implication constraints on top. We describe the strategy for solving these implication constraints, which, in turn, relies on a constraint solver for X. We characterise the properties of the constraint solver for X so that the resulting algorithm only accepts programs with principal types, even when the type system specification accepts programs that do not enjoy principal types. Going beyond the general framework, we give a particular constraint solver for X = type classes + {GADTs} + type families, a non-trivial challenge in its own right. This constraint solver has been implemented and distributed as part of {GHC} 7.},
+	pages = {333--412},
+	number = {4},
+	journaltitle = {Journal of Functional Programming},
+	author = {Vytiniotis, Dimitrios and Jones, Simon Peyton and Schrijvers, Tom and Sulzmann, Martin},
+	urldate = {2025-06-04},
+	date = {2011-09},
+	langid = {english},
+}
+
+
+@article{practical-type-inference-with-levels-2025,
+	title = {Practical Type Inference with Levels},
+	volume = {9},
+	issn = {2475-1421},
+	url = {https://dl.acm.org/doi/10.1145/3729338},
+	doi = {10.1145/3729338},
+	abstract = {Modern functional languages rely on sophisticated type inference algorithms. However, there often exists a gap between the theoretical presentation of these algorithms and their practical implementations. Specifically, implementations employ techniques not explicitly included in formal specifications, causing undesirable consequences. First, this leads to confusion and unforeseen challenges for developers adhering to the formal specification. Moreover, theoretical guarantees established for a formal presentation may not directly translate to the implementation. This paper focuses on formalizing one such technique, known as levels, which is widely used in practice but whose theoretical treatment remains largely understudied. We present the first comprehensive formalization of levels and demonstrate their applicability to type inference implementations.},
+	pages = {2180--2203},
+	issue = {{PLDI}},
+	journaltitle = {Proc. {ACM} Program. Lang.},
+	author = {Fan, Andong and Xu, Han and Xie, Ningning},
+	urldate = {2025-06-25},
+	date = {2025-06-10},
+	langid = {english},
+}
+
+
+@article{remy-levels,
+	title = {Extension of {ML} type system with a sorted equation theory on types},
+	author = {Rémy, Didier},
+  url = {https://inria.hal.science/inria-00077006/document},
+  urldate = {2025-07-08},
+}
+
+
+@online{iso-25010,
+	title = {{ISO} 25010},
+	url = {https://iso25000.com/index.php/en/iso-25000-standards/iso-25010},
+	urldate = {2025-07-15},
+}
+
+@book{10.5555/1177220,
+author = {Aho, Alfred V. and Lam, Monica S. and Sethi, Ravi and Ullman, Jeffrey D.},
+title = {Compilers: Principles, Techniques, and Tools (2nd Edition)},
+year = {2006},
+isbn = {0321486811},
+publisher = {Addison-Wesley Longman Publishing Co., Inc.},
+address = {USA}
+}
+
+@online{hugs-haskell,
+	title = {Hugs 98},
+	url = {https://www.haskell.org/hugs/},
+	urldate = {2025-07-16},
+}
+
+
+@online{wadler-expression-1998,
+	title = {The Expression Problem},
+	url = {https://homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt},
+	author = {Wadler, Philip},
+	urldate = {2025-07-16},
+	date = {1998-11-12},
+	file = {homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt:/home/eyjafjallajokull/Zotero/storage/JD73NNFL/expression.html:text/html},
+}
