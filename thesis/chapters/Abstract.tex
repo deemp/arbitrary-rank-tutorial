@@ -1,5 +1,9 @@
 \begin{abstract}
 
-\dots
+Advanced type systems, particularly arbitrary-rank polymorphism, are powerful but complex features of modern functional programming languages. A significant pedagogical gap exists between the seminal theory, such as Peyton Jones et al.'s ``Practical Type Inference for Arbitrary-Rank Polymorphism,'' and the vast, highly-optimized production implementations like the Glasgow Haskell Compiler (GHC). Aspiring developers lack a clear, modern resource that translates the elegant but dense theory into practical, understandable code, especially as modern compilers have evolved from eager unification to constraint-based architectures.
+
+This thesis presents \texttt{Arralac}, a small, well-documented compiler for a lambda calculus with arbitrary-rank polymorphism, designed explicitly to bridge this gap. \texttt{Arralac} serves as a tutorial implementation that diverges from the eager unification model of the foundational literature, instead adopting a modern, GHC-style, two-phase architecture that separates constraint generation from constraint solving. This design utilizes a Trees That Grow (TTG) Abstract Syntax Tree (AST) to support pass-specific annotations. The system is delivered as a complete, interactive toolchain, including a parser, evaluator, and a Language Server Protocol (LSP) implementation that makes the results of the type inference pipeline directly visible and explorable within a code editor.
+
+The implementation successfully typechecks programs requiring higher-rank types, correctly rejects invalid programs via level-based skolem escape checks, and provides real-time type information and diagnostics through the LSP. The project demonstrates that a constraint-based architecture provides a clearer pedagogical model for type inference than eager unification. By synthesizing foundational theory with modern architectural patterns and interactive tooling, \texttt{Arralac} provides an effective, accessible learning resource that demystifies a cornerstone of advanced compiler engineering.
 
 \end{abstract}
