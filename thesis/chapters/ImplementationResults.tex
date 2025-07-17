@@ -1,7 +1,7 @@
 \chapter{Implementation and Results}
 \label{chap:ImplementationAndResults}
 
-The previous chapter detailed the architectural design and core methodologies for the \texttt{Arralac} compiler. This chapter transitions from design to practice, describing the concrete Haskell implementation that realizes this architecture.
+The previous chapter detailed the architectural design and core methodologies for the \Arralac compiler. This chapter transitions from design to practice, describing the concrete Haskell implementation that realizes this architecture.
 
 First, I will examine the implementation of the core data structures, particularly the Trees That Grow (TTG) Abstract Syntax Tree (AST). Next, I will detail the type inference pipeline, focusing on the separation between constraint generation and solving. Finally, I will present concrete results, including the output for both successful and unsuccessful typechecking scenarios, and a demonstration of the functional Language Server Protocol (LSP) features.
 
@@ -10,11 +10,11 @@ First, I will examine the implementation of the core data structures, particular
 
 As outlined in the design (\cref{sec:Design:AST}), the AST is built using the Trees That Grow (TTG) pattern to ensure extensibility and to facilitate annotations. The core data types, \texttt{SynTerm} for expressions, \texttt{SynType} for syntactic types, and \texttt{Type} for non-syntactic types are parameterized by a type variable \texttt{x} that represents the current compiler pass (e.g., \texttt{CompRn} for Renamed, \texttt{CompTc} for Typechecked, \texttt{CompZn} for Zonked).
 
-Unlike a simpler AST where fields have concrete types, every component of an \texttt{Arralac} AST node is defined by a type family. This allows the structure of a node to be radically different across passes. The generic definition for \texttt{SynTerm} is shown below.
+Unlike a simpler AST where fields have concrete types, every component of an \Arralac AST node is defined by a type family. This allows the structure of a node to be radically different across passes. The generic definition for \texttt{SynTerm} is shown below.
 
 \begin{figure}
-  \centering
-  \begin{minted}[frame=lines]{haskell}
+    \centering
+    \begin{minted}[frame=lines]{haskell}
   data SynTerm x
     = -- | \ (x :: a). x
       SynTerm'ALam (XSynTerm'ALam' x) (XSynTerm'ALam'Var x) 
@@ -25,14 +25,14 @@ Unlike a simpler AST where fields have concrete types, every component of an \te
                   (XSynTerm'Ann'Type x)
     -- ... other constructors
   \end{minted}
-  \caption[The Generic \texttt{SynTerm} Data Type]{The Generic \texttt{SynTerm} Data Type in \\ \texttt{Language.Arralac.Syntax.TTG.SynTerm}}
+    \caption[The Generic \texttt{SynTerm} Data Type]{The Generic \texttt{SynTerm} Data Type in \\ \texttt{Language.Arralac.Syntax.TTG.SynTerm}}
 \end{figure}
 
 The power of TTG is realized through the instantiation of these type families for each specific compiler pass. For the typechecking pass (\texttt{CompTc}), the extension point fields (e.g., \texttt{XSynTerm'Ann'}) are instantiated with a \texttt{TcAnno} record. This record is crucial for tooling, as it contains the inferred type for that node, which is later used by the language server.
 
 \begin{figure}
-  \centering
-  \begin{minted}[frame=lines]{haskell}
+    \centering
+    \begin{minted}[frame=lines]{haskell}
   -- In Language.Arralac.Syntax.Local.SynTerm.Tc
   type instance XSynTerm'Ann'Term CompTc = SynTerm CompTc
   type instance XSynTerm'Ann'Type CompTc = SynType CompTc
@@ -43,7 +43,7 @@ The power of TTG is realized through the instantiation of these type families fo
   type instance XSynTerm'Ann' CompTc = TcAnno
   data TcAnno = TcAnno { annoSrcLoc :: SrcSpan, annoType :: Expected TcType }
   \end{minted}
-  \caption{Type Family Instantiation for the Typechecked Pass}
+    \caption{Type Family Instantiation for the Typechecked Pass}
 \end{figure}
 
 This approach provides a compile-time, type-safe guarantee that pass-specific information is only available in the AST after that pass has successfully completed.
@@ -57,18 +57,18 @@ The implementation of the type inference engine closely follows the constraint-b
 The first phase, implemented primarily in the \\ \texttt{Language.Arralac.Typechecker.TcTerm} module, traverses the renamed AST to produce a set of wanted constraints. The \texttt{unify} function merely emits canonical equality constraints with a metavariable on the left-hand side and a monotype on the right-hand side.
 
 \begin{itemize}
-  \item \textbf{Bidirectional Logic:} The core function, \texttt{tcRho}, implements the bidirectional algorithm. When called in inference mode (via the \texttt{inferRho} wrapper), it is passed a new mutable reference (\texttt{Expected (IORef TcType)}) to hold the resulting type. When called in checking mode (via \texttt{checkRho}), it consumes the expected type passed to it.
+    \item \textbf{Bidirectional Logic:} The core function, \texttt{tcRho}, implements the bidirectional algorithm. When called in inference mode (via the \texttt{inferRho} wrapper), it is passed a new mutable reference (\texttt{Expected (IORef TcType)}) to hold the resulting type. When called in checking mode (via \texttt{checkRho}), it consumes the expected type passed to it.
 
-  \item \textbf{Implication Constraints:} At each point where skolemization is required --- specifically, within the \texttt{checkSigma} function when checking an expression against a polymorphic type --- the typechecker enters a deeper scope. This is implemented by the helper function \texttt{pushLevelAndCaptureConstraints}. This function increments the current \texttt{TcLevel}, captures all new constraints generated within its scope, and packages them into an \texttt{Implic} constraint, which bundles the new skolem variables created at the current level with the constraints at a deeper level in which these skolems may occur. This directly models the scoped nature of polymorphism.
+    \item \textbf{Implication Constraints:} At each point where skolemization is required --- specifically, within the \texttt{checkSigma} function when checking an expression against a polymorphic type --- the typechecker enters a deeper scope. This is implemented by the helper function \texttt{pushLevelAndCaptureConstraints}. This function increments the current \texttt{TcLevel}, captures all new constraints generated within its scope, and packages them into an \texttt{Implic} constraint, which bundles the new skolem variables created at the current level with the constraints at a deeper level in which these skolems may occur. This directly models the scoped nature of polymorphism.
 \end{itemize}
 
 \subsection{Constraint Solving (\texttt{Solver})}
 The set of \texttt{WantedConstraints} generated by the typechecker is passed to the solver, implemented in \texttt{Language.Arralac.Solver.Solve}. The solver iteratively processes a worklist of simple equality constraints (\texttt{wc\_simple}).
 
 \begin{itemize}
-  \item \textbf{Occurs and Level Checks:} Before attempting to unify a metavariable with a type, the solver performs two critical checks implemented in \texttt{Language.Arralac.Solver.Check}. First, an \textbf{occurs check} ensures the metavariable does not appear within the right-hand side of the type, preventing infinite types like $a ~ a \rightarrow a$. Second, a \textbf{level check} verifies that the type on the right-hand side does not contain any skolem variables with a level deeper than the metavariable. This check is the concrete implementation of the skolem escape rule discussed in the design chapter.
+    \item \textbf{Occurs and Level Checks:} Before attempting to unify a metavariable with a type, the solver performs two critical checks implemented in \texttt{Language.Arralac.Solver.Check}. First, an \textbf{occurs check} ensures the metavariable does not appear within the right-hand side of the type, preventing infinite types like $a ~ a \rightarrow a$. Second, a \textbf{level check} verifies that the type on the right-hand side does not contain any skolem variables with a level deeper than the metavariable. This check is the concrete implementation of the skolem escape rule discussed in the design chapter.
 
-  \item \textbf{Unification:} If the checks pass, the solver unifies the variable by writing to the metavariable's mutable \texttt{IORef}. Constraints within implications are solved recursively within their own, deeper-level scope. Any constraints that cannot be solved (e.g., due to a type mismatch or a failed check) trigger an exception. When a metavariable contains a type, the \texttt{unify} function (defined in \texttt{Solver.Unify}) tries to generate new constraints by equating the contained type and the type on the right-hand side of the constraint. Therefore, the solver may need several iterations to solve constraints.
+    \item \textbf{Unification:} If the checks pass, the solver unifies the variable by writing to the metavariable's mutable \texttt{IORef}. Constraints within implications are solved recursively within their own, deeper-level scope. Any constraints that cannot be solved (e.g., due to a type mismatch or a failed check) trigger an exception. When a metavariable contains a type, the \texttt{unify} function (defined in \texttt{Solver.Unify}) tries to generate new constraints by equating the contained type and the type on the right-hand side of the constraint. Therefore, the solver may need several iterations to solve constraints.
 \end{itemize}
 
 \subsection{Finalization (\texttt{Zonker})}
@@ -83,8 +83,8 @@ This section demonstrates the functionality of the implemented system using both
 To test the correct handling of higher-rank types, I use a program that requires passing a polymorphic function as an argument. The following program, \texttt{Program1.arralac}, defines a function \texttt{applyMyShow} that expects a polymorphic function of type \texttt{forall b. b -> String}.
 
 \begin{figure}
-  \centering
-  \begin{minted}[frame=lines]{haskell}
+    \centering
+    \begin{minted}[frame=lines]{haskell}
 let
   applyMyShow =
     (\x. \y. x y)
@@ -95,14 +95,14 @@ let
 in
 applyMyShow myShow
 \end{minted}
-  \caption{\texttt{Program1.arralac}}
+    \caption{\texttt{Program1.arralac}}
 \end{figure}
 
-Running the \texttt{Arralac} CLI to typecheck the program produces a fully-annotated AST. The output in \Cref{fig:typecheck-output} shows that the system correctly inferred and propagated the types. Crucially, the lambda-bound variable \texttt{x\_1} is correctly assigned its type from the annotation containing a higher-rank type, and the final type correctly reflects that the type variable \texttt{a} was unconstrained and thus remains unsolved.
+Running the \Arralac CLI to typecheck the program produces a fully-annotated AST. The output in \Cref{fig:typecheck-output} shows that the system correctly inferred and propagated the types. Crucially, the lambda-bound variable \texttt{x\_1} is correctly assigned its type from the annotation containing a higher-rank type, and the final type correctly reflects that the type variable \texttt{a} was unconstrained and thus remains unsolved.
 
 \begin{figure}[h]
-  \centering
-  \begin{minted}[frame=lines,fontsize=\small]{console}
+    \centering
+    \begin{minted}[frame=lines,fontsize=\small]{console}
 $ nix run .#arralac -- typecheck arralac/test/data/Program1.arralac
 
 (let
@@ -118,43 +118,43 @@ in
   ) :: a_Unsolved_11 -> String
 ) :: a_Unsolved_11 -> String
 \end{minted}
-  \caption{Typechecking output for \texttt{Program1.arralac} (compacted).}
-  \label{fig:typecheck-output}
+    \caption{Typechecking output for \texttt{Program1.arralac} (compacted).}
+    \label{fig:typecheck-output}
 \end{figure}
 
 The evaluator correctly reduces the program to its weak head normal form (WHNF), as shown in \Cref{fig:evaluate-output}.
 
 \begin{figure}[h]
-  \centering
-  \begin{minted}[frame=lines]{console}
+    \centering
+    \begin{minted}[frame=lines]{console}
 $ nix run .#arralac -- evaluate whnf arralac/test/data/Program1.arralac
 
 \y_2. (\x_8. "Hello") (y_2)
 \end{minted}
-  \caption{Evaluation output for \texttt{Program1.arralac}.}
-  \label{fig:evaluate-output}
+    \caption{Evaluation output for \texttt{Program1.arralac}.}
+    \label{fig:evaluate-output}
 \end{figure}
 
 \subsection{A Negative Case: Skolem Escape Detection}
 To validate the robustness of the solver, a negative test case was created to trigger a skolem escape. The following program attempts to unify an outer-scope metavariable with an inner-scope skolem, which should be rejected.
 
 \begin{figure}
-  \centering
-  \begin{minted}[frame=lines]{haskell}
+    \centering
+    \begin{minted}[frame=lines]{haskell}
 let 
   myRun = \(x :: forall a b. a -> b). 
     (let myBad = \y. y x in myBad)
 in
   myRun
 \end{minted}
-  \caption{\texttt{Program2.arralac}}
+    \caption{\texttt{Program2.arralac}}
 \end{figure}
 
 When run through the typechecker and solver, the solver correctly identifies the illegal unification and reports a level check failure, as shown in \Cref{fig:skolem-escape-error}. This directly validates that the level-based checking mechanism is working as designed.
 
 \begin{figure}[h]
-  \centering
-  \begin{minted}[frame=lines,fontsize=\small]{console}
+    \centering
+    \begin{minted}[frame=lines,fontsize=\small]{console}
 $ nix run .#arralac -- typecheck arralac/test/data/Program2.arralac
 CallStack (from HasCallStack):
   SolverErrorWithCallStack, called at
@@ -172,42 +172,42 @@ has a larger TcLevel:
 in the constraint:
 ...
 \end{minted}
-  \caption{Error message demonstrating successful skolem escape detection.}
-  \label{fig:skolem-escape-error}
+    \caption{Error message demonstrating successful skolem escape detection.}
+    \label{fig:skolem-escape-error}
 \end{figure}
 
 \subsection{Interactive Tooling: The Language Server}
 The implementation includes a functional language server that leverages the annotated AST to provide on-the-fly diagnostics and type information. \Cref{fig:lsp-demo} demonstrates two key features in Visual Studio Code: (1) hovering over an identifier (\texttt{applyMyShow}) to see its inferred polymorphic type, and (2) an error diagnostic for an unbound variable (\texttt{myShowww}). This closes the loop between the compiler's internal representations and a useful, interactive user experience.
 
 \begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.9\textwidth]{VSCode.png}
-  \caption{LSP features: type on hover and error diagnostics.}
-  \label{fig:lsp-demo}
+    \centering
+    \includegraphics[width=0.9\textwidth]{VSCode.png}
+    \caption{LSP features: type on hover and error diagnostics.}
+    \label{fig:lsp-demo}
 \end{figure}
 
 \subsection{Codebase Characteristics}
 The system was evaluated against several quality characteristics from the ISO 25010 standard.
 \begin{itemize}
-  \item \textbf{Modularity:} The codebase is highly modular, comprising 86 distinct Haskell modules, as shown by the \texttt{cloc} \footnote{The tool is available at \url{https://github.com/AlDanial/cloc}} analysis in \Cref{table:cloc}. This separation of concerns was critical for managing the complexity of the type inference engine.
-  \item \textbf{Analysability:} The error-handling mechanism is designed for clear diagnostics. Each pipeline stage (e.g., Renamer, Typechecker, Solver) throws its own distinct error type, which captures a full call stack. This ensures that failures are easy to trace back to their source.
-  \item \textbf{Installability:} The entire project is packaged with Nix, enabling a reproducible, single-line installation via the command \texttt{nix profile install}.
+    \item \textbf{Modularity:} The codebase is highly modular, comprising 86 distinct Haskell modules, as shown by the \texttt{cloc} \footnote{The tool is available at \url{https://github.com/AlDanial/cloc}} analysis in \Cref{table:cloc}. This separation of concerns was critical for managing the complexity of the type inference engine.
+    \item \textbf{Analysability:} The error-handling mechanism is designed for clear diagnostics. Each pipeline stage (e.g., Renamer, Typechecker, Solver) throws its own distinct error type, which captures a full call stack. This ensures that failures are easy to trace back to their source.
+    \item \textbf{Installability:} The entire project is packaged with Nix, enabling a reproducible, single-line installation via the command \texttt{nix profile install}.
 \end{itemize}
 
 \begin{table}[h!]
-  \centering
-  \footnotesize
-  \caption{Code Metrics for the \texttt{Arralac} Implementation Generated by \texttt{cloc}}
-  \begin{tabular}{lrrrr}
-    \toprule
-    \textbf{Language} & \textbf{Files} & \textbf{Blank Lines} & \textbf{Comment Lines} & \textbf{Code Lines} \\
-    \midrule
-    Haskell           & 86             & 705                  & 1085                   & 3907                \\
-    \midrule
-    \textbf{SUM}      & \textbf{86}    & \textbf{705}         & \textbf{1085}          & \textbf{3907}       \\
-    \bottomrule
-  \end{tabular}
-  \label{table:cloc}
+    \centering
+    \footnotesize
+    \caption{Code Metrics for the \Arralac Implementation Generated by \texttt{cloc}}
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Language} & \textbf{Files} & \textbf{Blank Lines} & \textbf{Comment Lines} & \textbf{Code Lines} \\
+        \midrule
+        Haskell           & 86             & 705                  & 1085                   & 3907                \\
+        \midrule
+        \textbf{SUM}      & \textbf{86}    & \textbf{705}         & \textbf{1085}          & \textbf{3907}       \\
+        \bottomrule
+    \end{tabular}
+    \label{table:cloc}
 \end{table}
 
 This chapter has demonstrated that the design laid out previously has been successfully realized in a functional, well-structured, and non-trivial implementation. The system correctly handles higher-rank types, robustly rejects invalid programs, and provides modern tooling, fulfilling the primary objectives of this thesis.

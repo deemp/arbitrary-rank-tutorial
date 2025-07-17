@@ -1,7 +1,7 @@
 \chapter{Analysis and Discussion}
 \label{chap:AnalysisAndDiscussion}
 
-This chapter moves beyond description to provide a critical analysis of the \texttt{Arralac} project. The analysis will proceed in three parts. First, I will evaluate how the chosen design patterns successfully achieved the project's primary objectives and what trade-offs they entailed. Second, I will offer a qualitative evaluation of the system's non-functional characteristics. Finally, I will critically examine the limitations of the current implementation and propose concrete directions for future research.
+This chapter moves beyond description to provide a critical analysis of the \Arralac project. The analysis will proceed in three parts. First, I will evaluate how the chosen design patterns successfully achieved the project's primary objectives and what trade-offs they entailed. Second, I will offer a qualitative evaluation of the system's non-functional characteristics. Finally, I will critically examine the limitations of the current implementation and propose concrete directions for future research.
 
 \section{Analyzing the Architectural Contributions}
 \label{sec:Discussion:Objectives}
@@ -11,7 +11,7 @@ The primary goal of this thesis was to create a modern, tutorial-focused impleme
 \subsection[From Eager Unification to Constraint-Based Inference]{From Eager Unification \\ to Constraint-Based Inference}
 The most significant architectural contribution of this work is its adoption of a two-phase, constraint-based type inference model, a departure from the eager unification algorithm presented in \cite{jones-practical-2007}. In their paper, the authors suggest that a "more principled alternative is to... get the inference algorithm to return a set of constraints, and solve them all together" \cite[Sec. 9.6]{jones-practical-2007}.
 
-\texttt{Arralac} serves as a direct, working implementation of this suggestion. By separating constraint generation (the \texttt{Typechecker}) from constraint solving (the \texttt{Solver}), this thesis demonstrates that the benefits of this architecture are fundamental to building a modular and understandable system.
+\Arralac serves as a direct, working implementation of this suggestion. By separating constraint generation (the \texttt{Typechecker}) from constraint solving (the \texttt{Solver}), this thesis demonstrates that the benefits of this architecture are fundamental to building a modular and understandable system.
 
 \paragraph{Architectural Benefits and Trade-offs}
 This separation yielded two primary benefits:
@@ -27,7 +27,7 @@ The second key architectural choice was the adoption of the \textbf{Trees That G
 
 \section[A Qualitative Evaluation of System Characteristics]{A Qualitative Evaluation \\ of System Characteristics}
 \label{sec:Discussion:Characteristics}
-Evaluating \texttt{Arralac} against ISO 25010 \cite{iso-25010} sub-characteristics reveals the practical impact of its design.
+Evaluating \Arralac against ISO 25010 \cite{iso-25010} sub-characteristics reveals the practical impact of its design.
 
 \begin{itemize}
     \item \textbf{Modularity:} The division of the codebase into 86 modules (\Cref{table:cloc}) is a direct outcome of the pipeline architecture. The strict separation between stages creates a highly modular system. This modularity makes the codebase highly \textbf{analysable}; a student can study the \texttt{Solver} in isolation.
@@ -42,9 +42,9 @@ A critical analysis requires acknowledging the project's limitations. These simp
 \begin{enumerate}
     \item \textbf{Lack of \texttt{let}-generalization:} The most significant functional limitation is the lack of ML-style generalization for local \texttt{let}-bindings. Future work could add a scoped-solving phase at each \texttt{let}-binding, quantifying over any metavariables whose level is local to the binding's scope, as discussed in \cite{wits-type-inference-using-constraints}.
 
-    \item \textbf{Untyped Core Language:} \texttt{Arralac} desugars its typed AST into an untyped lambda calculus. A major extension would be to design a typed Core language and extend the desugaring process to generate the necessary type abstractions and applications, making the entire pipeline type-safe.
+    \item \textbf{Untyped Core Language:} \Arralac desugars its typed AST into an untyped lambda calculus. A major extension would be to design a typed Core language and extend the desugaring process to generate the necessary type abstractions and applications, making the entire pipeline type-safe.
 
     \item \textbf{Simplified Constraint Solver:} The current solver is basic. It halts on the first unsolvable constraint and does not implement advanced strategies, like floating constraints out of implications and promotion \footnote{See \href{https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs\#L2589}{Note [Unification preconditions]}}. Enhancing the solver to handle these cases and to report a complete set of residual constraints would be a valuable research project.
 \end{enumerate}
 
-In conclusion, the analysis confirms that \texttt{Arralac} is not merely a \\ reimplementation, but a modernization of the ideas in its foundational literature. It successfully serves its pedagogical purpose while providing a robust foundation for future exploration.
+In conclusion, the analysis confirms that \Arralac is not merely a \\ reimplementation, but a modernization of the ideas in its foundational literature. It successfully serves its pedagogical purpose while providing a robust foundation for future exploration.

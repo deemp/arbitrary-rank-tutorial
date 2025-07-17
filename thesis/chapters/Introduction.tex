@@ -22,11 +22,11 @@ Despite the existence of both foundational theory and a production-grade impleme
 There is a clear need for a resource that bridges this gap --- a "middle ground" that is more concrete than a paper but more focused and accessible than a full production compiler, one that explicitly demonstrates the architectural evolution from eager to constraint-based inference.
 
 % Section 3: Contribution - Reframed to be a direct answer to the refined problem.
-\section{Contribution: The \texttt{Arralac} Compiler}
+\section{Contribution: The \Arralac Compiler}
 
 % 10.5555/1177220
 
-To address this pedagogical gap, this thesis presents the design and implementation of a small, typed functional language named \texttt{Arralac} (\textbf{Ar}bitrary-\textbf{ra}nk polymorphism + \textbf{la}mbda \textbf{c}alculus). The \texttt{Arralac} compiler (in the sense that it translates a source code into a target program \cite{10.5555/1177220}) serves as a well-documented, tutorial implementation that explicitly models the architectural principles of a modern typechecker for arbitrary-rank polymorphism.
+To address this pedagogical gap, this thesis presents the design and implementation of a small, typed functional language named \Arralac (\textbf{Ar}bitrary-\textbf{ra}nk polymorphism + \textbf{la}mbda \textbf{c}alculus). The \Arralac compiler (in the sense that it translates a source code into a target program \cite{10.5555/1177220}) serves as a well-documented, tutorial implementation that explicitly models the architectural principles of a modern typechecker for arbitrary-rank polymorphism.
 
 The central thesis of this work is that a focused, modern, and interactive implementation that consciously diverges from older algorithmic models can serve as a more effective learning tool than studying foundational papers or production compilers in isolation.
 
@@ -55,7 +55,7 @@ This thesis is structured as follows:
 
 \begin{itemize}
     \item \textbf{\Cref{chap:LiteratureReview}} provides the theoretical foundations for this work by reviewing the evolution of polymorphic type systems. It traces the path from the Hindley-Milner compromise to the practical, bidirectional approach for arbitrary-rank types that forms the theoretical core of this thesis.
-    \item \textbf{\Cref{chap:DesignAndMethodology}} details the design and implementation of the \texttt{Arralac} language. It covers the full compilation pipeline, with a special focus on the constraint-based architecture of the typechecker and the Trees That Grow AST representation.
+    \item \textbf{\Cref{chap:DesignAndMethodology}} details the design and implementation of the \Arralac language. It covers the full compilation pipeline, with a special focus on the constraint-based architecture of the typechecker and the Trees That Grow AST representation.
     \item \textbf{\Cref{chap:AnalysisAndDiscussion}} evaluates the resulting system against its pedagogical goals, analyzing the trade-offs of its architectural decisions and discussing the insights gained during development.
     \item \textbf{\Cref{chap:Conclusion}} summarizes the contributions of this work, revisits the central thesis in light of the results, and outlines potential directions for future research and development.
 \end{itemize}
