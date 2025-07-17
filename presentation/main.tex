@@ -11,19 +11,25 @@
 \usepackage[T1]{fontenc} 
 \usepackage{fourier} % see "http://faq.ktug.org/wiki/uploads/MathFonts.pdf" for other options
 \usepackage{hyperref}
-% \hypersetup{
-%   colorlinks   = true,    % Colours links instead of ugly boxes
-%   urlcolor     = blue,    % Colour for external hyperlinks
-%   linkcolor    = blue,    % Colour of internal links
-% %   citecolor    = red      % Colour of citations
-% }
 \usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra}
 \usepackage{graphicx,pstricks,listings,stackengine}
 \usepackage{lipsum}
-% \usepackage[utf8]{inputenc}
+% \usepackage{inputenc}
+\usepackage{csquotes}
+
 \usepackage[english]{babel}
+\usepackage[newfloat]{minted}
+% \setminted{
+%   breaklines=true,
+%   breakbytoken=true,
+%   breakbytokenanywhere=true,
+%   fontsize=\small
+% }
+% \renewcommand{\theFancyVerbLine}{\textcolor{gray}{\arabic{FancyVerbLine}}}
 
 \usepackage[backend=biber,style=ieee,autocite=inline]{biblatex}
+% Note: You need a ref.bib file for this to compile
+% \addbibresource{ref.bib} % Use this if you have a ref.bib file
 \bibliography{ref.bib}
 \DefineBibliographyStrings{english}{%
   bibliography = {References},}
@@ -31,8 +37,9 @@
 \let\oldcite\cite
 \renewcommand{\cite}[2][]{\mbox{\oldcite[#1]{#2}}}
   
-\author[Danko, Strygin]{Danila Danko, MS-SE \inst{1} \and \newline \newline {Supervisor: Nikolai Kudasov \inst{1}}}
-\title{A GHC-inspired implementation of a lambda calculus with predicative parametric arbitrary-rank polymorphism using Free\,Foil}
+\author[Danko]{Danila Danko, MS-SE \inst{1} \and \newline \newline {Supervisor: Nikolai Kudasov \inst{1}}}
+\title{A Tutorial Implementation of a Lambda Calculus with
+Parametric Predicative Arbitrary-Rank Polymorphism}
 
 \institute{
     \inst{1}Innopolis University
@@ -60,449 +67,259 @@
     frame=shadowbox,
 }
 
-
 \begin{document}
 
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Motivation and Problem}
+
+\begin{frame}[containsverbatim]{The Magic of Modern Type Systems}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Modern functional languages like Haskell have powerful type systems.
+        \item One feature is \textbf{arbitrary-rank polymorphism}, allowing polymorphic functions as arguments.
+        \item This enables highly generic and safe code, but its implementation can feel like magic.
+        \item \textit{How do compilers like GHC handle this?}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{minted}{haskell}
+-- Pass a polymorphic function 
+-- 'myShow' as an argument
+let
+  applyMyShow =
+    (\x. \y. x y) ::
+      forall a.
+        (forall b. b -> String) 
+           -> a -> String
+in
+let
+  myShow = \x. "Hello"
+in
+  applyMyShow myShow
+            \end{minted}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{The Problem: A Pedagogical Gap}
+  There is a steep learning curve for understanding how arbitrary-rank polymorphism is implemented.
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \textbf{Foundational Papers}
+      \begin{itemize}
+        \item Seminal work like \textit{Peyton Jones et al. (2007)} is theoretically dense.
+        \item Describes an \textbf{eager unification} algorithm, which is conceptually different from modern practice.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.55\textwidth}
+      \textbf{Production Compilers (GHC)}
+      \begin{itemize}
+        \item Huge, highly-optimized codebase.
+        \item Uses a modern \textbf{constraint-based} architecture, a significant evolution from the papers.
+        \item Difficult for a newcomer to trace the connection between theory and implementation.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{1em}
+  \begin{alertblock}{The Gap}
+    We need a "middle ground": a resource more concrete than a paper, but more focused and accessible than a production compiler.
+  \end{alertblock}
+\end{frame}
+
+\section{Solution: The Arralac Compiler}
+
+\begin{frame}{The Solution: A Tutorial Compiler}
+  \begin{itemize}
+    \item<1-> This thesis presents \textbf{\texttt{Arralac}}, a small, typed functional language and compiler.
+    \item<2-> \textbf{Goal:} To bridge the pedagogical gap by serving as a well-documented, tutorial implementation of a modern typechecker.
+    \item<3-> \textbf{Central Thesis:} A focused, modern implementation that consciously diverges from older models can be a more effective learning tool than studying theory or production code in isolation.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Key Architectural Contributions}
+  \texttt{Arralac} was built on three core design choices to maximize clarity and modernity.
+  \begin{enumerate}
+    \item<1-> \textbf{A Modern, Constraint-Based Architecture}
+          \begin{itemize}
+            \item Deliberately implements a GHC-style, two-phase engine:
+                  \begin{enumerate}
+                    \item Constraint Generation
+                    \item Constraint Solving
+                  \end{enumerate}
+            \item This is a pedagogically superior alternative to the eager unification model.
+          \end{itemize}
+    \item<2-> \textbf{An Extensible "Trees That Grow" AST}
+          \begin{itemize}
+            \item The AST representation evolves with each compiler pass, enabling type-safe annotations required for tooling.
+          \end{itemize}
+    \item<3-> \textbf{An Interactive Toolchain (LSP)}
+          \begin{itemize}
+            \item A Language Server makes the typechecker's results visible and interactive, turning abstract rules into concrete feedback.
+          \end{itemize}
+  \end{enumerate}
+\end{frame}
+
+\section{How It Works}
+
+\begin{frame}{The Compilation Pipeline}
+  A modular, multi-stage pipeline transforms source text into an evaluated result.
+  \begin{figure}
+    \includegraphics[scale=0.3]{pic/pipeline.png} % You will need a PNG of your pipeline diagram
+    \caption{The \texttt{Arralac} Compilation Pipeline. Note the separation of Typechecking (Generation) and Solving.}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{Core Mechanism: Bidirectional Typechecking}
+  The system avoids undecidable inference by operating in two modes.
+
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Inference Mode ($\uparrow$)}
+      \begin{itemize}
+        \item Synthesizes or "infers" the most general type for an expression.
+        \item Used when the type is not known in advance.
+        \item For \\ \quad \texttt{let x = \textbackslash x. x} \\ infers \\ \quad \texttt{x :: a -> a}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Checking Mode ($\downarrow$)}
+      \begin{itemize}
+        \item Verifies an expression against a known, expected type.
+        \item Triggered by programmer annotations.
+        \item This is the key to handling higher-rank types.
+        \item \texttt{(\textbackslash x. x) :: \\ \quad \quad String -> String}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\section{Results and Demonstration}
+
+\begin{frame}[containsverbatim]{Positive Case: Higher-Rank Polymorphism}
+  The system correctly typechecks a program that passes a polymorphic function as an argument.
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Input Code (\texttt{Program1.arralac})}
+      \begin{minted}[frame=lines]{haskell}
+let
+  applyMyShow =
+    (\x. \y. x y) ::
+      forall a.
+        (forall b. b -> String)
+        -> a -> String
+in
+  applyMyShow (\z. "Hello")
+        \end{minted}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Inferred \& Zonked Output (simplified)}
+      \begin{minted}[frame=lines,fontsize=\tiny]{haskell}
+let
+  applyMyShow_0 =
+    (\(x_1 :: forall b_4. b_4 -> String).
+       (\(y_2 :: a_8).
+          (x_1 :: a_8 -> String) 
+          (y_2 :: a_8)
+       )
+    ) :: (forall b_4. b_4 -> String)
+       -> a_Unsolved_10 -> String
+in
+  (applyMyShow_0
+     (\(z_8 :: b_11). "Hello")
+  ) :: a_Unsolved_10 -> String
+        \end{minted}
+      \textbf{Result:} Success. The higher-rank annotation guides the typechecker correctly.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[containsverbatim]{Negative Case: Skolem Escape Detection}
+  The solver correctly rejects invalid programs where a type variable would escape its scope.
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Invalid Code (\texttt{Program2.arralac})}
+      \begin{minted}[frame=lines]{haskell}
+let 
+  myRun = 
+    \(x :: forall a b. a -> b). 
+      (let myBad = \y. y x in myBad)
+in
+  myRun
+        \end{minted}
+      This code tries to unify an outer-scope variable with an inner-scope `a`.
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Compiler Error}
+      \begin{minted}[fontsize=\scriptsize]{console}
+Skolem escape!
+The variable:
+  a_7[ID 7, L 0, Meta, ...]
+has the TcLevel:
+  L 0
+but the type variable:
+  a_11[ID 11, L 1, Meta, ...]
+has a larger TcLevel:
+  L 1
+        \end{minted}
+      \textbf{Result:} Correctly rejected. The level-based check works as designed.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Interactive Tooling: The Language Server}
+  The LSP brings the type system to life in the editor.
+  \begin{figure}
+    \includegraphics[scale=0.3]{pic/VSCode.png} % Your VS Code screenshot
+    \caption{LSP features in VS Code: (1) Type on hover, showing the inferred polymorphic type, and (2) live error diagnostics.}
+  \end{figure}
+\end{frame}
+
+\section{Conclusion and Future Work}
+
+\begin{frame}{Conclusion}
+  \begin{itemize}
+    \item \texttt{Arralac} successfully bridges the pedagogical gap between theory and practice for arbitrary-rank polymorphism.
+    \item \textbf{Key Insight:} Architectural choices (constraint-based model, TTG, LSP) have a profound impact on a compiler's value as a learning tool.
+    \item It demystifies the "magic" by providing a structured, modern, and understandable implementation.
+    \item The project provides a clear, interactive bridge for students and aspiring language developers, delivered as a public, open-source repository.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Future Work}
+  The tutorial foundation of \texttt{Arralac} enables several clear avenues for future research and development.
+  \begin{itemize}
+    \item \textbf{Implement \texttt{let}-generalization:} The most significant missing feature. The constraint-based architecture is an ideal foundation for adding scoped constraint solving.
+
+    \item \textbf{Introduce a Typed Core Language:} Evolve the untyped Core language into a typed intermediate representation (like GHC's System FC) to provide end-to-end type safety.
+
+    \item \textbf{Enhance the Constraint Solver:} Improve error reporting to show all residual constraints, not just the first failure. Implement advanced solving strategies like floating constraints.
+
+    \item \textbf{Richer Language Features:} Support user-defined algebraic data types and type classes.
+  \end{itemize}
+\end{frame}
 
 \begin{frame}
-	\titlepage
+  \begin{center}
+    {\Huge Thank You}
+    \vspace{2em}
+
+    Questions?
+
+    \vspace{2em}
+    Code available at: \url{https://github.com/deemp/arbitrary-rank-tutorial}
+  \end{center}
 \end{frame}
 
-\begin{frame}
-	\tableofcontents[sectionstyle=show,
-		subsectionstyle=show/shaded/hide,
-		subsubsectionstyle=show/shaded/hide]
-\end{frame}
-
-\section{Introduction}
-
-\cite{maclaurin-foil-2022}
-
-
-\begin{frame}{Context}
-	\begin{itemize}
-		[<+-| alert+>] % stepwise alerts
-		\item The Language Server Protocol \cite{noauthor-language-server-protocol-2024} standardized the protocol of communication between source code editors and language servers that provide language features like auto complete.
-		\item There are language servers for mainstream languages such as C\#, Java, C++ \cite{lsp-implementations}. Such servers improve the developer experience by supporting the "go to definition", "lookup the type on hover", "rename all occurences" queries.
-	\end{itemize}
-\end{frame}
-
-\begin{frame}{Problem}
-	\begin{itemize}
-		[<+-| alert+>] % stepwise alerts
-		% \item Multiple programming languages are implemented in Haskell \cite{github-haskell-programming-language}, \cite{hackage-formal-languages}, \cite{hackage-language}.
-		\item Only a half of the GitHub repositories for programming languages implemented in Haskell provide a language server.
-			 % \cite{github-lsp-module}.
-		      % TODO check more accurately
-		\item There exist frameworks for TypeScript (\texttt{Langium}~\cite{noauthor-langium-nodate}) and Python (\texttt{lsp-tree-sitter}~\cite{noauthor-neomuttlsp-tree-sitter-2024}) that simplify integration with the LSP for new languages.
-		\item However, to our best knowledge, there is no such framework for languages implemented in Haskell!
-	\end{itemize}
-\end{frame}
-
-\begin{frame}{Solution}
-	\begin{itemize}
-		[<+-| alert+>] % stepwise alerts
-		\item Language servers share some features, such as "go to definition".
-		\item We assume that some of these features can be implemented in a Haskell framework that is independent of the target language (language-agnostic) for which LSP integration is developed.
-		\item A promising approach is to work with the Second-Order Abstract Syntax (SOAS) \cite{fiore-formal-2022} of the target language.
-		\item The main idea of SOAS is to provide a language-agnostic machinery for describing variable introduction in Abstract Syntax Tree (like lambda abstraction in Lambda calculus).
-		\item This allows it to provide generic mechanisms for scope resolution ("go to definition"), variable bindings ("lookup the type on hover"), and substitution ("rename all occurences").
-	\end{itemize}
-\end{frame}
-
-\section{Contribution}
-
-\begin{frame}{Contribution}
-	\begin{itemize}
-		[<+-| alert+>] % stepwise alerts
-		\item We want to implement in Haskell a language-agnostic framework that simplifies integration with LSP of (new) languages written in Haskell.
-		\item The framework will primarily be based on the \texttt{free-foil} \cite{hackage-free-foil} (SOAS manipulation), \texttt{BNFC} \cite{hackage-bnfc} (parsing), \texttt{lsp} \cite{hackage-lsp} (library for building LSP) packages.
-	\end{itemize}
-\end{frame}
-
-\section{Evaluation criteria}
-\label{sec:evaluation_criteria}
-
-\begin{frame}{Metrics}
-	\begin{itemize}
-		[<+-| alert+>] % stepwise alerts
-		\item We plan to provide integration with LSP for Simply typed lambda calculus (STLC) \cite{wiki-stlc} and Stella Core \cite{noauthor-fizrukstella-nodate} with (Approach 1) and without (Approach 2) our framework.
-		\item We will measure for both approaches and compare:
-		      \begin{itemize}
-			      \item The lines of code required for integration and some other complexity metrics.
-			      \item The performance of the server on a large (probably generated) code base (approx.~10KLoC).
-		      \end{itemize}
-		\item Condition for success: metrics for the Approach 1 are at most 10\% better than metrics for the Approach 2.
-	\end{itemize}
-\end{frame}
-
-\section{Plan of work}
-
-\subsection{Review the literature}
-
-\begin{frame}{Review the literature}
-	\begin{itemize}
-		\item Read papers on SOAS \cite{fiore-formal-2022}, Foil \cite{maclaurin-foil-2022} and Free foil \cite{kudasov-free-2024}.
-		\item Read the \texttt{free-foil} package documentation \cite{hackage-free-foil}.
-	\end{itemize}
-\end{frame}
-
-\subsection{Preliminary results}
-
-\begin{frame}{Preliminary results}
-	\begin{itemize}
-		\item We created a repository \cite{github-query-driven-free-foil} for the thesis work.
-		\item We implemented a parser and pretty-printer of STLC as defined in \cite{dunfield-bidirectional-2020} using BNFC.
-	\end{itemize}
-\end{frame}
-
-\subsection{Practice with Free Foil}
-
-\begin{frame}{Practice with Free Foil}
-	\begin{itemize}
-		\item Complete exercises on AST manipulation provided by Nikolai.
-		\item Complete these exercises using Free foil.
-	\end{itemize}
-\end{frame}
-
-\subsection{Practice with Simply typed lambda calculus (STLC)}
-
-\begin{frame}{Type checker and interpreter for STLC}
-	\begin{itemize}
-		\item Implement a type checker and interpreter for STLC.
-		\item Features:
-		      \begin{itemize}
-			      \item Single module on the input and the output.
-			      \item Use BNFC for parsing and pretty-printing.
-			      \item Use Free Foil and Template Haskell.
-			      \item Show error location in the code.
-		      \end{itemize}
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Language server for STLC}
-	\begin{itemize}
-		\item Implement a language server and a simple VS Code extension for STLC.
-		\item Use the \texttt{lsp} \cite{hackage-lsp} package.
-		\item Features:
-		      \begin{itemize}
-			      \item Go to definition.
-			      \item Type on hover.
-			      \item Maybe something else that makes sense for STLC.
-		      \end{itemize}
-	\end{itemize}
-
-\end{frame}
-
-\subsection{Practice with Stella Core}
-
-\begin{frame}{Type checker and interpreter for Stella Core}
-	\begin{itemize}
-		\item Implement a type checker and interpreter for Stella Core.
-		\item Features:
-		      \begin{itemize}
-			      \item Single module on the input and the output.
-			      \item Use BNFC for parsing and pretty-printing.
-			      \item Use Free Foil and Template Haskell.
-			      \item Show error location in the code.
-		      \end{itemize}
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Language server for Stella Core}
-	\begin{itemize}
-		\item Implement a language server, and a simple VS Code extension for Stella Core.
-		\item Use the \texttt{lsp} \cite{hackage-lsp} package.
-		\item Features:
-		      \begin{itemize}
-			      \item Type and documentation on hover.
-			      \item Autocompletion.
-			      \item Inlay (type) hints.
-			      \item (Un)folding scopes.
-			      \item InfoView - a separate panel that shows context (what is in scope, the type of the current expression or goal)
-			      \item Something else.
-		      \end{itemize}
-	\end{itemize}
-
-\end{frame}
-
-\subsection{Evaluate the results}
-
-\begin{frame}{Evaluation}
-	\begin{itemize}
-		\item Generate large code bases (approx. 10KLoC) for STLC and Stella.
-		\item Evaluate the results using the \hyperlink{sec:evaluation_criteria}{Evaluation criteria}.
-	\end{itemize}
-
-\end{frame}
-
-
-% \section{Literature Review}
-
-% \subsection{GPT3-derived Models DALLE \& CLIP}
-
-% \begin{frame}
-%     \begin{itemize}
-%         \item \lipsum[2][1-4]
-%         \item \lipsum[2][5-9]
-%         \item Results accessible at \newline \url{https://scholar.google.com}
-%     \end{itemize}
+% \begin{frame}[allowframebreaks]{References}
+%   \printbibliography
 % \end{frame}
-
-
-% \section{Methods}
-
-% \subsection{Diffusion Model}
-
-% \begin{frame}{Title}
-%     \begin{itemize}
-%         \item \lipsum[3][1-4]
-%     \end{itemize}
-%     \begin{table}[h]
-%         \centering
-%         \begin{tabular}{c|c}
-%             Microsoft\textsuperscript{\textregistered}  Windows & Apple\textsuperscript{\textregistered}  Mac OS \\
-%             \hline
-%             Windows-Kernel & Unix-like \\
-%             Arm, Intel & Intel, Apple Silicon \\
-%             Sudden update & Stable update \\
-%             Less security & More security \\
-%             ... & ... \\
-%         \end{tabular}
-%     \end{table}
-% \end{frame}
-
-% \begin{frame}{Algorithms}
-%     \begin{exampleblock}{Non-Numbering Formula}
-%         \begin{equation*}
-%             J(\theta) = \mathbb{E}_{\pi_\theta}[G_t] = \sum_{s\in\mathcal{S}} d^\pi (s)V^\pi(s)=\sum_{s\in\mathcal{S}} d^\pi(s)\sum_{a\in\mathcal{A}}\pi_\theta(a|s)Q^\pi(s,a)
-%         \end{equation*}
-%     \end{exampleblock}
-%     \begin{exampleblock}{Multi-Row Formula\footnote{If text appears in the formula, use $\backslash$mathrm\{\} or $\backslash$text\{\} instead}}
-%         \begin{align}
-%             Q_\mathrm{target}&=r+\gamma Q^\pi(s^\prime, \pi_\theta(s^\prime)+\epsilon)\\
-%             \epsilon&\sim\mathrm{clip}(\mathcal{N}(0, \sigma), -c, c)\nonumber
-%         \end{align}
-%     \end{exampleblock}
-% \end{frame}
-
-% \begin{frame}
-%     \begin{exampleblock}{Numbered Multi-line Formula}
-%         % Taken from Mathmode.tex
-%         \begin{multline}
-%             A=\lim_{n\rightarrow\infty}\Delta x\left(a^{2}+\left(a^{2}+2a\Delta x+\left(\Delta x\right)^{2}\right)\right.\label{eq:reset}\\
-%             +\left(a^{2}+2\cdot2a\Delta x+2^{2}\left(\Delta x\right)^{2}\right)\\
-%             +\left(a^{2}+2\cdot3a\Delta x+3^{2}\left(\Delta x\right)^{2}\right)\\
-%             +\ldots\\
-%             \left.+\left(a^{2}+2\cdot(n-1)a\Delta x+(n-1)^{2}\left(\Delta x\right)^{2}\right)\right)\\
-%             =\frac{1}{3}\left(b^{3}-a^{3}\right)
-%         \end{multline}
-%     \end{exampleblock}
-% \end{frame}
-
-% \begin{frame}{Graphics and Columns}
-%     \begin{minipage}[c]{0.3\linewidth}
-%         \psset{unit=0.8cm}
-%         \begin{pspicture}(-1.75,-3)(3.25,4)
-%             \psline[linewidth=0.25pt](0,0)(0,4)
-%             \rput[tl]{0}(0.2,2){$\vec e_z$}
-%             \rput[tr]{0}(-0.9,1.4){$\vec e$}
-%             \rput[tl]{0}(2.8,-1.1){$\vec C_{ptm{ext}}$}
-%             \rput[br]{0}(-0.3,2.1){$\theta$}
-%             \rput{25}(0,0){%
-%             \psframe[fillstyle=solid,fillcolor=lightgray,linewidth=.8pt](-0.1,-3.2)(0.1,0)}
-%             \rput{25}(0,0){%
-%             \psellipse[fillstyle=solid,fillcolor=yellow,linewidth=3pt](0,0)(1.5,0.5)}
-%             \rput{25}(0,0){%
-%             \psframe[fillstyle=solid,fillcolor=lightgray,linewidth=.8pt](-0.1,0)(0.1,3.2)}
-%             \rput{25}(0,0){\psline[linecolor=red,linewidth=1.5pt]{->}(0,0)(0.,2)}
-% %           \psRotation{0}(0,3.5){$\dot\phi$}
-% %           \psRotation{25}(-1.2,2.6){$\dot\psi$}
-%             \psline[linecolor=red,linewidth=1.25pt]{->}(0,0)(0,2)
-%             \psline[linecolor=red,linewidth=1.25pt]{->}(0,0)(3,-1)
-%             \psline[linecolor=red,linewidth=1.25pt]{->}(0,0)(2.85,-0.95)
-%             \psarc{->}{2.1}{90}{112.5}
-%             \rput[bl](.1,.01){C}
-%         \end{pspicture}
-%     \end{minipage}\hspace{2cm}
-%     \begin{minipage}{0.5\linewidth}
-%         \medskip
-%         % \hspace{2cm}
-%         \begin{figure}[h]
-%             \centering
-%             \includegraphics[height=.4\textheight]{pic/sample.pdf}
-%         \end{figure}
-%     \end{minipage}
-% \end{frame}
-
-% \begin{frame}[fragile]{\LaTeX{} Common Commands}
-%     \begin{exampleblock}{Commands}
-%         \centering
-%         \footnotesize
-%         \begin{tabular}{llll}
-%             \cmd{chapter} & \cmd{section} & \cmd{subsection} & \cmd{paragraph} \\
-%             chapter & section & sub-section & paragraph \\\hline
-%             \cmd{centering} & \cmd{emph} & \cmd{verb} & \cmd{url} \\
-%             center & emphasize & original & hyperlink \\\hline
-%             \cmd{footnote} & \cmd{item} & \cmd{caption} & \cmd{includegraphics} \\
-%             footnote & list item & caption & insert image \\\hline
-%             \cmd{label} & \cmd{cite} & \cmd{ref} \\
-%             label & citation & refer\\\hline
-%         \end{tabular}
-%     \end{exampleblock}
-%     \begin{exampleblock}{Environment}
-%         \centering
-%         \footnotesize
-%         \begin{tabular}{lll}
-%             \env{table} & \env{figure} & \env{equation}\\
-%             table & figure & formula \\\hline
-%             \env{itemize} & \env{enumerate} & \env{description}\\
-%             non-numbering item & numbering item & description \\\hline
-%         \end{tabular}
-%     \end{exampleblock}
-% \end{frame}
-
-% \begin{frame}[fragile]{\LaTeX{} Examples of environmental commands}
-%     \begin{minipage}{0.5\linewidth}
-% \begin{lstlisting}[language=TeX]
-% \begin{itemize}
-%   \item A \item B
-%   \item C
-%   \begin{itemize}
-%     \item C-1
-%   \end{itemize}
-% \end{itemize}
-% \end{lstlisting}
-%     \end{minipage}\hspace{1cm}
-%     \begin{minipage}{0.3\linewidth}
-%         \begin{itemize}
-%             \item A
-%             \item B
-%             \item C
-%             \begin{itemize}
-%                 \item C-1
-%             \end{itemize}
-%         \end{itemize}
-%     \end{minipage}
-%     \medskip
-%     \pause
-%     \begin{minipage}{0.5\linewidth}
-% \begin{lstlisting}[language=TeX]
-% \begin{enumerate}
-%   \item A \item B
-%   \item C
-%   \begin{itemize}
-%     \item[n+e]
-%   \end{itemize}
-% \end{enumerate}
-% \end{lstlisting}
-%     \end{minipage}\hspace{1cm}
-%     \begin{minipage}{0.3\linewidth}
-%         \begin{enumerate}
-%             \item A
-%             \item B
-%             \item C
-%             \begin{itemize}
-%                 \item[n+e]
-%             \end{itemize}
-%         \end{enumerate}
-%     \end{minipage}
-% \end{frame}
-
-% \begin{frame}[fragile]{\LaTeX{} Formulas}
-%     \begin{columns}
-%         \begin{column}{.55\textwidth}
-% \begin{lstlisting}[language=TeX]
-% $V = \frac{4}{3}\pi r^3$
-
-% \[
-%   V = \frac{4}{3}\pi r^3
-% \]
-
-% \begin{equation}
-%   \label{eq:vsphere}
-%   V = \frac{4}{3}\pi r^3
-% \end{equation}
-% \end{lstlisting}
-%         \end{column}
-%         \begin{column}{.4\textwidth}
-%             $V = \frac{4}{3}\pi r^3$
-%             \[
-%                 V = \frac{4}{3}\pi r^3
-%             \]
-%             \begin{equation}
-%                 \label{eq:vsphere}
-%                 V = \frac{4}{3}\pi r^3
-%             \end{equation}
-%         \end{column}
-%     \end{columns}
-%     \begin{itemize}
-%         \item more information \href{https://ja.overleaf.com/learn/latex/Mathematical_expressions}{\color{purple}{here}}
-%     \end{itemize}
-% \end{frame}
-
-% \begin{frame}[fragile]
-%     \begin{columns}
-%         \column{.6\textwidth}
-% \begin{lstlisting}[language=TeX]
-% \begin{table}[htbp]
-%   \caption{numbers & meaning}
-%   \label{tab:number}
-%   \centering
-%   \begin{tabular}{cl}
-%     \toprule
-%     number & meaning \\
-%     \midrule
-%     1 & 4.0 \\
-%     2 & 3.7 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-% \end{lstlisting}
-%         \column{.4\textwidth}
-%         \begin{table}[htpb]
-%             \centering
-%             \caption{numbers \& meaning}
-%             \label{tab:number}
-%             \begin{tabular}{cl}\toprule
-%                 numbers & meaning \\\midrule
-%                 1 & 4.0\\
-%                 2 & 3.7\\\bottomrule
-%             \end{tabular}
-%         \end{table}
-%         \normalsize formula~(\ref{eq:vsphere}) at previous slide and Table~\ref{tab:number}.
-%     \end{columns}
-% \end{frame}
-
-% \section{Results}
-% \begin{frame}
-%     \begin{itemize}
-%         \item \lipsum[4][1-4]
-%         \item \lipsum[4][5-9]
-%         \item \lipsum[5][1-4]
-%         \item \lipsum[5][5-8]
-%     \end{itemize}
-% \end{frame}
-
-\section{References}
-
-
-\begin{frame}[allowframebreaks]
-	\printbibliography
-	% \bibliography{ref}
-	% \bibliographystyle{ieeetr}
-	% \nocite{*} % used here because no citation happens in slides
-	% if there are too many try use:
-	% \tiny\bibliographystyle{alpha}
-\end{frame}
-
-
-\begin{frame}
-	\begin{center}
-		{\Huge Thank You}
-	\end{center}
-\end{frame}
 
 \end{document}
