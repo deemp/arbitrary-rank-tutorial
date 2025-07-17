@@ -61,7 +61,12 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true, linkcolor=black, citecolor=black}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=black,
+	citecolor=black,
+	urlcolor=black
+}
 \usepackage{paralist}
 \usepackage{listings}
 \usepackage{zed-csp}
@@ -98,7 +103,13 @@
 \captionsetup[table]{labelfont={normalfont}, name={TABLE}, labelsep={newline}}
 \setlength{\parindent}{2em} 
 \DeclareCaptionLabelSeparator{figSep}{.\quad}
-\captionsetup[figure]{labelfont={bf}, name={Fig.}, labelsep=period}
+\captionsetup[figure]{
+  labelfont={bf}, 
+  name={Fig.}, 
+  labelsep=period, 
+  justification=raggedright, 
+  singlelinecheck=false, 
+}
 \counterwithin{figure}{chapter}
 
 % \usepackage{titlesec}
@@ -115,7 +126,7 @@
 
 % remember section title
 \renewcommand{\chaptermark}[1]%
-	{\markboth{\chaptername~\thechapter~--~#1}{}}
+{\markright{\thechapter\ #1}{}}
 
 % subsection number and title
 \renewcommand{\sectionmark}[1]%
@@ -203,16 +214,14 @@
 
 \begin{document}
 
-% \includepdf[pages=-]{title.pdf}
-
+\includepdf[noautoscale,offset=75 -75,pages=-]{title.pdf}
 \tableofcontents
 \listoftables
 \listoffigures
-
 \newpage
 % Depend on above part
 
-% \include{chapters/Abstract}
+\include{chapters/Abstract}
 
 \setcounter{page}{7}
 
