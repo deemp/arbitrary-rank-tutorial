@@ -16,10 +16,16 @@
 %%%%% END %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 \usepackage{atbegshi,picture}
-\usepackage[T1,T2A]{fontenc}
+% \usepackage[T1, T2A]{fontenc}
 \usepackage[utf8]{inputenc}
+\usepackage{hyphenat}
 
-\usepackage[english,russian]{babel}
+\usepackage[russian,english]{babel}
+
+\usepackage[default]{droidserif}
+\usepackage[defaultsans]{droidsans}
+
+\usepackage[babel=true]{microtype}
 \usepackage[backend=biber,style=ieee,autocite=inline]{biblatex}
 \bibliography{ref.bib}
 \DefineBibliographyStrings{english}{%
@@ -68,13 +74,13 @@
 % \usepackage{t1enc}
 
 \usepackage{chngcntr}
-\usepackage{upgreek} 
+\usepackage{upgreek}
 \usepackage{bm}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{longtable}
 \usepackage{forest}
-\usepackage{lmodern}
+% \usepackage{lmodern}
 
 \usepackage[font=singlespacing, labelfont=bf]{caption}
 %Hints
@@ -130,20 +136,36 @@
 \begin{document}
 
 \includepdf[noautoscale,offset=75 -75,pages=-]{title.pdf}
-\tableofcontents
-\listoftables
-\listoffigures
-\newpage
+% \tableofcontents
+% \listoftables
+% \listoffigures
+% \newpage
 
+\selectlanguage{russian}
+\include{annotation}
 
 % \setcounter{page}{8}
+% set manually the number, from which Chapter 1 starts!
+% Why do we put 7 in this case?
+% Title page - page 1
+% Contents - page 2, page 3
+% List of tables - page 4
+% List of figures - page 5
+% Abstract - page 6
+% Chapter 1 - page 7
+% In your thesis the counter number can be different, please count carefully and insert the corresponding number.
 
-\include{annotation}
+% \include{chapters/chapter1}
+% \include{chapters/chapter2}
+% \include{chapters/chapter3}
+% \include{chapters/chapter4}
+% \include{chapters/chapter5}
+% \include{chapters/chapter6}
 
 
 %% REFERENCES
 {\sloppy
-	\printbibliography[heading=bibintoc,title={Список литературы}]
+  \printbibliography[heading=bibintoc,title={Список литературы}]
 }
 %\include{chapters/appex}
 \end{document}
