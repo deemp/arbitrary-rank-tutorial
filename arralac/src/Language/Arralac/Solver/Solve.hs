@@ -6,6 +6,7 @@ import Control.Monad (forM)
 import Data.Foldable (Foldable (..))
 import Data.IORef (readIORef, writeIORef)
 import Data.Set qualified as Set
+import GHC.Stack.Types (HasCallStack)
 import Language.Arralac.Prelude.Bag
 import Language.Arralac.Prelude.Debug (debug')
 import Language.Arralac.Prelude.Pretty
@@ -17,7 +18,13 @@ import Language.Arralac.Solver.Unify qualified as Solver
 import Language.Arralac.Type.Local.TyVar.Tc
 import Language.Arralac.Typechecker.Constraints
 
-type SolveM a = (CtxDebug, CtxPrettyVerbosity) => IO a
+type SolveM a =
+  ( HasCallStack
+  , CtxDebug
+  , CtxPrettyVerbosity
+  , CtxMetaTvScope
+  ) =>
+  IO a
 
 -- | Solve constraints.
 --
@@ -28,10 +35,11 @@ type SolveM a = (CtxDebug, CtxPrettyVerbosity) => IO a
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3588
 class Solve a where
   type SolveTo a
-  solve :: (CtxMetaTvScope) => a -> SolveM (SolveTo a)
+  solve :: a -> SolveM (SolveTo a)
 
 instance Solve Ct where
   type SolveTo Ct = [Ct]
+  solve :: Ct -> SolveM (SolveTo Ct)
   solve ct = do
     let lhs = ct.ct_eq_can.eq_lhs
         rhs = ct.ct_eq_can.eq_rhs

@@ -3,6 +3,7 @@ module Language.Arralac.Solver.Check where
 import Control.Monad
 import Data.IORef (readIORef)
 import Data.Set qualified as Set
+import GHC.Stack (HasCallStack)
 import Language.Arralac.Prelude.Bag
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
@@ -12,6 +13,16 @@ import Language.Arralac.Type.Local.TyVar.Tc
 import Language.Arralac.Type.Local.Type
 import Language.Arralac.Type.TTG.Type
 import Language.Arralac.Typechecker.Constraints
+
+type CheckM a =
+  ( HasCallStack
+  , CtxLhsMetaTv
+  , CtxMetaTvScope
+  , CtxCt
+  , CtxDebug
+  , CtxPrettyVerbosity
+  ) =>
+  IO a
 
 -- | Perform occurs and level check.
 --
@@ -30,7 +41,7 @@ import Language.Arralac.Typechecker.Constraints
 -- See Note [Use checkTyEqRhs in mightEqualLater].
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L4362
 class Check a where
-  check :: (CtxLhsMetaTv, CtxMetaTvScope, CtxCt, CtxDebug, CtxPrettyVerbosity) => a -> IO ()
+  check :: a -> CheckM ()
 
 -- | Check that a variable somewhere on the rhs
 -- of the constraint doesn't have a strictly deeper level
@@ -39,7 +50,7 @@ class Check a where
 -- Similar to @tyVarLevelCheck@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3905
-levelCheck :: (CtxLhsMetaTv, CtxCt) => TcTyVar -> IO ()
+levelCheck :: TcTyVar -> CheckM ()
 levelCheck rhs = do
   let lhs = ?lhsMetaTv
       lhsLevel = ?lhsMetaTv.varDetails.tcLevel
@@ -63,7 +74,7 @@ levelCheck rhs = do
 -- Similar to @simpleOccursCheck@ in GHC.
 --
 -- https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs#L3892
-occursCheck :: (CtxLhsMetaTv, CtxCt, CtxMetaTvScope) => TcTyVar -> IO ()
+occursCheck :: TcTyVar -> CheckM ()
 occursCheck var =
   when (Set.member var ?metaTvScope) $
     dieSolver SolverError'OccursCheck{tv = ?lhsMetaTv, ct = ?ct}

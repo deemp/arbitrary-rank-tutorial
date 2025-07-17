@@ -2,6 +2,7 @@ module Language.Arralac.Solver.Run where
 
 import Data.Foldable
 import Data.Set qualified as Set
+import GHC.Stack (HasCallStack)
 import Language.Arralac.Prelude.Debug
 import Language.Arralac.Prelude.Pretty
 import Language.Arralac.Prelude.Types
@@ -11,7 +12,7 @@ import Language.Arralac.Typechecker.Constraints
 import Prettyprinter
 
 runSolver ::
-  (CtxDebug, CtxPrettyVerbosity) =>
+  (HasCallStack, CtxDebug, CtxPrettyVerbosity) =>
   Int -> WantedConstraints -> IO WantedConstraints
 runSolver iterations constraints = do
   let ?metaTvScope = Set.empty
