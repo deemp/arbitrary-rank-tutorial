@@ -3,7 +3,7 @@
 
 This chapter details the architectural design and core methodologies employed in the implementation of \texttt{Arralac}, a tutorial compiler for a lambda calculus with arbitrary-rank polymorphism. The design is heavily inspired by the bidirectional type inference system described in \textit{Practical type inference for arbitrary-rank types} \cite{jones-practical-2007}, but it incorporates several modern implementation techniques and diverges in key areas to prioritize clarity and extensibility. This chapter will first outline the overall system architecture, then justify the choice of Abstract Syntax Tree (AST) representation, and finally, delve into the specifics of the constraint-based type inference engine and the methodology used to validate its correctness.
 
-\section{System Architecture: The Compilation Pipeline}
+\section{System Architecture: \\ The Compilation Pipeline}
 \label{sec:Design:Pipeline}
 
 The process of transforming a source file from plain text into an evaluated term is managed by a multi-stage pipeline, depicted in \Cref{fig:pipeline}. Each stage performs a distinct transformation on the program representation, passing its output to the next. This standard pipeline structure \cite{wits-type-inference-using-constraints} was chosen to promote modularity and a clear separation of concerns, which are essential for creating an understandable and maintainable tutorial compiler.
@@ -124,7 +124,7 @@ A cornerstone of the system's practicality is the \textbf{monotype invariant}: a
 \subsubsection{The Bidirectional Algorithm.}
 The master strategy for handling higher-rank types is the \textbf{bidirectional type checking} algorithm. Instead of a single, monolithic inference function, the system operates in two distinct modes, preventing the need for full, undecidable inference:
 \begin{itemize}
-    \item \textbf{Inference Mode ($\uparrow$):} This mode synthesizes or "infers" the most general type for an expression from the bottom up. In the paper's implementation, this corresponds to functions like \texttt{inferRho} and \texttt{inferSigma}. It is used for expressions where the type is not already known.
+    \item \textbf{Inference Mode ($\uparrow$):} This mode synthesizes or "infers" the most general type for an expression from the bottom up. In the paper's implementation, this corresponds to functions like \texttt{inferRho} \\ and \texttt{inferSigma}. It is used for expressions where the type is not already known.
     \item \textbf{Checking Mode ($\downarrow$):} This mode verifies or "checks" an expression against a known, expected type that is pushed down from the surrounding context. This is implemented by functions like \texttt{checkRho} and \texttt{checkSigma}.
 \end{itemize}
 This duality is key. For most of the program, the system can infer types. However, when it encounters a programmer-supplied annotation for a higher-rank type (e.g., on a function argument), it switches to the more constrained checking mode, using the annotation to guide the process and avoid intractable search.
@@ -154,7 +154,7 @@ Finally, when checking function types for subsumption, such as \\ \texttt{($\sig
 
 These mechanisms --- a strict type hierarchy, the monotype invariant, bidirectional checking, and subsumption check via deep skolemization --- work in concert to create a system that is powerful enough to support higher-rank types yet constrained enough to remain practical and decidable. This is the foundational system that \texttt{Arralac} reinterprets through a modern, constraint-based lens.
 
-\subsection{Architectural Divergence: A Constraint-Based Model}
+\subsection{Architectural Divergence: \\ A Constraint-Based Model}
 \label{sec:Design:ArralacApproach}
 
 While the theoretical underpinnings are rooted in \cite{jones-practical-2007}, the implementation of the inference mechanism diverges significantly. Instead of the \textbf{eager unification} described in the paper, where constraints are solved as they are discovered, \texttt{Arralac} adopts a \textbf{constraint-based} approach inspired by GHC. This architectural choice was made to enhance modularity and to lay a more robust foundation for high-quality error diagnostics, reflecting modern compiler practice. \Cref{tab:arch-comparison} summarizes the key differences.
@@ -202,7 +202,7 @@ To validate the correctness of the implementation and ensure it meets its pedago
 
 While this methodology does not constitute a formal proof of correctness, it provides enough evidence that the key features of the system are implemented correctly and robustly, satisfying the primary objectives of the thesis.
 
-\section{Summary of Design Choices and Limitations}
+\section{Summary of Design Choices \\ and Limitations}
 \label{sec:Design:Summary}
 
 The design of \texttt{Arralac} makes several deliberate trade-offs to prioritize its tutorial nature and extensibility over feature completeness. The key design choices were:

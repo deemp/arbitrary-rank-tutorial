@@ -8,7 +8,7 @@ This chapter moves beyond description to provide a critical analysis of the \tex
 
 The primary goal of this thesis was to create a modern, tutorial-focused implementation of arbitrary-rank polymorphism by synthesizing foundational theory with modern compiler engineering practices.
 
-\subsection{From Eager Unification to Constraint-Based Inference}
+\subsection{From Eager Unification \\ to Constraint-Based Inference}
 The most significant architectural contribution of this work is its adoption of a two-phase, constraint-based type inference model, a departure from the eager unification algorithm presented in \cite{jones-practical-2007}. In their paper, the authors suggest that a "more principled alternative is to... get the inference algorithm to return a set of constraints, and solve them all together" \cite[Sec. 9.6]{jones-practical-2007}.
 
 \texttt{Arralac} serves as a direct, working implementation of this suggestion. By separating constraint generation (the \texttt{Typechecker}) from constraint solving (the \texttt{Solver}), this thesis demonstrates that the benefits of this architecture are fundamental to building a modular and understandable system.
@@ -25,7 +25,7 @@ The primary trade-off is the added complexity of the \texttt{WantedConstraints} 
 \subsection{The Trees That Grow AST: A Necessity for Modern Tooling}
 The second key architectural choice was the adoption of the \textbf{Trees That Grow} (TTG) pattern for the AST. The LSP requires annotating the AST with inferred types, and TTG provides a type-safe and elegant solution. As demonstrated in \Cref{sec:Implementation:AST}, the AST is parameterized by the compiler pass, and type families are used to "grow" the tree with annotations like \texttt{TcAnno} only after the typechecking pass. This provides a compile-time guarantee that type information is not accessed before it has been computed.
 
-\section{A Qualitative Evaluation of System Characteristics}
+\section{A Qualitative Evaluation \\ of System Characteristics}
 \label{sec:Discussion:Characteristics}
 Evaluating \texttt{Arralac} against ISO 25010 \cite{iso-25010} sub-characteristics reveals the practical impact of its design.
 
@@ -47,4 +47,4 @@ A critical analysis requires acknowledging the project's limitations. These simp
     \item \textbf{Simplified Constraint Solver:} The current solver is basic. It halts on the first unsolvable constraint and does not implement advanced strategies, like floating constraints out of implications and promotion \footnote{See \href{https://github.com/ghc/ghc/blob/ed38c09bd89307a7d3f219e1965a0d9743d0ca73/compiler/GHC/Tc/Utils/Unify.hs\#L2589}{Note [Unification preconditions]}}. Enhancing the solver to handle these cases and to report a complete set of residual constraints would be a valuable research project.
 \end{enumerate}
 
-In conclusion, the analysis confirms that \texttt{Arralac} is not merely a reimplementation, but a modernization of the ideas in its foundational literature. It successfully serves its pedagogical purpose while providing a robust foundation for future exploration.
+In conclusion, the analysis confirms that \texttt{Arralac} is not merely a \\ reimplementation, but a modernization of the ideas in its foundational literature. It successfully serves its pedagogical purpose while providing a robust foundation for future exploration.
