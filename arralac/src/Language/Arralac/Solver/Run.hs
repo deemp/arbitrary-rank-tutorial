@@ -16,23 +16,21 @@ runSolver ::
   Int -> WantedConstraints -> IO WantedConstraints
 runSolver iterations constraints = do
   let ?metaTvScope = Set.empty
-  do
-    constraints' <- go iterations constraints
-    pure constraints'
- where
-  go :: (CtxMetaTvScope, CtxDebug, CtxPrettyVerbosity) => Int -> WantedConstraints -> IO WantedConstraints
-  go _ constraintsCurrent
-    | [] <- toListWc constraintsCurrent =
-        pure constraintsCurrent
-  go 0 constraintsCurrent = pure constraintsCurrent
-  go n constraintsCurrent = do
-    debug'
-      ("go" <+> pretty' n)
-      [ ("constraintsCurrent", prettyDetailed constraintsCurrent)
-      ]
-    constraintsNew <- fold <$> solve constraintsCurrent
-    debug'
-      ("go" <+> pretty' n)
-      [ ("constraintsNew", prettyDetailed constraintsNew)
-      ]
-    go (n - 1) constraintsNew
+  runSolver' iterations constraints
+
+runSolver' :: (HasCallStack, CtxMetaTvScope, CtxDebug, CtxPrettyVerbosity) => Int -> WantedConstraints -> IO WantedConstraints
+runSolver' _ constraintsCurrent
+  | [] <- toListWc constraintsCurrent =
+      pure constraintsCurrent
+runSolver' 0 constraintsCurrent = pure constraintsCurrent
+runSolver' n constraintsCurrent = do
+  debug'
+    ("runSolver'" <+> pretty' n)
+    [ ("constraintsCurrent", prettyDetailed constraintsCurrent)
+    ]
+  constraintsNew <- fold <$> solve constraintsCurrent
+  debug'
+    ("runSolver'" <+> pretty' n)
+    [ ("constraintsNew", prettyDetailed constraintsNew)
+    ]
+  runSolver' (n - 1) constraintsNew
