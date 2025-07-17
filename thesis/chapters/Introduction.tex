@@ -11,7 +11,7 @@ Advanced type systems are a cornerstone of modern functional programming, enabli
 The theoretical foundations for implementing this feature in a practical compiler were laid out in the seminal paper "Practical Type Inference for Arbitrary-Rank Polymorphism" by Peyton Jones et al. \cite{jones-practical-2007}. The Glasgow Haskell Compiler (GHC) \cite{ghc-site-2025}, the de facto standard compiler for the Haskell programming language, serves as the most prominent real-world implementation of these ideas. For many developers and language enthusiasts, including the author, the inner workings of GHC represent a pinnacle of compiler technology --- a "sufficiently advanced technology" that can feel like magic.
 
 % Section 2: The Problem - Made more specific, referencing the key technical challenges.
-\section{The Problem: A Pedagogical Gap \\ in Understanding Compiler Internals}
+\section[The Problem: A Pedagogical Gap in Understanding Compiler Internals]{The Problem: A Pedagogical Gap \\ in Understanding Compiler Internals}
 
 Despite the existence of both foundational theory and a production-grade implementation, a significant pedagogical gap remains. Aspiring language developers and students face a steep learning curve when trying to understand how the elegant theory of arbitrary-rank polymorphism translates into practical code. This gap is not merely one of complexity, but of translation between different models of computation:
 \begin{itemize}
@@ -38,6 +38,7 @@ The primary contributions of this thesis are:
     \item \textbf{A Public Repository:} A publicly available and permissively licensed codebase \cite{deemp-arbitrary-rank-tutorial} to serve as a community resource for learning and experimentation.
 \end{enumerate}
 
+\newpage
 % Section 4: Research Questions - Sharpened to reflect the specific architectural choices.
 \section{Research Questions}
 

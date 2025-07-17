@@ -5,36 +5,46 @@ The previous chapter detailed the architectural design and core methodologies fo
 
 First, I will examine the implementation of the core data structures, particularly the Trees That Grow (TTG) Abstract Syntax Tree (AST). Next, I will detail the type inference pipeline, focusing on the separation between constraint generation and solving. Finally, I will present concrete results, including the output for both successful and unsuccessful typechecking scenarios, and a demonstration of the functional Language Server Protocol (LSP) features.
 
-\section{AST Implementation with \\ Trees That Grow}
+\section[AST Implementation with Trees That Grow]{AST Implementation with \\ Trees That Grow}
 \label{sec:Implementation:AST}
 
 As outlined in the design (\cref{sec:Design:AST}), the AST is built using the Trees That Grow (TTG) pattern to ensure extensibility and to facilitate annotations. The core data types, \texttt{SynTerm} for expressions, \texttt{SynType} for syntactic types, and \texttt{Type} for non-syntactic types are parameterized by a type variable \texttt{x} that represents the current compiler pass (e.g., \texttt{CompRn} for Renamed, \texttt{CompTc} for Typechecked, \texttt{CompZn} for Zonked).
 
 Unlike a simpler AST where fields have concrete types, every component of an \texttt{Arralac} AST node is defined by a type family. This allows the structure of a node to be radically different across passes. The generic definition for \texttt{SynTerm} is shown below.
 
-\begin{minted}[frame=lines,label={The Generic \texttt{SynTerm} Data Type in \texttt{Language.Arralac.Syntax.TTG.SynTerm}}]{haskell}
-data SynTerm x
-  = -- | \ (x :: a) -> x
-    SynTerm'ALam (XSynTerm'ALam' x) (XSynTerm'ALam'Var x) 
-                 (XSynTerm'ALam'Type x) (XSynTerm'ALam'Body x)
-  | -- | (f x) :: Int
-    SynTerm'Ann (XSynTerm'Ann' x) (XSynTerm'Ann'Term x) 
-                (XSynTerm'Ann'Type x)
-  -- ... other constructors
-\end{minted}
+\begin{figure}
+  \centering
+  \begin{minted}[frame=lines]{haskell}
+  data SynTerm x
+    = -- | \ (x :: a). x
+      SynTerm'ALam (XSynTerm'ALam' x) (XSynTerm'ALam'Var x) 
+                  (XSynTerm'ALam'Type x) 
+                      (XSynTerm'ALam'Body x)
+    | -- | (f x) :: Int
+      SynTerm'Ann (XSynTerm'Ann' x) (XSynTerm'Ann'Term x) 
+                  (XSynTerm'Ann'Type x)
+    -- ... other constructors
+  \end{minted}
+  \caption[The Generic \texttt{SynTerm} Data Type]{The Generic \texttt{SynTerm} Data Type in \\ \texttt{Language.Arralac.Syntax.TTG.SynTerm}}
+\end{figure}
 
 The power of TTG is realized through the instantiation of these type families for each specific compiler pass. For the typechecking pass (\texttt{CompTc}), the extension point fields (e.g., \texttt{XSynTerm'Ann'}) are instantiated with a \texttt{TcAnno} record. This record is crucial for tooling, as it contains the inferred type for that node, which is later used by the language server.
 
-\begin{minted}[frame=lines,label={Type Family Instantiation for the Typechecked Pass}]{haskell}
--- In Language.Arralac.Syntax.Local.SynTerm.Tc
-type instance XSynTerm'Ann'Term CompTc = SynTerm CompTc
-type instance XSynTerm'Ann'Type CompTc = SynType CompTc
+\begin{figure}
+  \centering
+  \begin{minted}[frame=lines]{haskell}
+  -- In Language.Arralac.Syntax.Local.SynTerm.Tc
+  type instance XSynTerm'Ann'Term CompTc = SynTerm CompTc
+  type instance XSynTerm'Ann'Type CompTc = SynType CompTc
 
--- In Language.Arralac.Syntax.Local.Extension.Tc
--- The AST node is annotated with its type after typechecking.
-type instance XSynTerm'Ann' CompTc = TcAnno
-data TcAnno = TcAnno { annoSrcLoc :: SrcSpan, annoType :: Expected TcType }
-\end{minted}
+  -- In Language.Arralac.Syntax.Local.Extension.Tc
+  -- The AST node is annotated with its type 
+  -- after typechecking.
+  type instance XSynTerm'Ann' CompTc = TcAnno
+  data TcAnno = TcAnno { annoSrcLoc :: SrcSpan, annoType :: Expected TcType }
+  \end{minted}
+  \caption{Type Family Instantiation for the Typechecked Pass}
+\end{figure}
 
 This approach provides a compile-time, type-safe guarantee that pass-specific information is only available in the AST after that pass has successfully completed.
 
@@ -44,7 +54,7 @@ This approach provides a compile-time, type-safe guarantee that pass-specific in
 The implementation of the type inference engine closely follows the constraint-based design laid out in \cref{sec:Design:TypeInference}. The process is divided into distinct, sequential stages, each managed by its own set of modules.
 
 \subsection{Constraint Generation (\texttt{Typechecker})}
-The first phase, implemented primarily in the \texttt{Language.Arralac.Typechecker.TcTerm} module, traverses the renamed AST to produce a set of wanted constraints. The \texttt{unify} function merely emits canonical equality constraints with a metavariable on the left-hand side and a monotype on the right-hand side.
+The first phase, implemented primarily in the \\ \texttt{Language.Arralac.Typechecker.TcTerm} module, traverses the renamed AST to produce a set of wanted constraints. The \texttt{unify} function merely emits canonical equality constraints with a metavariable on the left-hand side and a monotype on the right-hand side.
 
 \begin{itemize}
   \item \textbf{Bidirectional Logic:} The core function, \texttt{tcRho}, implements the bidirectional algorithm. When called in inference mode (via the \texttt{inferRho} wrapper), it is passed a new mutable reference (\texttt{Expected (IORef TcType)}) to hold the resulting type. When called in checking mode (via \texttt{checkRho}), it consumes the expected type passed to it.
@@ -73,6 +83,7 @@ This section demonstrates the functionality of the implemented system using both
 To test the correct handling of higher-rank types, I use a program that requires passing a polymorphic function as an argument. The following program, \texttt{Program1.arralac}, defines a function \texttt{applyMyShow} that expects a polymorphic function of type \texttt{forall b. b -> String}.
 
 \begin{figure}
+  \centering
   \begin{minted}[frame=lines]{haskell}
 let
   applyMyShow =
@@ -84,7 +95,7 @@ let
 in
 applyMyShow myShow
 \end{minted}
-\caption{\texttt{Program1.arralac}}
+  \caption{\texttt{Program1.arralac}}
 \end{figure}
 
 Running the \texttt{Arralac} CLI to typecheck the program produces a fully-annotated AST. The output in \Cref{fig:typecheck-output} shows that the system correctly inferred and propagated the types. Crucially, the lambda-bound variable \texttt{x\_1} is correctly assigned its type from the annotation containing a higher-rank type, and the final type correctly reflects that the type variable \texttt{a} was unconstrained and thus remains unsolved.

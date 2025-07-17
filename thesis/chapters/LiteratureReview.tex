@@ -1,7 +1,7 @@
 \chapter{Literature Review}
 \label{chap:LiteratureReview}
 
-\section{The Foundations of \\ Typed Functional Languages}
+\section[The Foundations of Typed Functional Languages]{The Foundations of \\ Typed Functional Languages}
 \label{sec:LitReviewFoundations}
 
 At the heart of modern, statically-typed functional languages like Haskell and OCaml lies a sophisticated type system \cite{haskell-type-systems-research, ocaml-papers}, a collection of formal rules assigning a property, or \textbf{type}, to every construct in a program \cite{pierce-types-2002}. A well-typed program is guaranteed to be free from a large class of runtime errors, such as applying an arithmetic operation to a string, a crucial property known as \textbf{type safety}. The theoretical basis for these languages is the \textbf{Lambda Calculus}, a formal system for expressing computation through function abstraction and application.
@@ -10,14 +10,14 @@ The most foundational typed variant is the \textbf{Simply-Typed Lambda Calculus 
 
 However, STLC's safety comes at the cost of expressivity. The system is fundamentally \textbf{monomorphic}: each function can only have one, specific type. An identity function, for instance, can be written for booleans (\texttt{\textbackslash(x~:~Bool).~x}) or for integers (\texttt{\textbackslash(x~:~Int).~x}), but a single, universal identity function that works for \textit{all} types is impossible to express. This inherent rigidity makes pure STLC impractical for building reusable, large-scale software and creates a fundamental need for more expressive polymorphic systems.
 
-\section{System F: The Ideal of Polymorphism and its Practical Limits}
+\section[System F: The Ideal of Polymorphism and its Limits]{System F: The Ideal of Polymorphism \\ and its Practical Limits}
 \label{chap:LiteratureReview:sec:PolymorphismAndSystemF}
 
 To overcome the limitations of monomorphism, modern languages rely on \textbf{polymorphism}, which allows a single piece of code to operate on values of multiple types. The foundational system that formally introduced this capability is Jean-Yves Girard's \textbf{System F} \cite{girard-system-f}. System F extends the lambda calculus with type abstraction and type application, enabling the creation of truly generic functions through what is known as \textbf{parametric polymorphism}. In System F, a universal identity function can be written with the polymorphic type \texttt{forall a. a -> a}, where the \texttt{forall} quantifier introduces a \textbf{type variable} \texttt{a} that can be instantiated with any concrete type at the function's call site.
 
 Within such powerful systems, a crucial distinction exists between predicative and impredicative polymorphism. In a \textbf{predicative} system, a quantified type variable (like \texttt{a}) can only be instantiated with a \textbf{monotype} --- a simple type that does not itself contain any \texttt{forall} quantifiers. In contrast, a more powerful \textbf{impredicative} system allows a type variable to be instantiated with another \textbf{polytype}. While this "first-class" polymorphism is highly expressive, full type inference for impredicative systems is undecidable \cite{wells-typability-1999, serrano-quick-2020}. This fundamental trade-off between expressive power and decidability directly informs the scope of this thesis, which, following the pragmatic tradition of GHC \cite{jones-practical-2007}, operates within the simpler and more predictable predicative fragment.
 
-\section{Practical Polymorphism: \\ The Hindley-Milner Compromise \\ and the Rank-N Gap}
+\section[Practical Polymorphism: The Hindley-Milner Compromise and the Rank-N Gap]{Practical Polymorphism: \\ The Hindley-Milner Compromise \\ and the Rank-N Gap}
 \label{sec:LitReviewHM}
 
 While System F provides the theoretical ideal for polymorphism, its power makes it impossible to create an algorithm that can always infer a program's types without explicit annotations from the programmer. To make type inference both practical and automatic, languages like ML adopted a decidable and well-behaved subset of System F known as the \textbf{Damas-Hindley-Milner (HM)} type system \cite{damas-milner}.
@@ -48,8 +48,10 @@ A significant thread of modern research has focused on placing bidirectional typ
 
 Subsequent research has focused on refining the bidirectional model. \citeauthor{xie-higher-rank} \cite{xie-higher-rank} proposed refinements to the algorithm from \cite{dunfield-complete-2013}, while more recently, \citeauthor{xue-contextual-2024} \cite{xue-contextual-2024} generalized the approach to \textbf{contextual typing}, allowing for more fine-grained propagation of type information.
 
-\subsection{Exploring Alternatives: \\ Impredicativity and Subtyping}
+\subsection[Exploring Alternatives: Impredicativity and Subtyping]{Exploring Alternatives: \\ Impredicativity and Subtyping}
 
+
+\enlargethispage{\baselineskip}
 In parallel, another line of research has explored supporting full, first-class impredicativity. \citeauthor{parreaux-when-2024} \cite{parreaux-when-2024} propose \textbf{SuperF}, a novel algorithm that supports impredicativity by replacing unification with \textbf{subtype inference}\footnote{The SuperF implementation can be found at \url{https://github.com/hkust-taco/superf}.}. While extremely powerful, this approach represents a significant departure from the unification-based systems that are the focus of this thesis.
 
 \subsection{Justification of the Chosen Approach}

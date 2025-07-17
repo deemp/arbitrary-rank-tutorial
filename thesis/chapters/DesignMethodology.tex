@@ -3,7 +3,7 @@
 
 This chapter details the architectural design and core methodologies employed in the implementation of \texttt{Arralac}, a tutorial compiler for a lambda calculus with arbitrary-rank polymorphism. The design is heavily inspired by the bidirectional type inference system described in \textit{Practical type inference for arbitrary-rank types} \cite{jones-practical-2007}, but it incorporates several modern implementation techniques and diverges in key areas to prioritize clarity and extensibility. This chapter will first outline the overall system architecture, then justify the choice of Abstract Syntax Tree (AST) representation, and finally, delve into the specifics of the constraint-based type inference engine and the methodology used to validate its correctness.
 
-\section{System Architecture: \\ The Compilation Pipeline}
+\section[System Architecture: The Compilation Pipeline]{System Architecture: \\ The Compilation Pipeline}
 \label{sec:Design:Pipeline}
 
 The process of transforming a source file from plain text into an evaluated term is managed by a multi-stage pipeline, depicted in \Cref{fig:pipeline}. Each stage performs a distinct transformation on the program representation, passing its output to the next. This standard pipeline structure \cite{wits-type-inference-using-constraints} was chosen to promote modularity and a clear separation of concerns, which are essential for creating an understandable and maintainable tutorial compiler.
@@ -65,6 +65,8 @@ Therefore, the \textbf{Trees That Grow (TTG)} pattern was selected \cite{trees-t
 
 
 % TODO no extension field
+      
+\enlargethispage{\baselineskip}
 My implementation of TTG differs slightly from GHC's. Whereas GHC uses concrete types in some fields, my implementation uses type family applications for \textit{all} fields, ensuring that every part of an AST node can be customized for a given compiler pass. Another difference is that I did not yet introduce an additional constructor for extending data types defined in the TTG representation because I did not expect usage of these types outside of the \texttt{Arralac} compiler.
 
 \begin{figure}
@@ -140,12 +142,15 @@ A central challenge is determining if a function can be used where a more-specif
 
           For arbitrary-rank types like \texttt{T1 -> (forall a. T2)}, the \texttt{forall} is nested. \textbf{Deep skolemization} is the paper's crucial innovation to handle this. It first transforms the type into a \textbf{weak prenex form} using an auxiliary function, $pr(\sigma)$, which pulls nested quantifiers from the return types of functions to the outermost level. For example,
 
-          \begin{equation}
+          \begin{figure}
+          \begin{equation*}
               \begin{split}
                   pr(\forall c. (\forall a. a \rightarrow c) \rightarrow (\forall b. b \rightarrow c)) & = \\
                   \quad \quad =\forall b c. \rightarrow (\forall a. a \rightarrow c) \rightarrow b \rightarrow c
               \end{split}
-          \end{equation}
+          \end{equation*}
+          \caption{Transforming a polytype into a weak-prenex form}
+        \end{figure}
 
           This makes all quantifiers accessible for skolemization, enabling a consistent and robust subsumption check.
 \end{itemize}
@@ -154,7 +159,7 @@ Finally, when checking function types for subsumption, such as \\ \texttt{($\sig
 
 These mechanisms --- a strict type hierarchy, the monotype invariant, bidirectional checking, and subsumption check via deep skolemization --- work in concert to create a system that is powerful enough to support higher-rank types yet constrained enough to remain practical and decidable. This is the foundational system that \texttt{Arralac} reinterprets through a modern, constraint-based lens.
 
-\subsection{Architectural Divergence: \\ A Constraint-Based Model}
+\subsection[Architectural Divergence: A Constraint-Based Model]{Architectural Divergence: \\ A Constraint-Based Model}
 \label{sec:Design:ArralacApproach}
 
 While the theoretical underpinnings are rooted in \cite{jones-practical-2007}, the implementation of the inference mechanism diverges significantly. Instead of the \textbf{eager unification} described in the paper, where constraints are solved as they are discovered, \texttt{Arralac} adopts a \textbf{constraint-based} approach inspired by GHC. This architectural choice was made to enhance modularity and to lay a more robust foundation for high-quality error diagnostics, reflecting modern compiler practice. \Cref{tab:arch-comparison} summarizes the key differences.
@@ -171,7 +176,7 @@ While the theoretical underpinnings are rooted in \cite{jones-practical-2007}, t
         \textbf{Unification}        & Solves constraints immediately as they are generated.                                & Gathers all constraints first; solves them in a separate, dedicated pass.                                                                                                 \\
         \textbf{Modularity}         & Inference logic is tightly coupled with unification logic.                           & The Typechecker (generation) and Solver (unification) are fully decoupled modules.                                                                                        \\
         \textbf{Error Reporting}    & Errors are reported at the first point of unification failure, which can be obscure. & Already reports the location of a sub-term where a constraint originated. Has the potential for holistic error analysis by examining all conflicting constraints at once. \\
-        \textbf{Let-Generalization} & Requires a global type context traversal at the point of the \texttt{let}-binding.   & Not implemented, but the architecture permits solving of scoped constraints during type checking.                                                                      \\
+        \textbf{Let-Generalization} & Requires a global type context traversal at the point of the \texttt{let}-binding.   & Not implemented, but the architecture permits solving of scoped constraints during type checking.                                                                         \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -202,7 +207,7 @@ To validate the correctness of the implementation and ensure it meets its pedago
 
 While this methodology does not constitute a formal proof of correctness, it provides enough evidence that the key features of the system are implemented correctly and robustly, satisfying the primary objectives of the thesis.
 
-\section{Summary of Design Choices \\ and Limitations}
+\section[Summary of Design Choices and Limitations]{Summary of Design Choices \\ and Limitations}
 \label{sec:Design:Summary}
 
 The design of \texttt{Arralac} makes several deliberate trade-offs to prioritize its tutorial nature and extensibility over feature completeness. The key design choices were:
