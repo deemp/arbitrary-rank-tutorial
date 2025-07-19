@@ -51,7 +51,7 @@ mkRnErrorDiagnostics :: SomeException -> Maybe [Diagnostic]
 mkRnErrorDiagnostics e = do
   RnErrorWithCallStack err <- fromException e
   case err of
-    RnError'ForallBindsNoTvs{} -> do
+    RnError'ForAllBindsNoTvs{} -> do
       range <- srcSpanToRange err.srcSpan
       pure [mkDiagnostic range err]
     RnError'UnboundTypeVariable{} -> do

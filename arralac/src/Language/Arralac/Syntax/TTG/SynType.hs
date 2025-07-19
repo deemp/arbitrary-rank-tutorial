@@ -16,7 +16,7 @@ data SynType x
     --
     -- @x@
     SynType'Var (XSynType'Var' x) (XSynType'Var x)
-  | -- | Forall construct.
+  | -- | "For all" construct.
     --
     -- @forall a. b@
     SynType'ForAll (XSynType'ForAll' x) [XSynType'ForAll'Var x] (XSynType'ForAll'Body x)

@@ -266,7 +266,7 @@ instance ConvertParsed Abs.Type where
     Abs.TypeForall pos tys ty -> do
       when (tys == []) $
         dieRn
-          RnError'ForallBindsNoTvs
+          RnError'ForAllBindsNoTvs
             { srcSpan = convertPositionToSrcSpan pos
             }
       tys' <- forM tys convertParsed

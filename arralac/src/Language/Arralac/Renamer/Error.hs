@@ -12,7 +12,7 @@ import Language.Arralac.Type.Local.RnVar
 
 -- | A renamer error.
 data RnError
-  = RnError'ForallBindsNoTvs {srcSpan :: SrcSpan}
+  = RnError'ForAllBindsNoTvs {srcSpan :: SrcSpan}
   | RnError'UnboundTermVariable {name :: NameFs, srcSpan :: SrcSpan}
   | RnError'UnboundTypeVariable {name :: NameFs, srcSpan :: SrcSpan}
   | RnError'LetOccursCheckFailed {letOccursCheckInfo :: LetOccursCheckInfo, letLhsOcc :: RnVar}
@@ -29,7 +29,7 @@ dieRn err = throw (RnErrorWithCallStack err)
 
 instance Pretty' RnError where
   pretty' err = case err of
-    RnError'ForallBindsNoTvs{} ->
+    RnError'ForAllBindsNoTvs{} ->
       vsep'
         [ "`forall' binds no type variables at:"
         , prettyIndent err.srcSpan
