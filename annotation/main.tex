@@ -100,8 +100,13 @@
 \DeclareCaptionLabelSeparator{figSep}{.\quad}
 \captionsetup[figure]{labelfont={normalfont},justification=raggedright, singlelinecheck=false, name={Рисунок}, labelsep=period}
 
-% \usepackage{titlesec}
-% \titleformat{\section}[hang]{\fontsize{20}{24}\selectfont\filcenter}{\Roman{section}}{1em}{}
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries} % Format for the whole title block
+  {}                          % <<<<< The label is left empty to hide "Глава X"
+  {20pt}                      % Separation between label and title
+  {\LARGE}
+% \titleformat{\section}[hang]{\fontsize{20}{24}\selectfont\filcenter}{}{1em}{}
 % \titleformat{\subsection}[hang]{\itshape}{\Alph{subsection}.}{1em}{}[]
 % \titleformat{\subsubsection}[runin]{\itshape}{\arabic{subsubsection})}{1em}{}[$:$]
 % \titlespacing{\subsubsection}{1em}{1em}{1em}
@@ -132,6 +137,10 @@
      
    \begin{flushleft}\raggedleft #1\end{flushleft}
 }
+
+% \usepackage{tocloft}
+% \renewcommand{\contentsname}{Содержание}
+% \renewcommand{\cfttoctitlefont}{\LARGE\bfseries}
 
 \begin{document}
 
