@@ -22,7 +22,7 @@ This separation yielded two primary benefits:
 
 The primary trade-off is the added complexity of the \texttt{WantedConstraints} data structure, which becomes the sole interface between the two largest components of the inference engine. This required careful engineering to ensure all necessary context, such as source locations and levels for scope checking, was correctly propagated.
 
-\subsection{The Trees That Grow AST: A Necessity for Modern Tooling}
+\subsection[The Trees That Grow AST: A Necessity for Modern Tooling]{The Trees That Grow AST: A Necessity \\ for Modern Tooling}
 The second key architectural choice was the adoption of the \textbf{Trees That Grow} (TTG) pattern for the AST. The LSP requires annotating the AST with inferred types, and TTG provides a type-safe and elegant solution. As demonstrated in \Cref{sec:Implementation:AST}, the AST is parameterized by the compiler pass, and type families are used to "grow" the tree with annotations like \texttt{TcAnno} only after the typechecking pass. This provides a compile-time guarantee that type information is not accessed before it has been computed.
 
 \section[A Qualitative Evaluation of System Characteristics]{A Qualitative Evaluation \\ of System Characteristics}
