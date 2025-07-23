@@ -101,11 +101,11 @@
 \captionsetup[figure]{labelfont={normalfont},justification=raggedright, singlelinecheck=false, name={Рисунок}, labelsep=period}
 
 \usepackage{titlesec}
-\titleformat{\chapter}[display]
+\titleformat{\chapter}[hang]
   {\normalfont\huge\bfseries} % Format for the whole title block
-  {}                          % <<<<< The label is left empty to hide "Глава X"
-  {20pt}                      % Separation between label and title
-  {\LARGE}
+  {\thechapter.}              % The label (chapter number + period)
+  {1em}                       % Horizontal space between number and title
+  {}                          % Code before the title text (leave empty)
 % \titleformat{\section}[hang]{\fontsize{20}{24}\selectfont\filcenter}{}{1em}{}
 % \titleformat{\subsection}[hang]{\itshape}{\Alph{subsection}.}{1em}{}[]
 % \titleformat{\subsubsection}[runin]{\itshape}{\arabic{subsubsection})}{1em}{}[$:$]
